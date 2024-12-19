@@ -1,3 +1,5 @@
+import os
+
 import gym
 from stable_baselines3.common.base_class import BaseAlgorithm
 from gym import Env
@@ -19,4 +21,4 @@ class Trainer:
             save_path=save_path,
             name_prefix="model")
         model = self.algorithm.learn(total_timesteps=num_timesteps, callback=[])
-        model.save(save_path)
+        model.save(os.path.join(save_path, f"model_trained_{num_timesteps}"))
