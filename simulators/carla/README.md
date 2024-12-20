@@ -48,11 +48,11 @@ The configuration is located in `config.py`. It contains the following parameter
 ### Training
 To train a model, run:
 ```bash
-python train.py --config <number of the config to use> --total_timesteps <number of timesteps to train>
+python train_duckiebot.py --config <number of the config to use> --total_timesteps <number of timesteps to train>
 ```
 For example:
 ```bash
-python train.py --config 0 --total_timesteps 1000000
+python train_duckiebot.py --config 0 --total_timesteps 1000000
 ```
 The training results will be saved in the `tensorboard` folder. You can open it with:
 ```bash

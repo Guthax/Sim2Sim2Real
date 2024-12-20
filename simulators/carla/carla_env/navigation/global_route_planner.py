@@ -11,8 +11,8 @@ import numpy as np
 import networkx as nx
 
 import carla
-from carla_env.navigation.local_planner import RoadOption
-from carla_env.tools.misc import vector
+from simulators.carla.carla_env.navigation.local_planner import RoadOption
+from simulators.carla.carla_env.tools.misc import vector
 
 
 class GlobalRoutePlanner(object):

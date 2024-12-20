@@ -79,7 +79,7 @@ def main():
             "--total_timesteps", str(steps),
             "--no_render"
         ]
-        subprocess.run(["python", "train.py"] + args_train)
+        subprocess.run(["python", "train_duckiebot.py"] + args_train)
         kill_carla_server()
         # Run evaluation
         print(f"Evaluating experiment {config} with {steps} steps\n")

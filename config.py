@@ -1,7 +1,7 @@
 import torch as th
 from stable_baselines3.common.noise import NormalActionNoise
 import numpy as np
-from simulators.carla.utils import lr_schedule
+from utils import lr_schedule
 
 algorithm_params = {
     "PPO": dict(
@@ -82,6 +82,16 @@ reward_params = {
          penalty_reward=-10,
      ),
     "reward_fn_5_best": dict(
+        early_stop=True,
+        min_speed=20.0,  # km/h
+        max_speed=35.0,  # km/h
+        target_speed=25.0,  # kmh
+        max_distance=2.0,  # Max distance from center before terminating
+        max_std_center_lane=0.35,
+        max_angle_center_lane=90,
+        penalty_reward=-10,
+    ),
+    "reward_only_lane": dict(
         early_stop=True,
         min_speed=20.0,  # km/h
         max_speed=35.0,  # km/h
@@ -306,8 +316,8 @@ _CONFIG_TEST = {
     "state": states["5"],
     "action_smoothing": 0.75,
     "reward_fn": "reward_fn5",
-    "reward_params": reward_params["reward_fn_5_default"],
-    "obs_res": (640, 480),
+    "reward_params": reward_params["reward_only_lane"],
+    "obs_res": (160, 80),
     "seed": 100,
     "wrappers": []
 }

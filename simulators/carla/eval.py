@@ -24,7 +24,7 @@ from carla_env.rewards import reward_functions
 
 from vae.utils.misc import LSIZE
 from carla_env.wrappers import vector, get_displacement_vector
-from carla_env.envs.carla_route_env import CarlaRouteEnv
+from envs.carla.carla_route_env import CarlaRouteEnv
 from eval_plots import plot_eval, summary_eval
 
 from config import CONFIG

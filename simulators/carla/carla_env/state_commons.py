@@ -2,13 +2,13 @@ import torch
 from torchvision import transforms
 
 import os
-from vae.models import VAE
+from simulators.carla.vae.models import VAE
 import numpy as np
 import gym
 from config import CONFIG
 
-from vae.utils.misc import LSIZE
-from carla_env.wrappers import vector, get_displacement_vector
+from simulators.carla.vae.utils.misc import LSIZE
+from simulators.carla.carla_env.wrappers import vector, get_displacement_vector
 
 torch.cuda.empty_cache()
 
@@ -61,7 +61,9 @@ def create_encode_state_fn(vae, measurements_to_include):
         if measure_flags[1]: low.append(0), high.append(1)
         if measure_flags[2]: low.append(0), high.append(120)
         if measure_flags[3]: low.append(-3.14), high.append(3.14)
-        observation_space['vehicle_measures'] = gym.spaces.Box(low=np.array(low), high=np.array(high), dtype=np.float32)
+
+        if low and high:
+            observation_space['vehicle_measures'] = gym.spaces.Box(low=np.array(low), high=np.array(high), dtype=np.float32)
 
         if measure_flags[4]: observation_space['maneuver'] = gym.spaces.Discrete(4)
 
@@ -89,7 +91,9 @@ def create_encode_state_fn(vae, measurements_to_include):
         if measure_flags[1]: vehicle_measures.append(env.vehicle.control.throttle)
         if measure_flags[2]: vehicle_measures.append(env.vehicle.get_speed())
         if measure_flags[3]: vehicle_measures.append(env.vehicle.get_angle(env.current_waypoint))
-        encoded_state['vehicle_measures'] = vehicle_measures
+
+        if vehicle_measures:
+            encoded_state['vehicle_measures'] = vehicle_measures
         if measure_flags[4]: encoded_state['maneuver'] = env.current_road_maneuver.value
 
         if measure_flags[5]:

@@ -24,7 +24,7 @@ config.set_config(args["config"])
 from stable_baselines3 import PPO, DDPG, SAC
 from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.logger import configure
-from carla_env.envs.carla_route_env import CarlaRouteEnv
+from envs.carla.carla_route_env import CarlaRouteEnv
 
 from vae.utils.misc import LSIZE
 from carla_env.state_commons import create_encode_state_fn, load_vae
