@@ -172,7 +172,7 @@ DEFAULT_FRAME_SKIP = 1
 
 DEFAULT_ACCEPT_START_ANGLE_DEG = 60
 
-REWARD_INVALID_POSE = -1000
+REWARD_INVALID_POSE = 0
 
 MAX_SPAWN_ATTEMPTS = 5000
 
@@ -1662,7 +1662,8 @@ class Simulator(gym.Env):
         else:
 
             # Compute the reward
-            reward = +1.0 * speed * lp.dot_dir + -10 * np.abs(lp.dist) + +40 * col_penalty
+            #reward = +1.0 * speed * lp.dot_dir + -10 * np.abs(lp.dist) + +40 * col_penalty
+            reward = lp.dot_dir + np.abs(lp.dist)
         return reward
 
     def step(self, action: np.ndarray):

@@ -109,33 +109,24 @@ class PyTorchObsWrapper(gym.ObservationWrapper):
 
 
 class ResizeWrapper(gym.ObservationWrapper):
-    def __init__(self, env=None, resize_w=80, resize_h=80):
+    def __init__(self, env=None, resize_w=160, resize_h=80):
         gym.ObservationWrapper.__init__(self, env)
         self.resize_h = resize_h
         self.resize_w = resize_w
         obs_shape = self.observation_space.shape
-        self.observation_space = spaces.Box(
-            self.observation_space.low[0, 0, 0],
-            self.observation_space.high[1, 1, 1],
-            [obs_shape[0], resize_h, resize_w],
-            dtype=self.observation_space.dtype,
-        )
+        self.observation_space = spaces.Box(low=0, high=255, shape=(resize_h, resize_w, 3), dtype=np.uint8)
 
     def observation(self, observation):
         return observation
 
     def reset(self):
         obs = gym.ObservationWrapper.reset(self)
-        return cv2.resize(
-            obs.swapaxes(0, 2), dsize=(self.resize_w, self.resize_h), interpolation=cv2.INTER_CUBIC
-        ).swapaxes(0, 2)
+        return cv2.resize(obs, dsize=(self.resize_w, self.resize_h), interpolation=cv2.INTER_CUBIC)
 
     def step(self, actions):
         obs, reward, done, info = gym.ObservationWrapper.step(self, actions)
         return (
-            cv2.resize(
-                obs.swapaxes(0, 2), dsize=(self.resize_w, self.resize_h), interpolation=cv2.INTER_CUBIC
-            ).swapaxes(0, 2),
+            cv2.resize(obs, dsize=(self.resize_w, self.resize_h), interpolation=cv2.INTER_CUBIC),
             reward,
             done,
             info,
@@ -148,7 +139,7 @@ class MultiInputWrapper(gym.ObservationWrapper):
         gym.ObservationWrapper.__init__(self, env)
 
         self.observation_space = spaces.Dict({
-            "rgb_camera": spaces.Box(low=0, high=255, shape=(480, 640, 3), dtype=np.uint8)
+            "rgb_camera": spaces.Box(low=0, high=255, shape=(80, 160, 3), dtype=np.uint8)
         })
 
     def observation(self, observation):
