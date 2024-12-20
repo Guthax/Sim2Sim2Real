@@ -10,7 +10,7 @@ def train():
     from envs.duckietown.duckietown_env_no_domain_rand import DuckietownEnvNoDomainRand
     config = CONFIGS["TEST"]
 
-    env = DuckietownEnvNoDomainRand(render_img=True)
+    env = DuckietownEnvNoDomainRand(render_img=False)
     env = ResizeWrapper(env)
     env = MultiInputWrapper(env)
     algorithm = PPO('MultiInputPolicy', env, verbose=2, device='cuda', **config["algorithm_params"])
