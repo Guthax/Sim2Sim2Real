@@ -94,6 +94,17 @@ def reward_fn5(env):
 
 reward_functions["reward_fn5"] = create_reward_fn(reward_fn5)
 
+def reward_only_lane(env):
+    angle = env.vehicle.get_angle(env.current_waypoint)
+    centering_factor = max(1.0 - env.distance_from_center / max_distance, 0.0)
+    """
+    angle_factor = max(1.0 - abs(angle / np.deg2rad(max_angle_center_lane)), 0.0)
+
+    std = np.std(env.distance_from_center_history)
+    distance_std_factor = max(1.0 - abs(std / max_std_center_lane), 0.0)
+    reward =  centering_factor + angle_factor + distance_std_factor
+    """
+    return centering_factor
 
 def reward_fn_waypoints(env):
     """
@@ -118,3 +129,4 @@ def reward_fn_waypoints(env):
 
 
 reward_functions["reward_fn_waypoints"] = create_reward_fn(reward_fn_waypoints)
+reward_functions["reward_only_lane"] = create_reward_fn(reward_only_lane)

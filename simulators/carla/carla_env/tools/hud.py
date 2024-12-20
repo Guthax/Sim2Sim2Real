@@ -26,7 +26,7 @@ Use ARROWS or WASD keys for control.
 
 import pygame
 import math
-from carla_env.wrappers import get_actor_display_name
+from simulators.carla.carla_env.wrappers import get_actor_display_name
 #===============================================================================
 # HUD
 #===============================================================================
@@ -40,7 +40,7 @@ class HUD(object):
         self.dim = (width, height)
 
         # Select a monospace font for the info panel
-        fonts = [x for x in pygame.font.get_fonts() if "mono" in x]
+        fonts = [x for x in pygame.font.get_fonts() if "arial" in x]
         default_font = "ubuntumono"
         mono = default_font if default_font in fonts else fonts[0]
         mono = pygame.font.match_font(mono)

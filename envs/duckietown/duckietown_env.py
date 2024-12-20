@@ -16,7 +16,7 @@ class DuckietownEnv(Simulator):
         Simulator.__init__(self, **kwargs)
         logger.info("using DuckietownEnv")
 
-        self.action_space = spaces.Box(low=np.array([-1]), high=np.array([1]), dtype=np.float32)
+        self.action_space = spaces.Box(low=np.array([-1, -1]), high=np.array([-1, 1]), dtype=np.float32)
 
         self.observation_space = spaces.Dict({
             "rgb_camera": self.observation_space
@@ -40,7 +40,7 @@ class DuckietownEnv(Simulator):
         self.render_img = render_img
 
     def step(self, action):
-        vel, angle = 0.2, action
+        vel, angle = action
         # Distance between the wheels
         baseline = self.unwrapped.wheel_dist
 

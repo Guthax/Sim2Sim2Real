@@ -14,7 +14,7 @@ import math
 import numpy as np
 
 import carla
-from carla_env.tools.misc import get_speed
+from simulators.carla.carla_env.tools.misc import get_speed
 
 
 class VehiclePIDController():
