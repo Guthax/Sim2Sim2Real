@@ -45,7 +45,7 @@ class DuckietownEnvNoDomainRand(DuckietownEnv):
         self.render_img = render_img
 
     def step(self, action):
-        vel, angle = 0.2, action
+        vel, angle = 0.1, action
         # Distance between the wheels
         baseline = self.unwrapped.wheel_dist
 
