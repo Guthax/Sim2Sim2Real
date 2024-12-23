@@ -1387,7 +1387,6 @@ class Simulator(gym.Env):
         dirVec = get_dir_vec(angle)
         dotDir = np.dot(dirVec, tangent)
         dotDir = np.clip(dotDir, -1.0, +1.0)
-
         # Compute the signed distance to the curve
         # Right of the curve is negative, left is positive
         posVec = pos - point
@@ -1404,7 +1403,6 @@ class Simulator(gym.Env):
 
         angle_deg = np.rad2deg(angle_rad)
         # return signedDist, dotDir, angle_deg
-
         return LanePosition(dist=signedDist, dot_dir=dotDir, angle_deg=angle_deg, angle_rad=angle_rad)
 
     def _drivable_pos(self, pos) -> bool:
@@ -1651,19 +1649,12 @@ class Simulator(gym.Env):
         return [gx, gy, gz], angle
 
     def compute_reward(self, pos, angle, speed):
-        # Compute the collision avoidance penalty
-        col_penalty = self.proximity_penalty2(pos, angle)
-
-        # Get the position relative to the right lane tangent
         try:
             lp = self.get_lane_pos2(pos, angle)
         except NotInLane:
-            reward = 40 * col_penalty
-        else:
+            return -100
 
-            # Compute the reward
-            #reward = +1.0 * speed * lp.dot_dir + -10 * np.abs(lp.dist) + +40 * col_penalty
-            reward = lp.dot_dir + np.abs(lp.dist)
+        reward = np.cos(lp.angle_rad) - np.abs(lp.dist)
         return reward
 
     def step(self, action: np.ndarray):
