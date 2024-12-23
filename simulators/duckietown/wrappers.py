@@ -3,6 +3,7 @@ import cv2
 import gym
 import numpy as np
 from gym import spaces
+from matplotlib import pyplot as plt
 
 
 class DiscreteWrapper(gym.ActionWrapper):

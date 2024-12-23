@@ -13,10 +13,13 @@ class Trainer:
 
         self.testing_environment = testing_env
 
-    def train(self, name, num_timesteps, callbacks, num_checkpoints, save_path, test_freq = -1):
+    def train(self, name, num_timesteps, num_checkpoints, save_path, test_freq = -1):
         cp = CheckpointCallback(
             save_freq= num_timesteps // num_checkpoints,
             save_path=save_path,
-            name_prefix="model")
-        model = self.algorithm.learn(total_timesteps=num_timesteps, callback=[])
+            name_prefix=f"{name}_model_trained")
+
+        #tb = TensorboardCallback(1)
+        
+        model = self.algorithm.learn(total_timesteps=num_timesteps, callback=[cp])
         model.save(os.path.join(save_path, f"{name}_model_trained_{num_timesteps}"))
