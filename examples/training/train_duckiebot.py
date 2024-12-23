@@ -21,6 +21,6 @@ def train():
     num_checkpoints = 5
 
     save_path = "../../results"
-    trainer.train("duckietown", num_timesteps, num_checkpoints, save_path)
+    trainer.train("duckietown_new_rew", num_timesteps, num_checkpoints, save_path)
 
 train()
