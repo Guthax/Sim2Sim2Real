@@ -1,4 +1,4 @@
-
+import cv2
 import numpy as np
 from gym import spaces
 
@@ -81,6 +81,6 @@ class DuckietownEnvNoDomainRand(DuckietownEnv):
         info["DuckietownEnv"] = mine
 
         if self.render_img:
-            self.render()
+            self.render(mode='human')
 
         return obs, reward, done, info

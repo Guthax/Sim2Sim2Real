@@ -20,7 +20,8 @@ def get_version(filename):
     return version
 
 
-CUDA = True
+CUDA = False
+
 
 torch_install_urls = {
     "TORCH_WIN_CUDA": "https://download.pytorch.org/whl/cu116/torch-1.13.1%2Bcu116-cp37-cp37m-win_amd64.whl",

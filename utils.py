@@ -265,3 +265,4 @@ def parse_wrapper_class(wrapper_class_str: str):
         return HistoryWrapperObsDict, wrap_params
     elif wrap_class == "FrameSkip":
         return FrameSkip, wrap_params
+
