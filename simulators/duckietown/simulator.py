@@ -164,9 +164,9 @@ DEFAULT_ROBOT_SPEED = 1.20
 
 DEFAULT_FRAMERATE = 30
 
-DEFAULT_MAX_STEPS = 1500
+DEFAULT_MAX_STEPS = 15000
 
-DEFAULT_MAP_NAME = "ETH_small_loop"
+DEFAULT_MAP_NAME = "ETH_small_loop_1"
 
 DEFAULT_FRAME_SKIP = 1
 
@@ -304,6 +304,8 @@ class Simulator(gym.Env):
 
         # Produce graphical output
         self.graphics = True
+
+        self.activated_shadow_window = False
 
         # Two-tuple of wheel torques, each in the range [-1, 1]
         self.action_space = spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
@@ -530,6 +532,11 @@ class Simulator(gym.Env):
         Reset the simulation at the start of a new episode
         This also randomizes many environment parameters (domain randomization)
         """
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT | gl.GL_STENCIL_BUFFER_BIT)
+
+        # Optional: Set the clear color if needed
+        gl.glClearColor(0.0, 0.0, 0.0, 1.0)  # Black background
+        gl.glFlush()  # Force execution of GL commands
 
         # Step count since episode start
         self.step_count = 0
@@ -1712,7 +1719,6 @@ class Simulator(gym.Env):
 
         if not self.graphics:
             return np.zeros((height, width, 3), np.uint8)
-
         # Switch to the default context
         # This is necessary on Linux nvidia drivers
         # pyglet.gl._shadow_window.switch_to()
@@ -1969,6 +1975,7 @@ class Simulator(gym.Env):
         mode: "human", "top_down", "free_cam", "rgb_array"
 
         """
+
         assert mode in ["human", "top_down", "free_cam", "rgb_array"]
 
         if close:

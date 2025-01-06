@@ -57,8 +57,8 @@ class DuckietownEnvNoDomainRand(DuckietownEnv):
         k_r_inv = (self.gain + self.trim) / k_r
         k_l_inv = (self.gain - self.trim) / k_l
 
-        omega_r = (vel + 0.5 * angle * baseline) / self.radius
-        omega_l = (vel - 0.5 * angle * baseline) / self.radius
+        omega_r = (vel - 0.5 * angle * baseline) / self.radius
+        omega_l = (vel + 0.5 * angle * baseline) / self.radius
 
         # conversion from motor rotation rate to duty cycle
         u_r = omega_r * k_r_inv
@@ -71,6 +71,8 @@ class DuckietownEnvNoDomainRand(DuckietownEnv):
         vels = np.array([u_l_limited, u_r_limited])
 
         obs, reward, done, info = Simulator.step(self, vels)
+        self.total_reward += reward
+        self.mean_reward = self.total_reward / self.step_count
         mine = {}
         mine["k"] = self.k
         mine["gain"] = self.gain
@@ -78,9 +80,17 @@ class DuckietownEnvNoDomainRand(DuckietownEnv):
         mine["radius"] = self.radius
         mine["omega_r"] = omega_r
         mine["omega_l"] = omega_l
+
         info["DuckietownEnv"] = mine
+        info["total_reward"] = self.total_reward
+        info["routes_completed"] = self.routes_completed
+        info["total_distance"] = 0
+        info["avg_center_dev"] = self.avg_center_dev
+        info["avg_speed"] = self.avg_speed
+        info["mean_reward"] = self.mean_reward
+        info["completed_steps"] = self.step_count
 
         if self.render_img:
-            self.render(mode='human')
+            self.render(mode='top_down')
 
         return obs, reward, done, info
