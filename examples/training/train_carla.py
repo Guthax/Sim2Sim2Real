@@ -1,6 +1,7 @@
 from stable_baselines3.common.callbacks import CheckpointCallback
 import config
 from envs.carla.carla_steering_only_env import CarlaSteeringEnv
+from utils import TensorboardCallback
 
 config.set_config("TEST")
 from envs.carla.carla_route_env import CarlaRouteEnv
@@ -37,7 +38,9 @@ def train():
     num_timesteps = 100000
     num_checkpoints = 5
 
+    tb = [TensorboardCallback(1)]
+
     save_path = "../../results"
-    trainer.train("carla_only_rgb_steering", num_timesteps, [], 5, save_path)
+    trainer.train("carla_only_rgb_steering", num_timesteps, 2, save_path, tb)
 
 train()

@@ -39,6 +39,13 @@ class DuckietownEnv(Simulator):
 
         self.render_img = render_img
 
+        self.total_reward = 0
+        self.routes_completed = 0
+        self.distance_traveled = 0
+        self.avg_center_dev = 0
+        self.avg_speed = 0
+        self.mean_reward = 0
+
     def step(self, action):
         vel, angle = action
         # Distance between the wheels

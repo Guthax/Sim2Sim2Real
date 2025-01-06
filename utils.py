@@ -75,6 +75,26 @@ class HParamCallback(BaseCallback):
         return True
 
 
+class TensorboardCallbackCarla(BaseCallback):
+    """
+    Custom callback for plotting additional values in tensorboard.
+    """
+
+    def __init__(self, verbose=0):
+        super().__init__(verbose)
+
+    def _on_step(self) -> bool:
+        # Log scalar value (here a random variable)
+        if self.locals['dones'][0]:
+            self.logger.record("custom/total_reward", self.locals['infos'][0]['total_reward'])
+            self.logger.record("custom/routes_completed", self.locals['infos'][0]['routes_completed'])
+            self.logger.record("custom/total_distance", self.locals['infos'][0]['total_distance'])
+            self.logger.record("custom/avg_center_dev", self.locals['infos'][0]['avg_center_dev'])
+            self.logger.record("custom/avg_speed", self.locals['infos'][0]['avg_speed'])
+            self.logger.record("custom/mean_reward", self.locals['infos'][0]['mean_reward'])
+            self.logger.dump(self.num_timesteps)
+        return True
+
 class TensorboardCallback(BaseCallback):
     """
     Custom callback for plotting additional values in tensorboard.

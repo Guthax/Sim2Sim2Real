@@ -149,6 +149,14 @@ class MultiInputWrapper(gym.ObservationWrapper):
         }
         return dict
 
+class CarlaToDuckietownActionWrapper(gym.ActionWrapper):
+    def __init__(self, env=None):
+        gym.ActionWrapper.__init__(self,env)
+        self.action_space = gym.spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)
+
+    def action(self, action):
+        return action * -1
+
 class UndistortWrapper(gym.ObservationWrapper):
     """
     To Undo the Fish eye transformation - undistorts the image with plumbbob distortion
