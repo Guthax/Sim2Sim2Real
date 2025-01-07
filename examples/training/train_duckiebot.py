@@ -17,7 +17,8 @@ def train():
 
     from envs.duckietown.duckietown_env_no_domain_rand import DuckietownEnvNoDomainRand
     from config import CONFIG
-    configuration = CONFIG
+
+    config = CONFIG
 
     env = DuckietownEnvNoDomainRand(render_img=True)
     env = ResizeWrapper(env)
@@ -31,7 +32,7 @@ def train():
 
     log_dir = "../../tensorboard"
 
-    model_name = "duckietown"
+    model_name = "scenario_1"
     log_model_dir = os.path.join(log_dir, model_name)
 
     new_logger = configure(log_model_dir, ["stdout", "csv", "tensorboard"])
@@ -42,6 +43,6 @@ def train():
     tb = [TensorboardCallback(1)]
 
     save_path = "../../results"
-    trainer.train("duckie_bot_tensorboard", num_timesteps, num_checkpoints, save_path, tb)
+    trainer.train(model_name, num_timesteps, num_checkpoints, save_path, tb)
 
 train()
