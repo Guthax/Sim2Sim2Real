@@ -5,6 +5,7 @@ import gym
 from stable_baselines3.common.base_class import BaseAlgorithm
 from gym import Env
 from stable_baselines3.common.callbacks import CheckpointCallback
+from stable_baselines3.common.logger import configure
 
 from utils import TensorboardCallback
 
@@ -24,6 +25,6 @@ class Trainer:
 
         if additional_callbacks:
             cp = additional_callbacks + cp
-        print(cp)
+
         model = self.algorithm.learn(total_timesteps=num_timesteps, callback=cp)
         model.save(os.path.join(save_path, f"{name}_model_trained_{num_timesteps}"))

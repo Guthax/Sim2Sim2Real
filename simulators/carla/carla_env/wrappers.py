@@ -405,7 +405,7 @@ class Vehicle(CarlaActorBase):
 
 class World():
     def __init__(self, client):
-        self.world = client.load_world('Town02')
+        self.world = client.load_world('Town02_opt')
         self.map = self.get_map()
         self.actor_list = []
 

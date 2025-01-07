@@ -63,6 +63,7 @@ install_requires = [
     f"torchvision@{torchvis_url}",
     "torchsummary==1.5.1",
     "carla==0.9.13",
+    "tensorboard",
 ]
 
 system_version = tuple(sys.version_info)[:3]
