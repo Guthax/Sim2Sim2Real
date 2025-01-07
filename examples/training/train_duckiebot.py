@@ -1,17 +1,23 @@
-from stable_baselines3.common.callbacks import CheckpointCallback
+import os
 
-from config import CONFIGS
+from stable_baselines3.common.callbacks import CheckpointCallback
+from stable_baselines3.common.logger import configure
+
+import config
+config.set_config("TEST")
+
 from simulators.duckietown.wrappers import MultiInputWrapper, ResizeWrapper
 from trainer import Trainer
 from stable_baselines3 import PPO
 
-from utils import TensorboardCallback
+from utils import TensorboardCallback, write_json
 
 
 def train():
 
     from envs.duckietown.duckietown_env_no_domain_rand import DuckietownEnvNoDomainRand
-    config = CONFIGS["TEST"]
+    from config import CONFIG
+    configuration = CONFIG
 
     env = DuckietownEnvNoDomainRand(render_img=True)
     env = ResizeWrapper(env)
@@ -20,12 +26,22 @@ def train():
 
     trainer = Trainer(env, algorithm)
 
-    num_timesteps = 2000
+    num_timesteps = 1000000
     num_checkpoints = 5
+
+    log_dir = "../../tensorboard"
+
+    model_name = "duckietown"
+    log_model_dir = os.path.join(log_dir, model_name)
+
+    new_logger = configure(log_model_dir, ["stdout", "csv", "tensorboard"])
+    algorithm.set_logger(new_logger)
+    write_json(CONFIG, os.path.join(log_model_dir, 'config.json'))
+
 
     tb = [TensorboardCallback(1)]
 
     save_path = "../../results"
-    trainer.train("duckie_bot_tensorboard", num_timesteps, 2, save_path, tb)
+    trainer.train("duckie_bot_tensorboard", num_timesteps, num_checkpoints, save_path, tb)
 
 train()

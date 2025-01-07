@@ -20,6 +20,7 @@ parts/
 sdist/
 var/
 results/
+tensorboard/
 wheels/
 share/python-wheels/
 *.egg-info/
