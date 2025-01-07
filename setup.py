@@ -64,6 +64,7 @@ install_requires = [
     "torchsummary==1.5.1",
     "carla==0.9.13",
     "tensorboard",
+    "chardet"
 ]
 
 system_version = tuple(sys.version_info)[:3]
