@@ -1,3 +1,4 @@
+import cv2
 import gym
 from stable_baselines3.common.base_class import BaseAlgorithm
 
@@ -10,7 +11,7 @@ class Evaluator:
         self.algorithm = algorithm
 
         self.evaluation_timesteps = 100000
-        self.episode_length = 5
+        self.episode_length = 1500
     def evaluate(self, ):
         state =  self.evaluation_environment.reset()
         done = False
