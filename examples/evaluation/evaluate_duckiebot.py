@@ -13,7 +13,7 @@ def evaluate():
     env = ResizeWrapper(env)
     env = MultiInputWrapper(env)
     #env = CarlaToDuckietownActionWrapper(env)
-    algorithm = PPO.load('/home/jurriaan/Documents/Programming/Sim2Sim2Real/results/carla_to_duckie_finetuned_model_trained_10000_steps')
+    algorithm = PPO.load('/home/jurriaan/Documents/Programming/Sim2Sim2Real/results/carla_only_rgb_steering_model_trained_200000_steps')
 
 
     evaluator = Evaluator(env, algorithm)

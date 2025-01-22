@@ -6,6 +6,8 @@ from dataclasses import dataclass
 
 import sys
 
+from matplotlib import pyplot as plt
+
 if sys.version_info >= (3, 8):
     from typing import TypedDict
 else:
@@ -1944,7 +1946,6 @@ class Simulator(gym.Env):
         # Note: this is necessary for gym.wrappers.Monitor to record videos
         # properly, otherwise they are vertically inverted.
         img_array = np.ascontiguousarray(np.flip(img_array, axis=0))
-
         return img_array
 
     def render_obs(self, segment: bool = False) -> np.ndarray:
@@ -1998,7 +1999,6 @@ class Simulator(gym.Env):
         # self.undistort - for UndistortWrapper
         if self.distortion and not self.undistort and mode != "free_cam":
             img = self.camera_model.distort(img)
-
         if mode == "rgb_array":
             return img
 
@@ -2007,6 +2007,7 @@ class Simulator(gym.Env):
             self.window = window.Window(
                 width=WINDOW_WIDTH, height=WINDOW_HEIGHT, resizable=False, config=config
             )
+
 
         self.window.clear()
         self.window.switch_to()
@@ -2047,7 +2048,6 @@ class Simulator(gym.Env):
 
         # Force execution of queued commands
         gl.glFlush()
-
         return img
 
 

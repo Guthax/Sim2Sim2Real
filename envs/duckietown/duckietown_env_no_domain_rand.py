@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 from gym import spaces
+from matplotlib import pyplot as plt
 
 from envs.duckietown.duckietown_env import DuckietownEnv
 from simulators.duckietown.simulator import Simulator
@@ -43,6 +44,9 @@ class DuckietownEnvNoDomainRand(DuckietownEnv):
         self.dynamics_rand = False
 
         self.render_img = render_img
+
+
+
 
     def step(self, action):
         vel, angle = 0.1, action
@@ -91,6 +95,12 @@ class DuckietownEnvNoDomainRand(DuckietownEnv):
         info["completed_steps"] = self.step_count
 
         if self.render_img:
-            self.render(mode='top_down')
+            img = self.render(mode='top_down')
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
+
+            cv2.imshow('output', img)
+            cv2.waitKey(1)
+
+            # Add a small delay for frame rate control
         return obs, reward, done, info
