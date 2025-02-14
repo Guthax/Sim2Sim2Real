@@ -20,7 +20,7 @@ def train():
 
     config = CONFIG
 
-    env = DuckietownEnvNoDomainRand(render_img=True)
+    env = DuckietownEnvNoDomainRand(render_img=False)
     env = ResizeWrapper(env)
     env = MultiInputWrapper(env)
     algorithm = PPO('MultiInputPolicy', env, verbose=2, device='cuda', **config["algorithm_params"])
@@ -32,7 +32,7 @@ def train():
 
     log_dir = "../../tensorboard"
 
-    model_name = "scenario_1"
+    model_name = "duckie_domain_rand"
     log_model_dir = os.path.join(log_dir, model_name)
 
     new_logger = configure(log_model_dir, ["stdout", "csv", "tensorboard"])

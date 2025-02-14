@@ -12,6 +12,7 @@ class Evaluator:
 
         self.evaluation_timesteps = 100000
         self.episode_length = 1500
+
     def evaluate(self, ):
         state =  self.evaluation_environment.reset()
         done = False
@@ -23,9 +24,7 @@ class Evaluator:
             while not done and current_episode_length < self.episode_length:
                 action, _states = self.algorithm.predict(state, deterministic=True)
                 state, reward, done, info = self.evaluation_environment.step(action)
-                print(reward)
                 total_reward += reward
-                print(timesteps)
                 timesteps += 1
                 current_episode_length += 1
             done = False
