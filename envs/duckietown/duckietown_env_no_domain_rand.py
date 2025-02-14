@@ -39,9 +39,9 @@ class DuckietownEnvNoDomainRand(DuckietownEnv):
         # Wheel velocity limit
         self.limit = limit
 
-        self.domain_rand = False
-        self.camera_rand = False
-        self.dynamics_rand = False
+        self.domain_rand = True
+        self.camera_rand = True
+        self.dynamics_rand = True
 
         self.render_img = render_img
 
