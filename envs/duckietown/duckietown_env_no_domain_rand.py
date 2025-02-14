@@ -42,7 +42,6 @@ class DuckietownEnvNoDomainRand(DuckietownEnv):
         self.domain_rand = True
         self.camera_rand = True
         self.dynamics_rand = True
-
         self.render_img = render_img
 
 
@@ -95,9 +94,9 @@ class DuckietownEnvNoDomainRand(DuckietownEnv):
         info["completed_steps"] = self.step_count
 
         if self.render_img:
-            img = self.render(mode='top_down')
+            img = self.render(mode='human')
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
+            img = cv2.flip(img, 0)
 
             cv2.imshow('output', img)
             cv2.waitKey(1)
