@@ -225,7 +225,7 @@ class Simulator(gym.Env):
         distortion: bool = False,
         dynamics_rand: bool = False,
         camera_rand: bool = False,
-        randomize_maps_on_reset: bool = False,
+        randomize_maps_on_reset: bool = True,
         num_tris_distractors: int = 12,
         color_ground: Sequence[float] = (0.15, 0.15, 0.15),
         color_sky: Sequence[float] = BLUE_SKY,
@@ -373,13 +373,19 @@ class Simulator(gym.Env):
         self.style = style
 
         self.randomize_maps_on_reset = randomize_maps_on_reset
-
         if self.randomize_maps_on_reset:
-            self.map_names = os.listdir(get_subdir_path("maps"))
-            self.map_names = [
-                _map for _map in self.map_names if not _map.startswith(("calibration", "regress"))
-            ]
-            self.map_names = [mapfile.replace(".yaml", "") for mapfile in self.map_names]
+            self.map_names =  [
+    "Caltech_loop01",
+    "ETHZ_autolab_fast_track",
+    "ETHZ_autolab_technical_track",
+    "ETH_intersection_map",
+    "ETH_large_loop",
+    "ETH_small_loop_1",
+    "ETH_small_loop_2",
+    "ETH_small_loop_3",
+    "TTIC_large_loop",
+    "TTIC_ripltown"
+]
 
         # Initialize the state
         self.reset()
