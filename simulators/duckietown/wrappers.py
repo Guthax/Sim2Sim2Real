@@ -157,6 +157,22 @@ class CarlaToDuckietownActionWrapper(gym.ActionWrapper):
     def action(self, action):
         return action * -1
 
+class CannyWrapper(gym.ObservationWrapper):
+    def __init__(self, env=None,):
+        gym.ObservationWrapper.__init__(self, env)
+
+        self.observation_space = spaces.Dict({
+            "canny": spaces.Box(low=0, high=255, shape=(80, 160), dtype=np.uint8)
+        })
+
+    def observation(self, observation):
+        img = observation["rgb_camera"]
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        canny = cv2.Canny(img, 100, 200)
+        dict = {
+            "canny": canny
+        }
+        return dict
 class UndistortWrapper(gym.ObservationWrapper):
     """
     To Undo the Fish eye transformation - undistorts the image with plumbbob distortion

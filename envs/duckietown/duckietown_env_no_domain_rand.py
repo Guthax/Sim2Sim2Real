@@ -95,10 +95,12 @@ class DuckietownEnvNoDomainRand(DuckietownEnv):
 
         if self.render_img:
             img = self.render(mode='human')
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             img = cv2.flip(img, 0)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            canny = cv2.Canny(img, 100, 200)
 
-            cv2.imshow('output', img)
+
+            cv2.imshow('output', canny)
             cv2.waitKey(1)
 
             # Add a small delay for frame rate control
