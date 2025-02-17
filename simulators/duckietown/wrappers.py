@@ -134,6 +134,19 @@ class ResizeWrapper(gym.ObservationWrapper):
         )
 
 
+class RGBWrapper(gym.ObservationWrapper):
+    def __init__(self, env=None,):
+        gym.ObservationWrapper.__init__(self, env)
+
+        self.observation_space = spaces.Dict({
+            "rgb_camera": spaces.Box(low=0, high=255, shape=(80, 160, 3), dtype=np.uint8)
+        })
+
+    def observation(self, observation):
+        dict = {
+            "rgb_camera": observation
+        }
+        return dict
 
 class MultiInputWrapper(gym.ObservationWrapper):
     def __init__(self, env=None,):
@@ -162,14 +175,44 @@ class CannyWrapper(gym.ObservationWrapper):
         gym.ObservationWrapper.__init__(self, env)
 
         self.observation_space = spaces.Dict({
+            "rgb": spaces.Box(low=0, high=255, shape=(80, 160, 3), dtype=np.uint8),
             "canny": spaces.Box(low=0, high=255, shape=(80, 160), dtype=np.uint8)
         })
 
+    def region_of_interest(self, img):
+        height, width = img.shape[:2]
+        mask = np.zeros_like(img)
+
+        # Define a triangular region of interest
+        roi_vertices = np.array([[
+            (0, height), (width, height), (width // 2, height // 2)
+        ]], dtype=np.int32)
+
+        cv2.fillPoly(mask, roi_vertices, 255)
+        masked_image = cv2.bitwise_and(img, mask)
+        return masked_image
+
+    def detect_lanes(self, img):
+        # Load the image
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        # Apply Gaussian blur
+        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+
+        # Canny edge detection
+        edges = cv2.Canny(blurred, 100, 300)
+
+        # Apply region of interest mask
+        #roi = self.region_of_interest(edges)
+
+        return edges
+
     def observation(self, observation):
-        img = observation["rgb_camera"]
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        canny = cv2.Canny(img, 150, 200)
+        img_bgr= observation["rgb_camera"]
+        canny = self.detect_lanes(img_bgr)
+
+        img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
         dict = {
+            "rgb": img_rgb,
             "canny": canny
         }
         return dict
