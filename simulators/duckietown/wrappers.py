@@ -185,8 +185,8 @@ class CropWrapper(gym.ObservationWrapper):
     def observation(self, observation):
         img = observation["rgb_camera"]
         img = img[40:120, :, :]
-        cv2.imshow("wiun", img)
-        cv2.waitKey(1)
+        #cv2.imshow("wiun", img)
+        #cv2.waitKey(1)
         dict = {
             "rgb_camera": img
         }
