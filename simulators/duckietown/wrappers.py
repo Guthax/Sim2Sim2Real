@@ -110,7 +110,7 @@ class PyTorchObsWrapper(gym.ObservationWrapper):
 
 
 class ResizeWrapper(gym.ObservationWrapper):
-    def __init__(self, env=None, resize_w=160, resize_h=80):
+    def __init__(self, env=None, resize_w=160, resize_h=120):
         gym.ObservationWrapper.__init__(self, env)
         self.resize_h = resize_h
         self.resize_w = resize_w
@@ -168,11 +168,30 @@ class CannyWrapper(gym.ObservationWrapper):
     def observation(self, observation):
         img = observation["rgb_camera"]
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        canny = cv2.Canny(img, 100, 200)
+        canny = cv2.Canny(img, 150, 200)
         dict = {
             "canny": canny
         }
         return dict
+
+class CropWrapper(gym.ObservationWrapper):
+    def __init__(self, env=None,):
+        gym.ObservationWrapper.__init__(self, env)
+
+        self.observation_space = spaces.Dict({
+            "rgb_camera": spaces.Box(low=0, high=255, shape=(80, 160, 3), dtype=np.uint8)
+        })
+
+    def observation(self, observation):
+        img = observation["rgb_camera"]
+        img = img[40:120, :, :]
+        cv2.imshow("wiun", img)
+        cv2.waitKey(1)
+        dict = {
+            "rgb_camera": img
+        }
+        return dict
+
 class UndistortWrapper(gym.ObservationWrapper):
     """
     To Undo the Fish eye transformation - undistorts the image with plumbbob distortion
