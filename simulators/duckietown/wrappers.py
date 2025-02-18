@@ -216,8 +216,8 @@ class CannyWrapper(gym.ObservationWrapper):
             "canny": canny
         }
 
-        cv2.imshow("test", img_rgb)
-        cv2.waitKey(1)
+        #cv2.imshow("test", img_rgb)
+        #cv2.waitKey(1)
         return dict
 
 class CropWrapper(gym.ObservationWrapper):
