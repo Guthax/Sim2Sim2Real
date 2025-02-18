@@ -10,13 +10,13 @@ def evaluate():
     from envs.duckietown.duckietown_env_no_domain_rand import DuckietownEnvNoDomainRand
     config = CONFIGS["TEST"]
 
-    env = DuckietownEnvNoDomainRand(render_img=True)
+    env = DuckietownEnvNoDomainRand(render_img=False)
     env = ResizeWrapper(env)
     env = MultiInputWrapper(env)
     env = CropWrapper(env)
     env = CannyWrapper(env)
     #env = CarlaToDuckietownActionWrapper(env)
-    algorithm = PPO.load('/home/jurriaan/Documents/Programming/Sim2Sim2Real/results/duckie_domain_rand_canny_cropped_model_trained_2000000')
+    algorithm = PPO.load('/home/jurriaan/Documents/Programming/Sim2Sim2Real/results/duckie_domain_rand_canny_cropped_model_trained_800000_steps')
 
     evaluator = Evaluator(env, algorithm)
 
