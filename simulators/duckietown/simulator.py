@@ -225,7 +225,7 @@ class Simulator(gym.Env):
         distortion: bool = False,
         dynamics_rand: bool = False,
         camera_rand: bool = False,
-        randomize_maps_on_reset: bool = True,
+        randomize_maps_on_reset: bool = False,
         num_tris_distractors: int = 12,
         color_ground: Sequence[float] = (0.15, 0.15, 0.15),
         color_sky: Sequence[float] = BLUE_SKY,
