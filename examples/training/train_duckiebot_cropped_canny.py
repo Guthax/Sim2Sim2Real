@@ -20,7 +20,7 @@ def train():
 
     config = CONFIG
 
-    env = DuckietownEnvNoDomainRand(render_img=False)
+    env = DuckietownEnvNoDomainRand(render_img=True)
     env = ResizeWrapper(env)
     env = MultiInputWrapper(env)
     env = CropWrapper(env)
