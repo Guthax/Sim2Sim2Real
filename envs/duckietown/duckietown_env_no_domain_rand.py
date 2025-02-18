@@ -57,8 +57,8 @@ class DuckietownEnvNoDomainRand(DuckietownEnv):
         k_l = self.k
 
         # adjusting k by gain and trim
-        k_r_inv = (self.gain + self.trim) / k_r
-        k_l_inv = (self.gain - self.trim) / k_l
+        k_r_inv = (self.gain - self.trim) / k_r
+        k_l_inv = (self.gain + self.trim) / k_l
 
         omega_r = (vel - 0.5 * angle * baseline) / self.radius
         omega_l = (vel + 0.5 * angle * baseline) / self.radius
