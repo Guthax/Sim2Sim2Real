@@ -222,7 +222,7 @@ class Simulator(gym.Env):
         full_transparency: bool = False,
         user_tile_start=None,
         seed: int = None,
-        distortion: bool = False,
+        distortion: bool = True,
         dynamics_rand: bool = False,
         camera_rand: bool = False,
         randomize_maps_on_reset: bool = False,
