@@ -148,19 +148,6 @@ class RGBWrapper(gym.ObservationWrapper):
         }
         return dict
 
-class MultiInputWrapper(gym.ObservationWrapper):
-    def __init__(self, env=None,):
-        gym.ObservationWrapper.__init__(self, env)
-
-        self.observation_space = spaces.Dict({
-            "rgb_camera": spaces.Box(low=0, high=255, shape=(80, 160, 3), dtype=np.uint8)
-        })
-
-    def observation(self, observation):
-        dict = {
-            "rgb_camera": observation
-        }
-        return dict
 
 class CarlaToDuckietownActionWrapper(gym.ActionWrapper):
     def __init__(self, env=None):
@@ -229,7 +216,7 @@ class CropWrapper(gym.ObservationWrapper):
         })
 
     def observation(self, observation):
-        img = observation["rgb_camera"]
+        img = observation
         img = img[40:120, :, :]
         #cv2.imshow("wiun", img)
         #cv2.waitKey(1)
