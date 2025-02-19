@@ -13,6 +13,9 @@ class Evaluator:
         self.evaluation_timesteps = 100000
         self.episode_length = 1500
 
+        self._window = "camera-reader2"
+        cv2.namedWindow(self._window, cv2.WINDOW_AUTOSIZE)
+
     def evaluate(self, ):
         state =  self.evaluation_environment.reset()
         done = False
