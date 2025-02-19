@@ -1,4 +1,4 @@
-
+import cv2
 import numpy as np
 from gym import spaces
 
@@ -33,8 +33,10 @@ class DuckietownEnv(Simulator):
         # Wheel velocity limit
         self.limit = limit
 
+        self.render_img = True
+
     def step(self, action):
-        vel, angle = action
+        vel, angle = 0.2, action[1]
 
         # Distance between the wheels
         baseline = self.unwrapped.wheel_dist
@@ -69,6 +71,15 @@ class DuckietownEnv(Simulator):
         mine["omega_r"] = omega_r
         mine["omega_l"] = omega_l
         info["DuckietownEnv"] = mine
+
+        if self.render_img:
+            img = self.render(mode='top_down')
+            # img = cv2.flip(img, 0)
+            # img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            # canny = cv2.Canny(img, 100, 200)
+
+            cv2.imshow('output', img)
+            cv2.waitKey(1)
         return obs, reward, done, info
 
 
