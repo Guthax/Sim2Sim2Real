@@ -222,7 +222,7 @@ class Simulator(gym.Env):
         full_transparency: bool = False,
         user_tile_start=None,
         seed: int = None,
-        distortion: bool = True,
+        distortion: bool = False,
         dynamics_rand: bool = True,
         camera_rand: bool = True,
         randomize_maps_on_reset: bool = False,
@@ -1970,8 +1970,8 @@ class Simulator(gym.Env):
         )
 
         # self.undistort - for UndistortWrapper
-        if self.distortion and not self.undistort:
-            observation = self.camera_model.distort(observation)
+        #if self.distortion and not self.undistort:
+        #    observation = self.camera_model.distort(observation)
 
         return observation
 

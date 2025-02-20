@@ -2,7 +2,7 @@ from stable_baselines3 import PPO
 
 from config import CONFIGS
 from evaluator import Evaluator
-from simulators.duckietown.wrappers import ResizeWrapper, MultiInputWrapper, CarlaToDuckietownActionWrapper, \
+from simulators.duckietown.wrappers import ResizeWrapper, CarlaToDuckietownActionWrapper, \
     CropWrapper, CannyWrapper
 
 
@@ -12,7 +12,6 @@ def evaluate():
 
     env = DuckietownEnvNoDomainRand(render_img=False)
     env = ResizeWrapper(env)
-    env = MultiInputWrapper(env)
     env = CropWrapper(env)
     env = CannyWrapper(env)
     #env = CarlaToDuckietownActionWrapper(env)

@@ -75,7 +75,7 @@ class DuckietownEnv(Simulator):
         if self.render_img:
             img = self.render(mode='top_down')
             # img = cv2.flip(img, 0)
-            # img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             # canny = cv2.Canny(img, 100, 200)
 
             cv2.imshow('output', img)

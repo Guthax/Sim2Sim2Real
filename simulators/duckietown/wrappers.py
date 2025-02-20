@@ -181,7 +181,7 @@ class CannyWrapper(gym.ObservationWrapper):
 
     def detect_lanes(self, img):
         # Load the image
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
         # Apply Gaussian blur
         blurred = cv2.GaussianBlur(gray, (5, 5), 0)
 
@@ -194,17 +194,16 @@ class CannyWrapper(gym.ObservationWrapper):
         return edges
 
     def observation(self, observation):
-        img_bgr= observation["rgb_camera"]
-        canny = self.detect_lanes(img_bgr)
+        img_rgb= observation["rgb_camera"]
+        canny = self.detect_lanes(img_rgb)
 
-        img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
         dict = {
             "rgb": img_rgb,
             "canny": canny
         }
 
-        #cv2.imshow("test", img_rgb)
-        #cv2.waitKey(1)
+        cv2.imshow("test", canny)
+        cv2.waitKey(1)
         return dict
 
 class CropWrapper(gym.ObservationWrapper):
@@ -218,6 +217,7 @@ class CropWrapper(gym.ObservationWrapper):
     def observation(self, observation):
         img = observation
         img = img[40:120, :, :]
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         #cv2.imshow("wiun", img)
         #cv2.waitKey(1)
         dict = {
