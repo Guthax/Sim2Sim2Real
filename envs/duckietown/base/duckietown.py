@@ -1,27 +1,26 @@
 import cv2
 import numpy as np
 from gym import spaces
-from matplotlib import pyplot as plt
 
 from envs.duckietown.duckietown_env import DuckietownEnv
-from simulators.duckietown.simulator import Simulator
 from simulators.duckietown import logger
+from simulators.duckietown.exceptions import NotInLane
+from simulators.duckietown.simulator import Simulator
 
 
-class DuckietownDirectVelocities(DuckietownEnv):
+class DuckietownBaseDynamics(Simulator):
     """
-    Wrapper to control the simulator using velocity and steering angle
-    instead of differential drive motor velocities
+    Wrapper to control the simulator using steering angle
+    instead of differential drive motor velocities. Uses RGB camera as observation space and no domain randomization.
     """
 
     def __init__(self, gain=1.0, trim=0.0, radius=0.0318, k=27.0, limit=1.0, render_img=False, **kwargs):
-        DuckietownEnv.__init__(self, **kwargs)
-        logger.info("using DuckietownEnvNoDomainrand")
+        Simulator.__init__(self, **kwargs)
 
         self.action_space = spaces.Box(low=np.array([-1]), high=np.array([1]), dtype=np.float32)
 
         self.observation_space = spaces.Dict({
-            "rgb_camera": self.observation_space
+            "camera_rgb": self.observation_space
         })
 
         # Should be adjusted so that the effective speed of the robot is 0.2 m/s
@@ -84,14 +83,46 @@ class DuckietownDirectVelocities(DuckietownEnv):
         info["completed_steps"] = self.step_count
 
         if self.render_img:
-            img = self.render(mode='top_down')
-            #img = cv2.flip(img, 0)
-            #img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            #canny = cv2.Canny(img, 100, 200)
-
-
-            cv2.imshow('output', img)
+            img = self._render_img(
+                800,
+                600,
+                self.multi_fbo_human,
+                self.final_fbo_human,
+                self.img_array_human,
+                top_down=True,
+                segment=False,
+            )
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            cv2.imshow("top_down_view", img)
             cv2.waitKey(1)
 
             # Add a small delay for frame rate control
         return obs, reward, done, info
+
+
+    def compute_reward(self, pos, angle, speed):
+        try:
+            lane_pos = self.get_lane_pos2(pos, angle)
+
+            # Reward for being close to the center of the right lane
+            dist_penalty = -abs(lane_pos.dist)  # Negative for larger distances
+
+            # Reward for aligning with the lane direction
+            direction_reward = lane_pos.dot_dir  # Higher when aligned with the lane
+
+            # Penalize large misalignment (angle deviation from tangent)
+            angle_penalty = -abs(lane_pos.angle_deg) / 45.0  # Normalize to [-1, 0]
+
+            # Compute total reward
+            reward = 1.0 + dist_penalty + direction_reward + angle_penalty
+
+        except NotInLane:
+            # Heavy penalty for going out of lane
+            reward = -10.0
+        return reward
+
+
+    def render_obs(self, segment: bool = False) -> np.ndarray:
+        img = Simulator.render_obs(self, segment)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        return img

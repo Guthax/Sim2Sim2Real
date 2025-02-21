@@ -15,7 +15,7 @@ def evaluate():
     env = CropWrapper(env)
     env = CannyWrapper(env)
     #env = CarlaToDuckietownActionWrapper(env)
-    algorithm = PPO.load('/home/jurriaan/Documents/Programming/Sim2Sim2Real/results/duckie_domain_rand_canny_cropped_model_trained_800000_steps')
+    algorithm = PPO.load('/home/jurriaan/Documents/Programming/Sim2Sim2Real/results/carla_only_rgb_steering_model_trained_200000_steps')
 
     evaluator = Evaluator(env, algorithm)
 

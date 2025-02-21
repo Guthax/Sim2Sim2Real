@@ -114,7 +114,6 @@ class ResizeWrapper(gym.ObservationWrapper):
         gym.ObservationWrapper.__init__(self, env)
         self.resize_h = resize_h
         self.resize_w = resize_w
-        obs_shape = self.observation_space.shape
         self.observation_space = spaces.Box(low=0, high=255, shape=(resize_h, resize_w, 3), dtype=np.uint8)
 
     def observation(self, observation):
@@ -133,29 +132,6 @@ class ResizeWrapper(gym.ObservationWrapper):
             info,
         )
 
-
-class RGBWrapper(gym.ObservationWrapper):
-    def __init__(self, env=None,):
-        gym.ObservationWrapper.__init__(self, env)
-
-        self.observation_space = spaces.Dict({
-            "rgb_camera": spaces.Box(low=0, high=255, shape=(80, 160, 3), dtype=np.uint8)
-        })
-
-    def observation(self, observation):
-        dict = {
-            "rgb_camera": observation
-        }
-        return dict
-
-
-class CarlaToDuckietownActionWrapper(gym.ActionWrapper):
-    def __init__(self, env=None):
-        gym.ActionWrapper.__init__(self,env)
-        self.action_space = gym.spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)
-
-    def action(self, action):
-        return action * -1
 
 class CannyWrapper(gym.ObservationWrapper):
     def __init__(self, env=None,):
@@ -194,7 +170,7 @@ class CannyWrapper(gym.ObservationWrapper):
         return edges
 
     def observation(self, observation):
-        img_rgb= observation["rgb_camera"]
+        img_rgb= observation
         canny = self.detect_lanes(img_rgb)
 
         dict = {
@@ -210,20 +186,15 @@ class CropWrapper(gym.ObservationWrapper):
     def __init__(self, env=None,):
         gym.ObservationWrapper.__init__(self, env)
 
-        self.observation_space = spaces.Dict({
-            "rgb_camera": spaces.Box(low=0, high=255, shape=(80, 160, 3), dtype=np.uint8)
-        })
+        self.observation_space = spaces.Box(low=0, high=255, shape=(80, 160, 3), dtype=np.uint8)
 
     def observation(self, observation):
         img = observation
         img = img[40:120, :, :]
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         #cv2.imshow("wiun", img)
         #cv2.waitKey(1)
-        dict = {
-            "rgb_camera": img
-        }
-        return dict
+        print(img.shape)
+        return img
 
 class UndistortWrapper(gym.ObservationWrapper):
     """

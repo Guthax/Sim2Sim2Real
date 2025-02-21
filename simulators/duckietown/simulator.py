@@ -223,8 +223,8 @@ class Simulator(gym.Env):
         user_tile_start=None,
         seed: int = None,
         distortion: bool = False,
-        dynamics_rand: bool = True,
-        camera_rand: bool = True,
+        dynamics_rand: bool = False,
+        camera_rand: bool = False,
         randomize_maps_on_reset: bool = False,
         num_tris_distractors: int = 12,
         color_ground: Sequence[float] = (0.15, 0.15, 0.15),
@@ -307,8 +307,6 @@ class Simulator(gym.Env):
         # Produce graphical output
         self.graphics = True
 
-        self.activated_shadow_window = False
-
         # Two-tuple of wheel torques, each in the range [-1, 1]
         self.action_space = spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
 
@@ -373,19 +371,13 @@ class Simulator(gym.Env):
         self.style = style
 
         self.randomize_maps_on_reset = randomize_maps_on_reset
+
         if self.randomize_maps_on_reset:
-            self.map_names =  [
-    "Caltech_loop01",
-    "ETHZ_autolab_fast_track",
-    "ETHZ_autolab_technical_track",
-    "ETH_intersection_map",
-    "ETH_large_loop",
-    "ETH_small_loop_1",
-    "ETH_small_loop_2",
-    "ETH_small_loop_3",
-    "TTIC_large_loop",
-    "TTIC_ripltown"
-]
+            self.map_names = os.listdir(get_subdir_path("maps"))
+            self.map_names = [
+                _map for _map in self.map_names if not _map.startswith(("calibration", "regress"))
+            ]
+            self.map_names = [mapfile.replace(".yaml", "") for mapfile in self.map_names]
 
         # Initialize the state
         self.reset()
@@ -540,11 +532,6 @@ class Simulator(gym.Env):
         Reset the simulation at the start of a new episode
         This also randomizes many environment parameters (domain randomization)
         """
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT | gl.GL_STENCIL_BUFFER_BIT)
-
-        # Optional: Set the clear color if needed
-        gl.glClearColor(0.0, 0.0, 0.0, 1.0)  # Black background
-        gl.glFlush()  # Force execution of GL commands
 
         # Step count since episode start
         self.step_count = 0
@@ -558,8 +545,8 @@ class Simulator(gym.Env):
             logger.info(f"Random map chosen: {map_name}")
             self._load_map(map_name)
 
-
         self.randomization_settings = self.randomizer.randomize(rng=self.np_random)
+
         # Horizon color
         # Note: we explicitly sample white and grey/black because
         # these colors are easily confused for road and lane markings
@@ -575,6 +562,7 @@ class Simulator(gym.Env):
                 self.horizon_color = self._perturb([0.9, 0.9, 0.9], 0.4)
         else:
             self.horizon_color = self.color_sky
+
         # Setup some basic lighting with a far away sun
         if self.domain_rand:
             light_pos = self.randomization_settings["light_pos"]
@@ -591,7 +579,7 @@ class Simulator(gym.Env):
         # specular = np.array([0.3, 0.3, 0.3, 1])
         specular = np.array([0.0, 0.0, 0.0, 1])
 
-        logger.info(light_pos=light_pos, ambient=ambient, diffuse=diffuse, specular=specular)
+        # logger.info(light_pos=light_pos, ambient=ambient, diffuse=diffuse, specular=specular)
         gl.glLightfv(gl.GL_LIGHT0, gl.GL_POSITION, (gl.GLfloat * 4)(*light_pos))
         gl.glLightfv(gl.GL_LIGHT0, gl.GL_AMBIENT, (gl.GLfloat * 4)(*ambient))
         gl.glLightfv(gl.GL_LIGHT0, gl.GL_DIFFUSE, (gl.GLfloat * 4)(*diffuse))
@@ -649,7 +637,7 @@ class Simulator(gym.Env):
             rng = self.np_random if self.domain_rand else None
 
             kind = tile["kind"]
-            fn = get_texture_file(os.path.join("tiles-processed", self.style, kind, "texture"))[0]
+            fn = get_texture_file(f"tiles-processed/{self.style}/{kind}/texture")[0]
             # ft = get_fancy_textures(self.style, texture_name)
             t = load_texture(fn, segment=False, segment_into_color=False)
             tt = Texture(t, tex_name=kind, rng=rng)
@@ -665,7 +653,7 @@ class Simulator(gym.Env):
 
             # Randomize whether the object is visible or not
             if obj.optional and self.domain_rand:
-                obj.visible = np.random.randint(0, 2) == 0
+                obj.visible = self.np_random.integers(0, 2) == 0
             else:
                 obj.visible = True
 
@@ -1402,6 +1390,7 @@ class Simulator(gym.Env):
         dirVec = get_dir_vec(angle)
         dotDir = np.dot(dirVec, tangent)
         dotDir = np.clip(dotDir, -1.0, +1.0)
+
         # Compute the signed distance to the curve
         # Right of the curve is negative, left is positive
         posVec = pos - point
@@ -1418,6 +1407,7 @@ class Simulator(gym.Env):
 
         angle_deg = np.rad2deg(angle_rad)
         # return signedDist, dotDir, angle_deg
+
         return LanePosition(dist=signedDist, dot_dir=dotDir, angle_deg=angle_deg, angle_rad=angle_rad)
 
     def _drivable_pos(self, pos) -> bool:
@@ -1664,12 +1654,18 @@ class Simulator(gym.Env):
         return [gx, gy, gz], angle
 
     def compute_reward(self, pos, angle, speed):
+        # Compute the collision avoidance penalty
+        col_penalty = self.proximity_penalty2(pos, angle)
+
+        # Get the position relative to the right lane tangent
         try:
             lp = self.get_lane_pos2(pos, angle)
         except NotInLane:
-            return -100
+            reward = 40 * col_penalty
+        else:
 
-        reward = np.cos(lp.angle_rad) - np.abs(lp.dist)
+            # Compute the reward
+            reward = +1.0 * speed * lp.dot_dir + -10 * np.abs(lp.dist) + +40 * col_penalty
         return reward
 
     def step(self, action: np.ndarray):
@@ -1727,6 +1723,7 @@ class Simulator(gym.Env):
 
         if not self.graphics:
             return np.zeros((height, width, 3), np.uint8)
+
         # Switch to the default context
         # This is necessary on Linux nvidia drivers
         # pyglet.gl._shadow_window.switch_to()
@@ -1952,6 +1949,7 @@ class Simulator(gym.Env):
         # Note: this is necessary for gym.wrappers.Monitor to record videos
         # properly, otherwise they are vertically inverted.
         img_array = np.ascontiguousarray(np.flip(img_array, axis=0))
+
         return img_array
 
     def render_obs(self, segment: bool = False) -> np.ndarray:
@@ -1970,8 +1968,8 @@ class Simulator(gym.Env):
         )
 
         # self.undistort - for UndistortWrapper
-        #if self.distortion and not self.undistort:
-        #    observation = self.camera_model.distort(observation)
+        if self.distortion and not self.undistort:
+            observation = self.camera_model.distort(observation)
 
         return observation
 
@@ -1982,7 +1980,6 @@ class Simulator(gym.Env):
         mode: "human", "top_down", "free_cam", "rgb_array"
 
         """
-
         assert mode in ["human", "top_down", "free_cam", "rgb_array"]
 
         if close:
@@ -2005,6 +2002,7 @@ class Simulator(gym.Env):
         # self.undistort - for UndistortWrapper
         if self.distortion and not self.undistort and mode != "free_cam":
             img = self.camera_model.distort(img)
+
         if mode == "rgb_array":
             return img
 
@@ -2013,7 +2011,6 @@ class Simulator(gym.Env):
             self.window = window.Window(
                 width=WINDOW_WIDTH, height=WINDOW_HEIGHT, resizable=False, config=config
             )
-
 
         self.window.clear()
         self.window.switch_to()
@@ -2054,6 +2051,7 @@ class Simulator(gym.Env):
 
         # Force execution of queued commands
         gl.glFlush()
+
         return img
 
 

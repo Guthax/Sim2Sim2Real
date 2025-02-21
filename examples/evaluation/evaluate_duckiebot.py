@@ -1,20 +1,18 @@
 from stable_baselines3 import PPO
 
 from config import CONFIGS
+from envs.duckietown.base.duckietown import DuckietownBaseDynamics
+from envs.duckietown.duckie_town_direct_velocities import DuckietownDirectVelocities
 from evaluator import Evaluator
-from simulators.duckietown.wrappers import ResizeWrapper, MultiInputWrapper, CarlaToDuckietownActionWrapper
-
+from simulators.duckietown.wrappers import ResizeWrapper, CannyWrapper, \
+    CropWrapper
 
 def evaluate():
-    from envs.duckietown.duckietown_env_no_domain_rand import DuckietownEnvNoDomainRand
-    config = CONFIGS["TEST"]
-
-    env = DuckietownEnvNoDomainRand(render_img=True)
+    env = DuckietownBaseDynamics(render_img=True)
     env = ResizeWrapper(env)
-    env = MultiInputWrapper(env)
-    #env = CarlaToDuckietownActionWrapper(env)
-    algorithm = PPO.load('/home/jurriaan/Documents/Programming/Sim2Sim2Real/results/duckie_domain_rand_model_trained_1000000')
-
+    env = CropWrapper(env)
+    env = CannyWrapper(env)
+    algorithm = PPO.load('/home/jurriaan/Documents/Programming/Sim2Sim2Real/results/duckie_domain_rand_canny_cropped_model_trained_800000_steps')
 
     evaluator = Evaluator(env, algorithm)
 
