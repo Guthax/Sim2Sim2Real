@@ -15,12 +15,13 @@ class DuckietownBaseDynamics(Simulator):
     """
 
     def __init__(self, gain=1.0, trim=0.0, radius=0.0318, k=27.0, limit=1.0, render_img=False, **kwargs):
+        self.obs_rgb_name = "camera_rgb"
         Simulator.__init__(self, **kwargs)
 
         self.action_space = spaces.Box(low=np.array([-1]), high=np.array([1]), dtype=np.float32)
 
         self.observation_space = spaces.Dict({
-            "camera_rgb": self.observation_space
+            self.obs_rgb_name : spaces.Box(low=0, high=255, shape=(self.camera_height, self.camera_width, 3), dtype=np.uint8)
         })
 
         # Should be adjusted so that the effective speed of the robot is 0.2 m/s
@@ -97,6 +98,9 @@ class DuckietownBaseDynamics(Simulator):
             cv2.waitKey(1)
 
             # Add a small delay for frame rate control
+        obs = {
+            self.obs_rgb_name: obs
+        }
         return obs, reward, done, info
 
 
@@ -119,10 +123,17 @@ class DuckietownBaseDynamics(Simulator):
         except NotInLane:
             # Heavy penalty for going out of lane
             reward = -10.0
+        print(reward)
         return reward
 
+    def reset(self, segment: bool = False):
+        obs = super().reset()
+        obs = cv2.cvtColor(obs, cv2.COLOR_BGR2RGB)
+        return {
+            self.obs_rgb_name: obs
+        }
 
-    def render_obs(self, segment: bool = False) -> np.ndarray:
+    def render_obs(self, segment: bool = False):
         img = Simulator.render_obs(self, segment)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         return img
