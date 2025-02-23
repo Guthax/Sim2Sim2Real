@@ -20,7 +20,7 @@ def train():
 
     config = CONFIG
 
-    env = DuckietownBaseDynamics(render_img=True, camera_rand=True, domain_rand=True, distortion=False)
+    env = DuckietownBaseDynamics(render_img=False, camera_rand=True, domain_rand=True, distortion=False)
     env = ResizeWrapper(env)
     env = CropWrapper(env)
     algorithm = PPO('MultiInputPolicy', env, verbose=2, device='cuda', **config["algorithm_params"])
