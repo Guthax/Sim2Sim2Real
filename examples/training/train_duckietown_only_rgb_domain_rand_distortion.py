@@ -5,10 +5,9 @@ from stable_baselines3.common.logger import configure
 
 import config
 from envs.duckietown.base.duckietown import DuckietownBaseDynamics
-
 config.set_config("TEST")
 
-from simulators.duckietown.wrappers import ResizeWrapper, CropWrapper, CannyWrapper
+from simulators.duckietown.wrappers import ResizeWrapper, CropWrapper
 from trainer import Trainer
 from stable_baselines3 import PPO
 
@@ -21,10 +20,9 @@ def train():
 
     config = CONFIG
 
-    env = DuckietownBaseDynamics(render_img=False)
+    env = DuckietownBaseDynamics(render_img=True, camera_rand=True, domain_rand=True, distortion=True)
     env = ResizeWrapper(env)
     env = CropWrapper(env)
-    env = CannyWrapper(env)
     algorithm = PPO('MultiInputPolicy', env, verbose=2, device='cuda', **config["algorithm_params"])
 
     trainer = Trainer(env, algorithm)
@@ -34,7 +32,7 @@ def train():
 
     log_dir = "../../tensorboard"
 
-    model_name = "duckie_rgb_canny"
+    model_name = "duckie_only_rgb_domain_rand_distortion"
     log_model_dir = os.path.join(log_dir, model_name)
 
     new_logger = configure(log_model_dir, ["stdout", "csv", "tensorboard"])
