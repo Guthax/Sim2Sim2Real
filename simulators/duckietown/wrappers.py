@@ -139,8 +139,8 @@ class CannyWrapper(gym.ObservationWrapper):
         gym.ObservationWrapper.__init__(self, env)
 
         self.observation_space = spaces.Dict({
-            "rgb": spaces.Box(low=0, high=255, shape=(80, 160, 3), dtype=np.uint8),
-            "canny": spaces.Box(low=0, high=255, shape=(80, 160), dtype=np.uint8)
+            "camera_rgb": spaces.Box(low=0, high=255, shape=(80, 160, 3), dtype=np.uint8),
+            "camera_canny": spaces.Box(low=0, high=255, shape=(80, 160), dtype=np.uint8)
         })
 
     def region_of_interest(self, img):
@@ -171,12 +171,12 @@ class CannyWrapper(gym.ObservationWrapper):
         return edges
 
     def observation(self, observation):
-        img_rgb= observation
+        img_rgb= observation["camera_rgb"]
         canny = self.detect_lanes(img_rgb)
 
         dict = {
-            "rgb": img_rgb,
-            "canny": canny
+            "camera_rgb": img_rgb,
+            "camera_canny": canny
         }
 
         #cv2.imshow("test", canny)
