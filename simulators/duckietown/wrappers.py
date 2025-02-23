@@ -114,23 +114,24 @@ class ResizeWrapper(gym.ObservationWrapper):
         gym.ObservationWrapper.__init__(self, env)
         self.resize_h = resize_h
         self.resize_w = resize_w
-        self.observation_space = spaces.Box(low=0, high=255, shape=(resize_h, resize_w, 3), dtype=np.uint8)
+        self.observation_space = spaces.Dict({
+            "camera_rgb": spaces.Box(low=0, high=255, shape=(resize_h, resize_w, 3), dtype=np.uint8)
+        })
 
     def observation(self, observation):
-        return observation
+        img = observation["camera_rgb"]
+        obs = {
+            "camera_rgb": cv2.resize(img, dsize=(self.resize_w, self.resize_h), interpolation=cv2.INTER_CUBIC)
+        }
+        return obs
 
     def reset(self):
         obs = gym.ObservationWrapper.reset(self)
-        return cv2.resize(obs, dsize=(self.resize_w, self.resize_h), interpolation=cv2.INTER_CUBIC)
-
-    def step(self, actions):
-        obs, reward, done, info = gym.ObservationWrapper.step(self, actions)
-        return (
-            cv2.resize(obs, dsize=(self.resize_w, self.resize_h), interpolation=cv2.INTER_CUBIC),
-            reward,
-            done,
-            info,
-        )
+        img = obs["camera_rgb"]
+        obs = {
+            "camera_rgb": cv2.resize(img, dsize=(self.resize_w, self.resize_h), interpolation=cv2.INTER_CUBIC)
+        }
+        return obs
 
 
 class CannyWrapper(gym.ObservationWrapper):
@@ -186,15 +187,17 @@ class CropWrapper(gym.ObservationWrapper):
     def __init__(self, env=None,):
         gym.ObservationWrapper.__init__(self, env)
 
-        self.observation_space = spaces.Box(low=0, high=255, shape=(80, 160, 3), dtype=np.uint8)
+        self.observation_space = spaces.Dict({
+            "camera_rgb": spaces.Box(low=0, high=255, shape=(80, 160, 3), dtype=np.uint8)
+        })
 
     def observation(self, observation):
-        img = observation
-        img = img[40:120, :, :]
-        #cv2.imshow("wiun", img)
-        #cv2.waitKey(1)
-        print(img.shape)
-        return img
+        img = observation["camera_rgb"]
+        img = img[40:120, :160, :]
+        obs = {
+            "camera_rgb" : img
+        }
+        return obs
 
 class UndistortWrapper(gym.ObservationWrapper):
     """
