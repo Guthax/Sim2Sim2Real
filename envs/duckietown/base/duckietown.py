@@ -123,7 +123,6 @@ class DuckietownBaseDynamics(Simulator):
         except NotInLane:
             # Heavy penalty for going out of lane
             reward = -10.0
-        print(reward)
         return reward
 
     def reset(self, segment: bool = False):
