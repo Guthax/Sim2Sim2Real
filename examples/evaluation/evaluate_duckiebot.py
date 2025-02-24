@@ -8,12 +8,11 @@ from simulators.duckietown.wrappers import ResizeWrapper, CannyWrapper, \
     CropWrapper
 
 def evaluate():
-    env = DuckietownBaseDynamics(render_img=True)
+    env = DuckietownBaseDynamics(render_img=True   , randomize_maps_on_reset=True)
     env = ResizeWrapper(env)
     env = CropWrapper(env)
-    env = CannyWrapper(env)
-    algorithm = PPO.load('/home/jurriaan/Documents/Programming/Sim2Sim2Real/results/duckie_domain_rand_canny_cropped_model_trained_800000_steps')
-
+    algorithm = PPO.load('/home/jurriaan/Documents/Programming/Sim2Sim2Real/results/duckie_only_rgb_domain_rand_model_trained_1000000_steps.zip')
+    print(algorithm.policy)
     evaluator = Evaluator(env, algorithm)
 
     evaluator.evaluate()

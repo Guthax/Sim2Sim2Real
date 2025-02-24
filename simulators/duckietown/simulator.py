@@ -373,11 +373,18 @@ class Simulator(gym.Env):
         self.randomize_maps_on_reset = randomize_maps_on_reset
 
         if self.randomize_maps_on_reset:
-            self.map_names = os.listdir(get_subdir_path("maps"))
             self.map_names = [
-                _map for _map in self.map_names if not _map.startswith(("calibration", "regress"))
+                "Caltech_loop01",
+                "ETHZ_autolab_fast_track",
+                "ETHZ_autolab_technical_track",
+                "ETH_intersection_map",
+                "ETH_large_loop",
+                "ETH_small_loop_1",
+                "ETH_small_loop_2",
+                "ETH_small_loop_3",
+                "TTIC_large_loop",
+                "TTIC_ripltown"
             ]
-            self.map_names = [mapfile.replace(".yaml", "") for mapfile in self.map_names]
 
         # Initialize the state
         self.reset()
