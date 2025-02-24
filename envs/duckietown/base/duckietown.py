@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 from gym import spaces
 
-from envs.duckietown.duckietown_env import DuckietownEnv
 from simulators.duckietown import logger
 from simulators.duckietown.exceptions import NotInLane
 from simulators.duckietown.simulator import Simulator
@@ -90,7 +89,7 @@ class DuckietownBaseDynamics(Simulator):
                 self.multi_fbo_human,
                 self.final_fbo_human,
                 self.img_array_human,
-                top_down=True,
+                top_down=False,
                 segment=False,
             )
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
