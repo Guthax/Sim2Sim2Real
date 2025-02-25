@@ -1,9 +1,9 @@
 import os
 from typing import List
 
-import gym
+from gymnasium import Env
 from stable_baselines3.common.base_class import BaseAlgorithm
-from gym import Env
+import gymnasium as gym
 from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.logger import configure
 

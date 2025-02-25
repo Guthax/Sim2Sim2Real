@@ -1,6 +1,8 @@
 import torch as th
 from stable_baselines3.common.noise import NormalActionNoise
 import numpy as np
+
+from simulators.selfmade.carla_env import SelfCarlaEnv
 from utils import lr_schedule
 
 algorithm_params = {

@@ -10,6 +10,7 @@ class BaseEnv(gym.Env, ABC):
         self.action_space = action_space
         self.reward_function = reward_function
 
+
     @abstractmethod
     def reset(self):
         pass
@@ -18,6 +19,9 @@ class BaseEnv(gym.Env, ABC):
     def step(self, action):
         pass
 
+    @abstractmethod
+    def render(self, mode="human"):
+        pass
 
 
 

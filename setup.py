@@ -43,17 +43,18 @@ else:
     torchvis_url = torch_install_urls["TORCHVIS_LINUX_CUDA"] if CUDA else torch_install_urls["TORCHVIS_LINUX_CPU"]
 print(torch_url, torchvis_url)
 install_requires = [
+    "gymnasium==0.28.1"
     "gym>=0.17.1",
     "numpy>=1.10.0",
     "pyglet<=1.5.0",
     "pygame==2.1.2",
     "pyzmq>=16.0.0",
-    "opencv-python==4.3.0.36",
+    "opencv-python",
     "PyYAML>=3.11",
     f"duckietown-world-daffy",
     "PyGeometry-z6",
     "carnivalmirror==0.6.2",
-    "stable-baselines3==1.3.0",
+    "stable-baselines3==2.0.0",
     "zuper-commons-z6",
     "typing_extensions",
     "Pillow",
