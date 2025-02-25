@@ -13,7 +13,7 @@ def evaluate():
     env = CropWrapper(env)
     algorithm = PPO.load('/home/jurriaan/Documents/Programming/Sim2Sim2Real/results/duckie_only_rgb_domain_rand_model_trained_1000000_steps.zip')
     print(algorithm.policy)
-    evaluator = Evaluator(env, algorithm)
+    evaluator = Evaluator(env, algorithm, apply_grad_cam=True)
 
     evaluator.evaluate()
 
