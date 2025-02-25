@@ -8,7 +8,7 @@ from simulators.duckietown.simulator import Simulator
 from simulators.duckietown import logger
 
 
-class DuckietownEnvNoDomainRand(DuckietownEnv):
+class DuckietownDirectVelocities(DuckietownEnv):
     """
     Wrapper to control the simulator using velocity and steering angle
     instead of differential drive motor velocities
@@ -38,10 +38,10 @@ class DuckietownEnvNoDomainRand(DuckietownEnv):
 
         # Wheel velocity limit
         self.limit = limit
-        self.distortion = True
-        self.domain_rand = True
-        self.camera_rand = True
-        self.dynamics_rand = True
+        self.distortion = False
+        self.domain_rand = False
+        self.camera_rand = False
+        self.dynamics_rand = False
         self.render_img = render_img
 
         self.total_reward = 0
@@ -52,41 +52,27 @@ class DuckietownEnvNoDomainRand(DuckietownEnv):
 
 
     def step(self, action):
-        vel, angle = 0.1, action
-        # Distance between the wheels
-        baseline = self.unwrapped.wheel_dist
+        # Ensure the steering angle is within the valid range
+        steering_angle = max(-1, min(1, action))
 
-        # assuming same motor constants k for both motors
-        k_r = self.k
-        k_l = self.k
+        # Map the steering angle to wheel velocities
+        left_wheel_velocity = 0.25 * (2 + steering_angle)
+        right_wheel_velocity = 0.25 * (2 - steering_angle)
 
-        # adjusting k by gain and trim
-        k_r_inv = (self.gain - self.trim) / k_r
-        k_l_inv = (self.gain + self.trim) / k_l
-
-        omega_r = (vel - 0.5 * angle * baseline) / self.radius
-        omega_l = (vel + 0.5 * angle * baseline) / self.radius
-
-        # conversion from motor rotation rate to duty cycle
-        u_r = omega_r * k_r_inv
-        u_l = omega_l * k_l_inv
-
-        # limiting output to limit, which is 1.0 for the duckiebot
-        u_r_limited = max(min(u_r, self.limit), -self.limit)
-        u_l_limited = max(min(u_l, self.limit), -self.limit)
-
-        vels = np.array([u_l_limited, u_r_limited])
+        vels = np.array([left_wheel_velocity, right_wheel_velocity])
 
         obs, reward, done, info = Simulator.step(self, vels)
         self.total_reward += reward
         self.mean_reward = self.total_reward / self.step_count
+
+
         mine = {}
         mine["k"] = self.k
         mine["gain"] = self.gain
         mine["train"] = self.trim
         mine["radius"] = self.radius
-        mine["omega_r"] = omega_r
-        mine["omega_l"] = omega_l
+        mine["omega_r"] = left_wheel_velocity
+        mine["omega_l"] = right_wheel_velocity
 
         info["DuckietownEnv"] = mine
         info["total_reward"] = self.total_reward
@@ -109,4 +95,3 @@ class DuckietownEnvNoDomainRand(DuckietownEnv):
 
             # Add a small delay for frame rate control
         return obs, reward, done, info
-

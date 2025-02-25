@@ -1,9 +1,12 @@
 import os
 
+import numpy as np
+from gym import spaces
 from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.logger import configure
 
 import config
+from envs.carla.carla_env import CarlaBaseEnv
 from envs.carla.carla_steering_only_env import CarlaSteeringEnv
 from utils import TensorboardCallback, write_json
 
@@ -20,7 +23,11 @@ def train():
     from config import CONFIG
 
     configuration = CONFIG
-    observation_space, encode_state_fn, decode_vae_fn = create_encode_state_fn(None, configuration["state"])
+
+    observation_space = spaces.Dict({
+        "camera_rgb": spaces.Box(low=0, high=255, shape=(300, 600, 3), dtype=np.uint8)
+    })
+
     # CarlaUE4.exe -quality-level=Low -benchmark -fps=15 -prefernvidia -dx11 -carla-world-port=2000
     """
     env = CarlaRouteEnv(obs_res=configuration["obs_res"], host="localhost", port=2000,
@@ -30,15 +37,13 @@ def train():
                         fps=15, action_smoothing=configuration["action_smoothing"],
                         action_space_type='continuous', activate_spectator=False, activate_render=True)
     """
-    env = CarlaSteeringEnv(obs_res=configuration["obs_res"], host="localhost", port=2000,
+    env = CarlaBaseEnv(obs_res=configuration["obs_res"], host="localhost", port=2000,
                         reward_fn=reward_functions[configuration["reward_fn"]],
-                        observation_space=observation_space,
-                        encode_state_fn=encode_state_fn, decode_vae_fn=decode_vae_fn,
-                        fps=15, action_smoothing=configuration["action_smoothing"],
-                        action_space_type='continuous', activate_spectator=False, activate_render=True)
+                        observation_space=observation_space, activate_spectator=False, activate_render=True)
 
-    #algorithm = PPO('MultiInputPolicy', env, verbose=2, device='cuda', **configuration["algorithm_params"])
-    algorithm = PPO.load("F:\Github\Sim2Sim2Real\\results\carla_only_rgb_steering_model_trained_600000_steps", env=env, device='cuda')
+    """
+    algorithm = PPO('MultiInputPolicy', env, verbose=2, device='cuda', **configuration["algorithm_params"])
+    #algorithm = PPO.load("F:\Github\Sim2Sim2Real\\results\carla_only_rgb_steering_model_trained_600000_steps", env=env, device='cuda')
 
     trainer = Trainer(env, algorithm)
 
@@ -59,5 +64,6 @@ def train():
 
     save_path = "../../results"
     trainer.train(model_name, num_timesteps, num_checkpoints, save_path, tb)
+    """
 
 train()

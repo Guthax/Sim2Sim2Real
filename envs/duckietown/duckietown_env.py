@@ -1,4 +1,4 @@
-
+import cv2
 import numpy as np
 from gym import spaces
 
@@ -12,15 +12,11 @@ class DuckietownEnv(Simulator):
     instead of differential drive motor velocities
     """
 
-    def __init__(self, gain=1.0, trim=0.0, radius=0.0318, k=27.0, limit=1.0, render_img=False, **kwargs):
+    def __init__(self, gain=1.0, trim=0.0, radius=0.0318, k=27.0, limit=1.0, **kwargs):
         Simulator.__init__(self, **kwargs)
         logger.info("using DuckietownEnv")
 
-        self.action_space = spaces.Box(low=np.array([-1, -1]), high=np.array([-1, 1]), dtype=np.float32)
-
-        self.observation_space = spaces.Dict({
-            "rgb_camera": self.observation_space
-        })
+        self.action_space = spaces.Box(low=np.array([-1, -1]), high=np.array([1, 1]), dtype=np.float32)
 
         # Should be adjusted so that the effective speed of the robot is 0.2 m/s
         self.gain = gain
@@ -37,17 +33,11 @@ class DuckietownEnv(Simulator):
         # Wheel velocity limit
         self.limit = limit
 
-        self.render_img = render_img
-
-        self.total_reward = 0
-        self.routes_completed = 0
-        self.distance_traveled = 0
-        self.avg_center_dev = 0
-        self.avg_speed = 0
-        self.mean_reward = 0
+        self.render_img = True
 
     def step(self, action):
-        vel, angle = action
+        vel, angle = 0.2, action[1]
+
         # Distance between the wheels
         baseline = self.unwrapped.wheel_dist
 
@@ -83,8 +73,13 @@ class DuckietownEnv(Simulator):
         info["DuckietownEnv"] = mine
 
         if self.render_img:
-            self.render()
+            img = self.render(mode='top_down')
+            # img = cv2.flip(img, 0)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            # canny = cv2.Canny(img, 100, 200)
 
+            cv2.imshow('output', img)
+            cv2.waitKey(1)
         return obs, reward, done, info
 
 
