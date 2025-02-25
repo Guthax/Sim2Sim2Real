@@ -57,7 +57,7 @@ states = {
     "2": ["steer", "throttle", "speed", "maneuver"],
     "3": ["steer", "throttle", "speed", "waypoints"],
     "4": ["steer", "throttle", "speed", "angle_next_waypoint", "maneuver", "distance_goal"],
-    "5": ["rgb_camera"]
+    "5": ["camera_rgb"]
 }
 
 reward_params = {

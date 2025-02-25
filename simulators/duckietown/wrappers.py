@@ -19,13 +19,13 @@ class DiscreteWrapper(gym.ActionWrapper):
     def action(self, action):
         # Turn left
         if action == 0:
-            vels = [0.6, +1.0]
+            vels = [0, 1.0]
         # Turn right
         elif action == 1:
-            vels = [0.6, -1.0]
+            vels = [1, 0]
         # Go forward
         elif action == 2:
-            vels = [0.7, 0.0]
+            vels = [0.5, 0.5]
         else:
             assert False, "unknown action"
         return np.array(vels)
@@ -110,52 +110,94 @@ class PyTorchObsWrapper(gym.ObservationWrapper):
 
 
 class ResizeWrapper(gym.ObservationWrapper):
-    def __init__(self, env=None, resize_w=160, resize_h=80):
+    def __init__(self, env=None, resize_w=160, resize_h=120):
         gym.ObservationWrapper.__init__(self, env)
         self.resize_h = resize_h
         self.resize_w = resize_w
-        obs_shape = self.observation_space.shape
-        self.observation_space = spaces.Box(low=0, high=255, shape=(resize_h, resize_w, 3), dtype=np.uint8)
+        self.observation_space = spaces.Dict({
+            "camera_rgb": spaces.Box(low=0, high=255, shape=(resize_h, resize_w, 3), dtype=np.uint8)
+        })
 
     def observation(self, observation):
-        return observation
+        img = observation["camera_rgb"]
+        obs = {
+            "camera_rgb": cv2.resize(img, dsize=(self.resize_w, self.resize_h), interpolation=cv2.INTER_CUBIC)
+        }
+        return obs
 
     def reset(self):
         obs = gym.ObservationWrapper.reset(self)
-        return cv2.resize(obs, dsize=(self.resize_w, self.resize_h), interpolation=cv2.INTER_CUBIC)
-
-    def step(self, actions):
-        obs, reward, done, info = gym.ObservationWrapper.step(self, actions)
-        return (
-            cv2.resize(obs, dsize=(self.resize_w, self.resize_h), interpolation=cv2.INTER_CUBIC),
-            reward,
-            done,
-            info,
-        )
+        img = obs["camera_rgb"]
+        obs = {
+            "camera_rgb": cv2.resize(img, dsize=(self.resize_w, self.resize_h), interpolation=cv2.INTER_CUBIC)
+        }
+        return obs
 
 
-
-class MultiInputWrapper(gym.ObservationWrapper):
+class CannyWrapper(gym.ObservationWrapper):
     def __init__(self, env=None,):
         gym.ObservationWrapper.__init__(self, env)
 
         self.observation_space = spaces.Dict({
-            "rgb_camera": spaces.Box(low=0, high=255, shape=(80, 160, 3), dtype=np.uint8)
+            "camera_rgb": spaces.Box(low=0, high=255, shape=(80, 160, 3), dtype=np.uint8),
+            "camera_canny": spaces.Box(low=0, high=255, shape=(80, 160), dtype=np.uint8)
+        })
+
+    def region_of_interest(self, img):
+        height, width = img.shape[:2]
+        mask = np.zeros_like(img)
+
+        # Define a triangular region of interest
+        roi_vertices = np.array([[
+            (0, height), (width, height), (width // 2, height // 2)
+        ]], dtype=np.int32)
+
+        cv2.fillPoly(mask, roi_vertices, 255)
+        masked_image = cv2.bitwise_and(img, mask)
+        return masked_image
+
+    def detect_lanes(self, img):
+        # Load the image
+        gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+        # Apply Gaussian blur
+        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+
+        # Canny edge detection
+        edges = cv2.Canny(blurred, 100, 300)
+
+        # Apply region of interest mask
+        #roi = self.region_of_interest(edges)
+
+        return edges
+
+    def observation(self, observation):
+        img_rgb= observation["camera_rgb"]
+        canny = self.detect_lanes(img_rgb)
+
+        dict = {
+            "camera_rgb": img_rgb,
+            "camera_canny": canny
+        }
+
+        #cv2.imshow("test", canny)
+        #cv2.waitKey(1)
+        return dict
+
+class CropWrapper(gym.ObservationWrapper):
+    def __init__(self, env=None,):
+        gym.ObservationWrapper.__init__(self, env)
+
+        self.observation_space = spaces.Dict({
+            "camera_rgb": spaces.Box(low=0, high=255, shape=(80, 160, 3), dtype=np.uint8)
         })
 
     def observation(self, observation):
-        dict = {
-            "rgb_camera": observation
+        img = observation["camera_rgb"]
+        img = img[40:120, :160, :]
+        obs = {
+            "camera_rgb" : img
         }
-        return dict
-
-class CarlaToDuckietownActionWrapper(gym.ActionWrapper):
-    def __init__(self, env=None):
-        gym.ActionWrapper.__init__(self,env)
-        self.action_space = gym.spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)
-
-    def action(self, action):
-        return action * -1
+        return obs
 
 class UndistortWrapper(gym.ObservationWrapper):
     """
