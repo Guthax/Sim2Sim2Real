@@ -38,9 +38,9 @@ discrete_actions = {
 discrete_actions = {
     0: [-1, 1], 1: [0, 1], 2: [1, 1],
 }
+FPS = 15
 
-
-class CarlaSteeringEnv(gym.Env):
+class CarlaBaseEnv(gym.Env):
     metadata = {
         "render.modes": ["human", "rgb_array", "rgb_array_no_hud", "state_pixels"]
     }
@@ -49,11 +49,8 @@ class CarlaSteeringEnv(gym.Env):
                  viewer_res=(1120, 560), obs_res=(160, 80),
                  reward_fn=None,
                  observation_space=None,
-                 encode_state_fn=None, decode_vae_fn=None,
-                 fps=15, action_smoothing=0.0, action_space_type="continuous",
+                 action_smoothing=0.0,
                  activate_spectator=True,
-                 activate_lidar=False,
-                 start_carla=False,
                  eval=False,
                  activate_render=True):
         """
@@ -70,10 +67,7 @@ class CarlaSteeringEnv(gym.Env):
             - decode_vae_fn (function): Function that decodes a state vector to an image. Used only if encode_state_fn is not None.
             - fps (int): FPS of the client. If fps <= 0 then use unbounded FPS.
             - action_smoothing (float): Scalar used to smooth the incoming action signal. 1.0 = max smoothing, 0.0 = no smoothing
-            - action_space_type (str): Type of action space. Can be "continuous" or "discrete".
             - activate_spectator (bool): Whether to activate the spectator camera. Default is True.
-            - activate_lidar (bool): Whether to activate the lidar sensor. Default is False.
-            - start_carla (bool): Whether to automatically start CARLA when True. Note that you need to set the environment variable ${CARLA_ROOT} to point to the CARLA root directory for this option to work.
             - eval (bool): Whether the environment is used for evaluation or training. Default is False.
             - activate_render (bool): Whether to activate rendering. Default is True.
         """
@@ -88,24 +82,17 @@ class CarlaSteeringEnv(gym.Env):
         self.activate_render = activate_render
 
         # Setup gym environment
-        self.action_space_type = action_space_type
-        if self.action_space_type == "continuous":
-            self.action_space = gym.spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32) # steer
-        elif self.action_space_type == "discrete":
-            self.action_space = gym.spaces.Discrete(len(discrete_actions))
+        self.action_space = gym.spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32) # steer
 
         self.observation_space = observation_space
 
-        self.fps = fps
+        self.fps = FPS
         self.action_smoothing = action_smoothing
         self.episode_idx = -2
 
-        self.encode_state_fn = (lambda x: x) if not callable(encode_state_fn) else encode_state_fn
-        self.decode_vae_fn = None if not callable(decode_vae_fn) else decode_vae_fn
         self.reward_fn = (lambda x: 0) if not callable(reward_fn) else reward_fn
         self.max_distance = 3000  # m
         self.activate_spectator = activate_spectator
-        self.activate_lidar = activate_lidar
         self.eval = eval
 
         self.world = None
@@ -160,9 +147,6 @@ class CarlaSteeringEnv(gym.Env):
                 self.camera = Camera(self.world, width, height,
                                      transform=sensor_transforms["spectator"],
                                      attach_to=self.vehicle, on_recv_image=lambda e: self._set_viewer_image(e))
-            if self.activate_lidar:
-                self.lidar = Lidar(self.world, transform=sensor_transforms["lidar"],
-                                   attach_to=self.vehicle, on_recv_image=lambda e: self._set_lidar_data(e))
         except Exception as e:
             self.close()
             raise e
@@ -183,7 +167,6 @@ class CarlaSteeringEnv(gym.Env):
         self.extra_info = []  # List of extra info shown on the HUD
         self.observation = self.observation_buffer = None  # Last received observation
         self.viewer_image = self.viewer_image_buffer = None  # Last received image to show in the viewer
-        self.lidar_data = self.lidar_data_buffer = None
         self.step_count = 0
 
         # Init metrics
@@ -287,14 +270,6 @@ class CarlaSteeringEnv(gym.Env):
         self.display.blit(pygame.surfarray.make_surface(self.observation.swapaxes(0, 1)), pos_observation)
 
         pos_vae_decoded = (self.display.get_size()[0] - 2 * obs_w - 10, 10)
-        if self.decode_vae_fn:
-            self.display.blit(pygame.surfarray.make_surface(self.observation_decoded.swapaxes(0, 1)), pos_vae_decoded)
-
-        if self.activate_lidar:
-            lidar_h, lidar_w = self.lidar_data.shape[:2]
-            pos_lidar = (self.display.get_size()[0] - obs_w - 10, 100)
-            self.display.blit(pygame.surfarray.make_surface(self.lidar_data.swapaxes(0, 1)), pos_lidar)
-
         # Render HUD
         self.hud.render(self.display, extra_info=self.extra_info)
         self.extra_info = []  # Reset extra info list
@@ -315,10 +290,7 @@ class CarlaSteeringEnv(gym.Env):
                 else:
                     self.success_state = True
 
-            if self.action_space_type == "continuous":
-                steer = [float(a) for a in action][0]
-            elif self.action_space_type == "discrete":
-                steer, throttle = discrete_actions[action]
+            steer = [float(a) for a in action][0]
 
             self.vehicle.control.steer = steer
             # self.vehicle.control.throttle = smooth_action(self.vehicle.control.throttle, throttle,
@@ -340,9 +312,6 @@ class CarlaSteeringEnv(gym.Env):
         self.observation = self._get_observation()
         if self.activate_spectator:
             self.viewer_image = self._get_viewer_image()
-
-        if self.activate_lidar:
-            self.lidar_data = self._get_lidar_data()
 
         # Get vehicle transform
         transform = self.vehicle.get_transform()
@@ -396,10 +365,7 @@ class CarlaSteeringEnv(gym.Env):
         self.last_reward = self.reward_fn(self)
         self.total_reward += self.last_reward
 
-        # Encode the state
-        encoded_state = self.encode_state_fn(self)
-        if self.decode_vae_fn:
-            self.observation_decoded = self.decode_vae_fn(encoded_state['vae_latent'])
+
         self.step_count += 1
 
         # DEBUG: Draw path
