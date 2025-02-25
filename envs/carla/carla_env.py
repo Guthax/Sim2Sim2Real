@@ -9,6 +9,7 @@ import pygame
 import cv2
 from pygame.locals import *
 
+from envs.BaseEnv import BaseEnv
 from simulators.carla.carla_env.tools.hud import HUD
 from simulators.carla.carla_env.navigation.planner import RoadOption, compute_route_waypoints
 from simulators.carla.carla_env.wrappers import *
@@ -40,62 +41,48 @@ discrete_actions = {
 }
 FPS = 15
 
-class CarlaBaseEnv(gym.Env):
+class CarlaBaseEnv(BaseEnv):
     metadata = {
         "render.modes": ["human", "rgb_array", "rgb_array_no_hud", "state_pixels"]
     }
 
-    def __init__(self, host="127.0.0.1", port=2000,
-                 viewer_res=(1120, 560), obs_res=(160, 80),
-                 reward_fn=None,
-                 observation_space=None,
+    def __init__(self,
+                 observation_space,
+                 action_space,
+                 reward_function,
                  action_smoothing=0.0,
                  activate_spectator=True,
                  eval=False,
-                 activate_render=True):
-        """
-        A gym-like environment for interacting with a running CARLA environment and controlling a Lincoln MKZ2017 vehicle.
+                 activate_render=True,
+                 host="127.0.0.1", port=2000,
+                 viewer_res=(1120, 560), obs_res=(160, 80),
+                 ):
 
-        Parameters:
-            - host (str): IP address of the CARLA host
-            - port (int): Port used to connect to CARLA
-            - viewer_res (tuple[int, int]): Resolution of the spectator camera as a (width, height) tuple
-            - obs_res (tuple[int, int]): Resolution of the observation camera as a (width, height) tuple
-            - reward_fn (function): Custom reward function that is called every step. If None, no reward function is used.
-            - observation_space: Custom observation space. If None, the default observation space is used.
-            - encode_state_fn (function): Function that encodes the image from the observation camera to a state vector returned by step(). If None, the full image is returned.
-            - decode_vae_fn (function): Function that decodes a state vector to an image. Used only if encode_state_fn is not None.
-            - fps (int): FPS of the client. If fps <= 0 then use unbounded FPS.
-            - action_smoothing (float): Scalar used to smooth the incoming action signal. 1.0 = max smoothing, 0.0 = no smoothing
-            - activate_spectator (bool): Whether to activate the spectator camera. Default is True.
-            - eval (bool): Whether the environment is used for evaluation or training. Default is False.
-            - activate_render (bool): Whether to activate rendering. Default is True.
-        """
+        super().__init__(observation_space, action_space, reward_function)
 
         self.carla_process = None
 
         width, height = viewer_res
-        if obs_res is None:
-            out_width, out_height = width, height
-        else:
-            out_width, out_height = obs_res
+        out_width, out_height = viewer_res
+
         self.activate_render = activate_render
 
         # Setup gym environment
-        self.action_space = gym.spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32) # steer
-
-        self.observation_space = observation_space
 
         self.fps = FPS
         self.action_smoothing = action_smoothing
         self.episode_idx = -2
 
-        self.reward_fn = (lambda x: 0) if not callable(reward_fn) else reward_fn
+        self.reward_fn = (lambda x: 0)
         self.max_distance = 3000  # m
         self.activate_spectator = activate_spectator
         self.eval = eval
 
+        self.observation_buffer = None
+        self.viewer_image_buffer = None
+
         self.world = None
+
         try:
             # Connect to carla
             self.client = carla.Client(host, port)
@@ -165,8 +152,10 @@ class CarlaBaseEnv(gym.Env):
 
         self.closed = False  # Set to True when ESC is pressed
         self.extra_info = []  # List of extra info shown on the HUD
-        self.observation = self.observation_buffer = None  # Last received observation
-        self.viewer_image = self.viewer_image_buffer = None  # Last received image to show in the viewer
+
+        self.observation_buffer = None  # Last received observation
+        self.viewer_image_buffer = None  # Last received image to show in the viewer
+
         self.step_count = 0
 
         # Init metrics
@@ -290,7 +279,7 @@ class CarlaBaseEnv(gym.Env):
                 else:
                     self.success_state = True
 
-            steer = [float(a) for a in action][0]
+            steer = action
 
             self.vehicle.control.steer = steer
             # self.vehicle.control.throttle = smooth_action(self.vehicle.control.throttle, throttle,
@@ -309,7 +298,7 @@ class CarlaBaseEnv(gym.Env):
         self.world.tick()
 
         # Get most recent observation and viewer image
-        self.observation = self._get_observation()
+        observation = self._get_observation()
         if self.activate_spectator:
             self.viewer_image = self._get_viewer_image()
 
@@ -329,23 +318,24 @@ class CarlaBaseEnv(gym.Env):
                 waypoint_index += 1  # Go to next waypoint
             else:
                 break
-        self.current_waypoint_index = waypoint_index
+        current_waypoint_index = waypoint_index
 
         # Check for route completion
         if self.current_waypoint_index < len(self.route_waypoints) - 1:
-            self.next_waypoint, self.next_road_maneuver = self.route_waypoints[
+            next_waypoint, next_road_maneuver = self.route_waypoints[
                 (self.current_waypoint_index + 1) % len(self.route_waypoints)]
 
-        self.current_waypoint, self.current_road_maneuver = self.route_waypoints[
+        current_waypoint, self.current_road_maneuver = self.route_waypoints[
             self.current_waypoint_index % len(self.route_waypoints)]
         self.routes_completed = self.num_routes_completed + (self.current_waypoint_index + 1) / len(
             self.route_waypoints)
 
         # Calculate deviation from center of the lane
-        self.distance_from_center = distance_to_line(vector(self.current_waypoint.transform.location),
-                                                     vector(self.next_waypoint.transform.location),
+        distance_from_center = distance_to_line(vector(current_waypoint.transform.location),
+                                                     vector(next_waypoint.transform.location),
                                                      vector(transform.location))
-        self.center_lane_deviation += self.distance_from_center
+
+        self.center_lane_deviation += distance_from_center
 
         # Calculate distance traveled
         if action is not None:
@@ -359,11 +349,11 @@ class CarlaBaseEnv(gym.Env):
         if self.distance_traveled >= self.max_distance and not self.eval:
             self.success_state = True
 
-        self.distance_from_center_history.append(self.distance_from_center)
+        self.distance_from_center_history.append(distance_from_center)
 
         # Call external reward fn
-        self.last_reward = self.reward_fn(self)
-        self.total_reward += self.last_reward
+        last_reward = self.reward_fn(self)
+        self.total_reward += last_reward
 
 
         self.step_count += 1
@@ -390,7 +380,9 @@ class CarlaBaseEnv(gym.Env):
             'avg_speed': (self.speed_accum / self.step_count),
             'mean_reward': (self.total_reward / self.step_count)
         }
-        return encoded_state, self.last_reward, self.terminal_state or self.success_state, info
+
+
+        return observation, self.last_reward, self.terminal_state or self.success_state, info
 
     def _draw_path_server(self, life_time=60.0, skip=0):
         """
