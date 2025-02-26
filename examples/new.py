@@ -1,5 +1,4 @@
-from scenario_builder import make_scenario_from_config
+from scenario_builder import  Scenario
 from config import _CONFIG_BASIC
-scenario = make_scenario_from_config(_CONFIG_BASIC)
-scenario.train_on_environment("duckietown")
-
+scenario = Scenario(_CONFIG_BASIC)
+scenario.train_on_environment("duckietown", "duckietown_rgb_cnn", 1000000, 2)

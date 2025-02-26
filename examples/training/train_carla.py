@@ -8,7 +8,7 @@ from stable_baselines3.common.logger import configure
 import config
 from envs.carla.carla_env import CarlaBaseEnv
 from envs.carla.carla_steering_only_env import CarlaSteeringEnv
-from simulators.selfmade.carla_env import SelfCarlaEnv
+from simulators.carla.carla_env import SelfCarlaEnv
 from utils import TensorboardCallback, write_json
 
 config.set_config("TEST")
