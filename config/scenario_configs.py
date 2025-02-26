@@ -5,11 +5,11 @@ import gymnasium as gym
 
 from config.environment_configs import environment_configs
 
-_CONFIG_BASIC = {
+_CONFIG_PPO_CNN_DUCKIETOWN_RGB_STEER = {
     "algorithm": "PPO",
     "algorithm_policy_network": "CnnPolicy",
     "algorithm_hyperparams": algorithm_params["PPO"],
-    "observation_space": gym.spaces.Box(low=0, high=255, shape=(120, 160, 3), dtype=np.uint8),
+    "observation_space": gym.spaces.Box(low=0, high=255, shape=(80, 160, 3), dtype=np.uint8),
     "action_space": gym.spaces.Box(low=np.array([-1]), high=np.array([1]), dtype=np.float32),
     "environments": {
         "duckietown": environment_configs["duckietown_rgb"],
