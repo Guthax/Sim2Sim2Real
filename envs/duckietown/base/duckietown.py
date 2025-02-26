@@ -94,9 +94,6 @@ class DuckietownBaseDynamics(Simulator):
             cv2.waitKey(1)
 
             # Add a small delay for frame rate control
-        obs = {
-            self.obs_rgb_name: obs
-        }
         return obs, reward, done, trunc, info
 
 
@@ -124,9 +121,6 @@ class DuckietownBaseDynamics(Simulator):
     def reset(self, seed = None, options = None, segment: bool = False):
         obs, _ = super().reset(seed, options, segment)
         obs = cv2.cvtColor(obs, cv2.COLOR_BGR2RGB)
-        obs = {
-            self.obs_rgb_name: obs
-        }
         return obs, {}
 
     def render_obs(self, segment: bool = False):

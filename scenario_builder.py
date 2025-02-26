@@ -1,12 +1,14 @@
 import os
 
+import numpy as np
 import torch.cuda
 from stable_baselines3 import PPO
 
 import gymnasium as gym
 from stable_baselines3.common.logger import configure
+from stable_baselines3.common.vec_env import DummyVecEnv
 
-from simulators.carla.carla_env.envs.collect_data_rl_env import observation_space
+from evaluator import Evaluator
 from trainer import Trainer
 from utils import TensorboardCallback
 
@@ -15,28 +17,47 @@ class Scenario:
     environments: dict
 
     def __init__(self, config: dict):
-        self.algorithm = PPO(config['algorithm_policy_network'],
-                        observation_space=config["observation_space"],
-                        env=None, verbose=2, device='cuda' if torch.cuda.is_available() else 'cpu',
-                        **config["algorithm_hyperparams"])
-
+        self.config = config
         self.environments = {}
 
-    def add_environment(self, key: str, env: gym.Env) -> None:
-        self.environments[key] = env
+        self._init_environments()
+        self._init_algorithm()
 
-    def train_on_environment(self, env_name: str):
+    def _init_algorithm(self, model_path = None):
+        if not model_path:
+            first_env = self.environments[next(iter(self.environments))]
+            self.algorithm = PPO(self.config['algorithm_policy_network'], first_env, verbose=2,
+                                 device='cuda' if torch.cuda.is_available() else 'cpu',
+                                 **self.config["algorithm_hyperparams"])
+        else:
+            self.algorithm = PPO.load(model_path)
+    def _init_environments(self):
+
+        for key, value in self.config["environments"].items():
+            base_env = value["base_env"]
+            wrappers = value["wrappers"]
+
+            current_env = base_env
+            for wrapper in wrappers:
+                current_env = wrapper(current_env)
+
+            if current_env.observation_space == self.config["observation_space"] and current_env.action_space == self.config["action_space"]:
+                self.environments[key] = current_env
+            else:
+                raise NotCompatibleEnvironmentException()
+
+
+    def train_on_environment(self, env_name: str, model_name:str, num_timesteps:int, num_checkpoints:int):
         training_env = self.environments[env_name]
-        self.algorithm.env = training_env
+        self.algorithm.set_env(training_env, True)
 
         trainer = Trainer(self.algorithm)
 
-        num_timesteps = 1000000
-        num_checkpoints = 5
+        num_timesteps = num_timesteps
 
         log_dir = "../../tensorboard"
 
-        model_name = "duckie_only_rgb"
+        model_name = model_name
         log_model_dir = os.path.join(log_dir, model_name)
 
         new_logger = configure(log_model_dir, ["stdout", "csv", "tensorboard"])
@@ -49,26 +70,18 @@ class Scenario:
         trainer.train(model_name, num_timesteps, num_checkpoints, save_path, tb)
 
 
-def make_scenario_from_config(config: dict):
-    scenario = Scenario(config)
+    def evaluate_on_environment(self, env_name, model_path, render_grad_cam=True):
+        self._init_algorithm(model_path)
 
+        eval_env = self.environments[env_name]
+        self.algorithm.set_env(eval_env, True)
 
-    for key, value in config["environments"].items():
-        base_env = value["base_env"]
-        wrappers = value["wrappers"]
-
-        current_env = base_env
-        for wrapper in wrappers:
-            current_env = wrapper(current_env)
-
-        if current_env.observation_space == config["observation_space"] and current_env.action_space == config["action_space"]:
-            scenario.add_environment(key, current_env)
-        else:
-            raise NotCompatibleEnvironmentException()
-
-    return scenario
-
+        evaluator = Evaluator(self.algorithm.env, self.algorithm, apply_grad_cam=render_grad_cam)
+        evaluator.evaluate()
 
 class NotCompatibleEnvironmentException(Exception):
     def __init__(self):
         super().__init__()
+
+
+
