@@ -49,7 +49,7 @@ install_requires = [
     "pyglet<=1.5.0",
     "pygame==2.1.2",
     "pyzmq>=16.0.0",
-    "opencv-python",
+    "opencv-python-4.11.0.86",
     "PyYAML>=3.11",
     f"duckietown-world-daffy",
     "PyGeometry-z6",

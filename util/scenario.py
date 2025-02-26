@@ -2,6 +2,7 @@ import os
 
 import numpy as np
 import torch.cuda
+from contracts.library.extensions import kwarg
 from stable_baselines3 import PPO
 
 import gymnasium as gym
@@ -10,7 +11,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 
 from evaluator import Evaluator
 from trainer import Trainer
-from utils import TensorboardCallback
+from utils import TensorboardCallback, write_json
 
 
 class Scenario:
@@ -31,10 +32,11 @@ class Scenario:
                                  **self.config["algorithm_hyperparams"])
         else:
             self.algorithm = PPO.load(model_path)
+
     def _init_environments(self):
 
         for key, value in self.config["environments"].items():
-            base_env = value["base_env"]
+            base_env = value["base_env"](**value["arguments"])
             wrappers = value["wrappers"]
 
             current_env = base_env
@@ -47,7 +49,12 @@ class Scenario:
                 raise NotCompatibleEnvironmentException()
 
 
-    def train_on_environment(self, env_name: str, model_name:str, num_timesteps:int, num_checkpoints:int):
+    def train_on_environment(self, env_name: str,
+                             model_name:str,
+                             save_path:str,
+                             log_dir:str,
+                             num_timesteps:int,
+                             num_checkpoints:int):
         training_env = self.environments[env_name]
         self.algorithm.set_env(training_env, True)
 
@@ -55,18 +62,16 @@ class Scenario:
 
         num_timesteps = num_timesteps
 
-        log_dir = "../../tensorboard"
 
         model_name = model_name
         log_model_dir = os.path.join(log_dir, model_name)
 
         new_logger = configure(log_model_dir, ["stdout", "csv", "tensorboard"])
         self.algorithm.set_logger(new_logger)
-        #write_json(CONFIG, os.path.join(log_model_dir, 'config.json'))
+        write_json(self.config, os.path.join(log_model_dir, 'config.json'))
 
         tb = [TensorboardCallback(1)]
 
-        save_path = "../../results"
         trainer.train(model_name, num_timesteps, num_checkpoints, save_path, tb)
 
 

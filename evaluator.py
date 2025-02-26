@@ -9,6 +9,8 @@ from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.preprocessing import preprocess_obs
 from stable_baselines3.common.utils import obs_as_tensor
 
+from util.gradcam_targets import ContinuousActionTarget
+
 
 class Evaluator:
     evaluation_environment: gym.Env
@@ -38,7 +40,7 @@ class Evaluator:
                 print(f"Action: {action}")
                 state, reward, done, info = self.evaluation_environment.step(action)
                 if self.apply_grad_cam:
-                    self.show_grad_cam(state)
+                    self.grad_cam(state)
                 total_reward += reward
                 timesteps += 1
                 current_episode_length += 1
@@ -49,9 +51,9 @@ class Evaluator:
         avg_reward = total_reward / timesteps
         print(f"AVERAGE REWARD: {avg_reward}")
 
-    def show_grad_cam(self, obs):
+    def grad_cam(self, obs):
         policy_net = self.algorithm.policy
-        last_cnn_layer = policy_net.features_extractor.extractors.camera_rgb.cnn[0]
+        last_cnn_layer = policy_net.features_extractor.cnn[0]
 
         activations = {}
         gradients = {}
@@ -70,7 +72,7 @@ class Evaluator:
 
         tensor = obs_as_tensor(obs, device=torch.device("cpu"))
         tensor = preprocess_obs(tensor, self.algorithm.observation_space)
-        tensor["camera_rgb"] = tensor["camera_rgb"].permute(2,0,1).unsqueeze(0)
+        #tensor["camera_rgb"] = tensor["camera_rgb"].permute(2,0,1).unsqueeze(0)
 
         with torch.set_grad_enabled(True):
             gaussian = self.algorithm.policy.get_distribution(tensor)
@@ -91,7 +93,9 @@ class Evaluator:
         gradcam = (gradcam - gradcam.min()) / (gradcam.max() - gradcam.min())
 
         # Resize heatmap to match original image
-        obs = obs["camera_rgb"]
+        #obs = obs["camera_rgb"]
+        obs = obs.squeeze(0)
+        obs = np.transpose(obs, (2,1,0))
         heatmap = cv2.resize(gradcam, (obs.shape[1], obs.shape[0]))
         heatmap = np.uint8(255 * heatmap)
         heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
@@ -107,7 +111,7 @@ class Evaluator:
 
         #plt.subplot(1, 2, 2)
         #plt.title("Grad-CAM Visualization")
-        cv2.imshow("Grad-CAM Visualization", overlay)
+        cv2.imshow("gradients", heatmap)
 
         cv2.waitKey(1)
         # Remove hooks after use
@@ -117,27 +121,28 @@ class Evaluator:
         activations = {}
         gradients = {}
 
+
     def grad_cam2(self, obs):
         policy_net = self.algorithm.policy
-        last_cnn_layer = policy_net.features_extractor.extractors.camera_rgb.cnn[-2]
+        last_cnn_layer = policy_net.features_extractor.cnn[0]
         target_layers = [last_cnn_layer]
 
         tensor = obs_as_tensor(obs, device=torch.device("cpu"))
-        tensor = preprocess_obs(tensor, self.algorithm.observation_space)
-        tensor["camera_rgb"] = tensor["camera_rgb"].permute(2,0,1).unsqueeze(0)
-        input_tensor = tensor
+        #tensor = preprocess_obs(tensor, self.algorithm.observation_space)
+        #tensor["camera_rgb"] = tensor["camera_rgb"].permute(2,0,1).unsqueeze(0)
+        #input_tensor = tensor
         # Note: input_tensor can be a batch tensor with several images!
 
         # We have to specify the target we want to generate the CAM for.
-        targets = [RawScoresOutputTarget()]
+        targets = [ContinuousActionTarget()]
 
         # Construct the CAM object once, and then re-use it on many images.
         with GradCAM(model=policy_net, target_layers=target_layers) as cam:
             # You can also pass aug_smooth=True and eigen_smooth=True, to apply smoothing.
-            grayscale_cam = cam(input_tensor=input_tensor, targets=targets)
+            grayscale_cam = cam(input_tensor=tensor, targets=targets)
             # In this example grayscale_cam has only one image in the batch:
             grayscale_cam = grayscale_cam[0, :]
-            visualization = show_cam_on_image(tensor["camera_rgb"].squeeze(0).permute(1,2,0).numpy(), grayscale_cam, use_rgb=True)
+            visualization = show_cam_on_image(obs, grayscale_cam, use_rgb=True)
             # You can also get the model outputs without having to redo inference
             #model_outputs = cam.outputs
             cv2.imshow("Grad-CAM Visualization", visualization)
