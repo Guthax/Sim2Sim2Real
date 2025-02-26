@@ -1,18 +1,9 @@
-import torch as th
-from stable_baselines3.common.noise import NormalActionNoise
 import numpy as np
+from stable_baselines3.common.noise import NormalActionNoise
 
-from envs.duckietown.base.duckietown import DuckietownBaseDynamics
-from simulators.duckietown.wrappers import CropWrapper, ResizeWrapper
 from utils import lr_schedule
-import gymnasium as gym
+import torch as th
 
-environment_configs = {
-    "duckietown_resize_cropped": {
-        "base_env": DuckietownBaseDynamics(),
-        "wrappers": []
-    }
-}
 algorithm_params = {
     "PPO": dict(
         learning_rate=lr_schedule(1e-4, 1e-6, 2),
@@ -60,17 +51,4 @@ algorithm_params = {
         use_sde=True,
         policy_kwargs=dict(log_std_init=-3, net_arch=[500, 300]),
     ),
-}
-
-
-_CONFIG_BASIC = {
-    "algorithm": "PPO",
-    "algorithm_policy_network": "CnnPolicy",
-    "algorithm_hyperparams": algorithm_params["PPO"],
-    "observation_space": gym.spaces.Box(low=0, high=255, shape=(480, 640, 3), dtype=np.uint8),
-    "action_space": gym.spaces.Box(low=np.array([-1]), high=np.array([1]), dtype=np.float32),
-    "environments": {
-        "duckietown": environment_configs["duckietown_resize_cropped"],
-    }
-
 }
