@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 import gymnasium as gym
 from gymnasium import spaces
+from stable_baselines3.common.utils import obs_as_tensor
+
 
 class ResizeWrapper(gym.ObservationWrapper):
     def __init__(self, env=None, resize_w=160, resize_h=120):
@@ -69,14 +71,8 @@ class CropWrapper(gym.ObservationWrapper):
     def __init__(self, env=None,):
         gym.ObservationWrapper.__init__(self, env)
 
-        self.observation_space = spaces.Dict({
-            "camera_rgb": spaces.Box(low=0, high=255, shape=(80, 160, 3), dtype=np.uint8)
-        })
+        self.observation_space = spaces.Box(low=0, high=255, shape=(80, 160, 3), dtype=np.uint8)
 
     def observation(self, observation):
-        img = observation["camera_rgb"]
-        img = img[40:120, :160, :]
-        obs = {
-            "camera_rgb" : img
-        }
-        return obs
+        cropped = observation[40:120, :160, :]
+        return cropped

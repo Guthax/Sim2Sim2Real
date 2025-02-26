@@ -1,5 +1,5 @@
 from envs.duckietown.base.duckietown import DuckietownBaseDynamics
-from util.general_wrappers import ResizeWrapper
+from util.general_wrappers import ResizeWrapper, CropWrapper
 
 environment_configs = {
     "duckietown_rgb": {
@@ -7,6 +7,6 @@ environment_configs = {
         "arguments": dict(
             render_img=False
         ),
-        "wrappers": [ResizeWrapper]
+        "wrappers": [ResizeWrapper, CropWrapper]
     }
 }
