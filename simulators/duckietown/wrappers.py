@@ -1,8 +1,8 @@
 # coding=utf-8
 import cv2
-import gym
+import gymnasium as gym
 import numpy as np
-from gym import spaces
+from gymnasium import spaces
 from matplotlib import pyplot as plt
 
 
@@ -119,19 +119,20 @@ class ResizeWrapper(gym.ObservationWrapper):
         })
 
     def observation(self, observation):
-        img = observation["camera_rgb"]
+        img, _ = observation["camera_rgb"]
         obs = {
             "camera_rgb": cv2.resize(img, dsize=(self.resize_w, self.resize_h), interpolation=cv2.INTER_CUBIC)
         }
         return obs
-
-    def reset(self):
-        obs = gym.ObservationWrapper.reset(self)
+    """
+    def reset(self, seed = None, options = None):
+        obs = gym.ObservationWrapper.reset(self, seed, options)
         img = obs["camera_rgb"]
         obs = {
             "camera_rgb": cv2.resize(img, dsize=(self.resize_w, self.resize_h), interpolation=cv2.INTER_CUBIC)
         }
         return obs
+    """
 
 
 class CannyWrapper(gym.ObservationWrapper):
@@ -171,7 +172,7 @@ class CannyWrapper(gym.ObservationWrapper):
         return edges
 
     def observation(self, observation):
-        img_rgb= observation["camera_rgb"]
+        img_rgb, _= observation["camera_rgb"]
         canny = self.detect_lanes(img_rgb)
 
         dict = {

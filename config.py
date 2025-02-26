@@ -2,9 +2,17 @@ import torch as th
 from stable_baselines3.common.noise import NormalActionNoise
 import numpy as np
 
-from simulators.selfmade.carla_env import SelfCarlaEnv
+from envs.duckietown.base.duckietown import DuckietownBaseDynamics
+from simulators.duckietown.wrappers import CropWrapper, ResizeWrapper
 from utils import lr_schedule
+import gymnasium as gym
 
+environment_configs = {
+    "duckietown_resize_cropped": {
+        "base_env": DuckietownBaseDynamics(),
+        "wrappers": []
+    }
+}
 algorithm_params = {
     "PPO": dict(
         learning_rate=lr_schedule(1e-4, 1e-6, 2),
@@ -54,297 +62,15 @@ algorithm_params = {
     ),
 }
 
-states = {
-    "1": ["steer", "throttle", "speed", "angle_next_waypoint", "maneuver"],
-    "2": ["steer", "throttle", "speed", "maneuver"],
-    "3": ["steer", "throttle", "speed", "waypoints"],
-    "4": ["steer", "throttle", "speed", "angle_next_waypoint", "maneuver", "distance_goal"],
-    "5": ["camera_rgb"]
-}
 
-reward_params = {
-    "reward_fn_5_default": dict(
-        early_stop=True,
-        min_speed=20.0,  # km/h
-        max_speed=35.0,  # km/h
-        target_speed=25.0,  # kmh
-        max_distance=3.0,  # Max distance from center before terminating
-        max_std_center_lane=0.4,
-        max_angle_center_lane=90,
-        penalty_reward=-10,
-    ),
-     "reward_fn_5_no_early_stop": dict(
-         early_stop=False,
-         min_speed=20.0,  # km/h
-         max_speed=35.0,  # km/h
-         target_speed=25.0,  # kmh
-         max_distance=3.0,  # Max distance from center before terminating
-         max_std_center_lane=0.4,
-         max_angle_center_lane=90,
-         penalty_reward=-10,
-     ),
-    "reward_fn_5_best": dict(
-        early_stop=True,
-        min_speed=20.0,  # km/h
-        max_speed=35.0,  # km/h
-        target_speed=25.0,  # kmh
-        max_distance=2.0,  # Max distance from center before terminating
-        max_std_center_lane=0.35,
-        max_angle_center_lane=90,
-        penalty_reward=-10,
-    ),
-    "reward_only_lane": dict(
-        early_stop=True,
-        min_speed=20.0,  # km/h
-        max_speed=35.0,  # km/h
-        target_speed=25.0,  # kmh
-        max_distance=2.0,  # Max distance from center before terminating
-        max_std_center_lane=0.35,
-        max_angle_center_lane=90,
-        penalty_reward=-10,
-    ),
-}
-
-_CONFIG_1 = {
+_CONFIG_BASIC = {
     "algorithm": "PPO",
-    "algorithm_params": algorithm_params["PPO"],
-    "state": states["3"],
-    "vae_model": "vae_64",
-    "action_smoothing": 0.75,
-    "reward_fn": "reward_fn5",
-    "reward_params": reward_params["reward_fn_5_default"],
-    "obs_res": (160, 80),
-    "seed": 100,
-    "wrappers": []
-}
+    "algorithm_policy_network": "CnnPolicy",
+    "algorithm_hyperparams": algorithm_params["PPO"],
+    "observation_space": gym.spaces.Box(low=0, high=255, shape=(480, 640, 3), dtype=np.uint8),
+    "action_space": gym.spaces.Box(low=np.array([-1]), high=np.array([1]), dtype=np.float32),
+    "environments": {
+        "duckietown": environment_configs["duckietown_resize_cropped"],
+    }
 
-_CONFIG_2 = {
-    "algorithm": "SAC",
-    "algorithm_params": algorithm_params["SAC"],
-    "state": states["3"],
-    "vae_model": "vae_64",
-    "action_smoothing": 0.75,
-    "reward_fn": "reward_fn5",
-    "reward_params": reward_params["reward_fn_5_default"],
-    "obs_res": (160, 80),
-    "seed": 100,
-    "wrappers": []
 }
-
-_CONFIG_3 = {
-    "algorithm": "DDPG",
-    "algorithm_params": algorithm_params["DDPG"],
-    "state": states["3"],
-    "vae_model": "vae_64",
-    "action_smoothing": 0.75,
-    "reward_fn": "reward_fn5",
-    "reward_params": reward_params["reward_fn_5_default"],
-    "obs_res": (160, 80),
-    "seed": 100,
-    "wrappers": []
-}
-
-_CONFIG_4 = {
-    "algorithm": "PPO",
-    "algorithm_params": algorithm_params["PPO"],
-    "state": states["1"],
-    "vae_model": "vae_64",
-    "action_smoothing": 0.75,
-    "reward_fn": "reward_fn5",
-    "reward_params": reward_params["reward_fn_5_default"],
-    "obs_res": (160, 80),
-    "seed": 100,
-    "wrappers": []
-}
-
-_CONFIG_5 = {
-    "algorithm": "SAC",
-    "algorithm_params": algorithm_params["SAC"],
-    "state": states["1"],
-    "vae_model": "vae_64",
-    "action_smoothing": 0.75,
-    "reward_fn": "reward_fn5",
-    "reward_params": reward_params["reward_fn_5_default"],
-    "obs_res": (160, 80),
-    "seed": 100,
-    "wrappers": []
-}
-
-_CONFIG_6 = {
-    "algorithm": "DDPG",
-    "algorithm_params": algorithm_params["DDPG"],
-    "state": states["1"],
-    "vae_model": "vae_64",
-    "action_smoothing": 0.75,
-    "reward_fn": "reward_fn5",
-    "reward_params": reward_params["reward_fn_5_default"],
-    "obs_res": (160, 80),
-    "seed": 100,
-    "wrappers": []
-}
-
-_CONFIG_7 = {
-    "algorithm": "SAC",
-    "algorithm_params": algorithm_params["SAC"],
-    "state": states["1"],
-    "vae_model": "vae_64_augmentation",
-    "action_smoothing": 0.75,
-    "reward_fn": "reward_fn5",
-    "reward_params": reward_params["reward_fn_5_default"],
-    "obs_res": (160, 80),
-    "seed": 100,
-    "wrappers": []
-}
-
-_CONFIG_8 = {
-    "algorithm": "SAC",
-    "algorithm_params": algorithm_params["SAC"],
-    "state": states["1"],
-    "vae_model": "vae_64",
-    "action_smoothing": 0,
-    "reward_fn": "reward_fn5",
-    "reward_params": reward_params["reward_fn_5_default"],
-    "obs_res": (160, 80),
-    "seed": 100,
-    "wrappers": []
-}
-
-_CONFIG_9 = {
-    "algorithm": "SAC",
-    "algorithm_params": algorithm_params["SAC"],
-    "state": states["1"],
-    "vae_model": "vae_64",
-    "action_smoothing": 0.75,
-    "reward_fn": "reward_fn5",
-    "reward_params": reward_params["reward_fn_5_no_early_stop"],
-    "obs_res": (160, 80),
-    "seed": 100,
-    "wrappers": []
-}
-
-_CONFIG_10 = {
-    "algorithm": "SAC",
-    "algorithm_params": algorithm_params["SAC"],
-    "state": states["2"],
-    "vae_model": "vae_64", # Cambiar mejor VAE
-    "action_smoothing": 0.75,
-    "reward_fn": "reward_fn5",
-    "reward_params": reward_params["reward_fn_5_default"],
-    "obs_res": (160, 80),
-    "seed": 100,
-    "wrappers": []
-}
-
-_CONFIG_11 = {
-    "algorithm": "SAC",
-    "algorithm_params": algorithm_params["SAC"],
-    "state": states["4"],
-    "vae_model": "vae_64", # Cambiar mejor VAE
-    "action_smoothing": 0.75,
-    "reward_fn": "reward_fn5",
-    "reward_params": reward_params["reward_fn_5_default"],
-    "obs_res": (160, 80),
-    "seed": 100,
-    "wrappers": []
-}
-
-_CONFIG_12 = {
-    "algorithm": "SAC",
-    "algorithm_params": algorithm_params["SAC"],
-    "state": states["1"],
-    "vae_model": "vae_64_augmentation",
-    "action_smoothing": 0.75,
-    "reward_fn": "reward_fn5",
-    "reward_params": reward_params["reward_fn_5_default"],
-    "obs_res": (160, 80),
-    "seed": 100,
-    "wrappers": []
-}
-
-_CONFIG_13 = {
-    "algorithm": "SAC",
-    "algorithm_params": algorithm_params["SAC"],
-    "state": states["1"],
-    "vae_model": "vae_64_augmentation",
-    "action_smoothing": 0.75,
-    "reward_fn": "reward_fn5",
-    "reward_params": reward_params["reward_fn_5_default"],
-    "obs_res": (160, 80),
-    "seed": 100,
-    "wrappers": ["HistoryWrapperObsDict_5"]
-}
-
-_CONFIG_14 = {
-    "algorithm": "SAC",
-    "algorithm_params": algorithm_params["SAC"],
-    "state": states["1"],
-    "vae_model": "vae_64_augmentation",
-    "action_smoothing": 0.75,
-    "reward_fn": "reward_fn5",
-    "reward_params": reward_params["reward_fn_5_default"],
-    "obs_res": (160, 80),
-    "seed": 100,
-    "wrappers": ["FrameSkip_3"]
-}
-
-_CONFIG_15 = {
-    "algorithm": "SAC",
-    "algorithm_params": algorithm_params["SAC"],
-    "state": states["1"],
-    "vae_model": "vae_64_augmentation",
-    "action_smoothing": 0.75,
-    "reward_fn": "reward_fn5",
-    "reward_params": reward_params["reward_fn_5_default"],
-    "obs_res": (160, 80),
-    "seed": 100,
-    "wrappers": ["FrameSkip_3", "HistoryWrapperObsDict_5"]
-}
-
-_CONFIG_BEST = {
-    "algorithm": "SAC",
-    "algorithm_params": algorithm_params["SAC_BEST"],
-    "state": states["1"],
-    "vae_model": "vae_64_augmentation",
-    "action_smoothing": 0.75,
-    "reward_fn": "reward_fn5",
-    "reward_params": reward_params["reward_fn_5_best"],
-    "obs_res": (160, 80),
-    "seed": 100,
-    "wrappers": []
-}
-_CONFIG_TEST = {
-    "algorithm": "PPO",
-    "algorithm_params": algorithm_params["PPO"],
-    "state": states["5"],
-    "action_smoothing": 0.75,
-    "reward_fn": "reward_fn5",
-    "reward_params": reward_params["reward_only_lane"],
-    "obs_res": (160, 80),
-    "seed": 100,
-    "wrappers": []
-}
-CONFIGS = {
-    "1": _CONFIG_1,
-    "2": _CONFIG_2,
-    "3": _CONFIG_3,
-    "4": _CONFIG_4,
-    "5": _CONFIG_5,
-    "6": _CONFIG_6,
-    "7": _CONFIG_7,
-    "8": _CONFIG_8,
-    "9": _CONFIG_9,
-    "10": _CONFIG_10,
-    "11": _CONFIG_11,
-    "12": _CONFIG_12,
-    "13": _CONFIG_13,
-    "14": _CONFIG_14,
-    "15": _CONFIG_15,
-    "BEST": _CONFIG_BEST,
-    "TEST": _CONFIG_TEST
-}
-CONFIG = None
-
-
-def set_config(config_name):
-    global CONFIG
-    CONFIG = CONFIGS[config_name]

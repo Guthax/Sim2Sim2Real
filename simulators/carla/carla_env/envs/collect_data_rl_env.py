@@ -3,9 +3,9 @@ import subprocess
 import sys
 import glob
 
-import gym
+import gymnasium as gym
 import pygame
-from gym.utils import seeding
+from gymnasium.utils import seeding
 from pygame.locals import *
 from PIL import Image
 
