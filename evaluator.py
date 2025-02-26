@@ -45,7 +45,7 @@ class Evaluator:
                 timesteps += 1
                 current_episode_length += 1
             done = False
-            obs = self.evaluation_environment.reset()
+            state = self.evaluation_environment.reset()
             current_episode_length = 0
 
         avg_reward = total_reward / timesteps

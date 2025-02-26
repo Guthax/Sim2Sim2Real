@@ -3,7 +3,7 @@ import argparse
 from config.scenario_configs import configs, get_config_by_name
 from util.scenario import Scenario
 
-parser = argparse.ArgumentParser("runner")
+parser = argparse.ArgumentParser("evaluator")
 parser.add_argument("-config_name", help="The name of the config to use.", type=str)
 parser.add_argument("-env_name", help="Environment to train on", type=str)
 parser.add_argument("-model_name", help="Model output name", type=str)

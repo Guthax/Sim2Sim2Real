@@ -15,7 +15,6 @@ _CONFIG_PPO_CNN_DUCKIETOWN_RGB_STEER = {
     "environments": {
         "duckietown": environment_configs["duckietown_rgb"],
     }
-
 }
 
 _CONFIG_PPO_MULTI_DUCKIETOWN_RGB_CANNY_STEER = {
