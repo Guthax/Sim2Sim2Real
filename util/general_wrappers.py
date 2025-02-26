@@ -55,7 +55,7 @@ class CannyWrapper(gym.ObservationWrapper):
         return edges
 
     def observation(self, observation):
-        img_rgb, _= observation["camera_rgb"]
+        img_rgb = observation
         canny = self.detect_lanes(img_rgb)
 
         dict = {
@@ -63,8 +63,6 @@ class CannyWrapper(gym.ObservationWrapper):
             "camera_canny": canny
         }
 
-        #cv2.imshow("test", canny)
-        #cv2.waitKey(1)
         return dict
 
 class CropWrapper(gym.ObservationWrapper):
