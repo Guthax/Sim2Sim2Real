@@ -2,10 +2,11 @@ from stable_baselines3 import PPO
 
 from config import CONFIGS
 from envs.duckietown.base.duckietown import DuckietownBaseDynamics
-from envs.duckietown.duckie_town_direct_velocities import DuckietownDirectVelocities
 from evaluator import Evaluator
 from simulators.duckietown.wrappers import ResizeWrapper, CannyWrapper, \
     CropWrapper
+
+
 
 def evaluate():
     env = DuckietownBaseDynamics(render_img=True   , randomize_maps_on_reset=True)

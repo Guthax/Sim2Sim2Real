@@ -17,14 +17,14 @@ from typing import Any, cast, Dict, List, NewType, Optional, Sequence, Tuple, Un
 
 import geometry
 import geometry as g
-import gym
+import gymnasium as gym
 import math
 import numpy as np
 import pyglet
 import yaml
 from geometry import SE2value
-from gym import spaces
-from gym.utils import seeding
+from gymnasium import spaces
+from gymnasium.utils import seeding
 from numpy.random.mtrand import RandomState
 from pyglet import gl, image, window
 
@@ -534,7 +534,7 @@ class Simulator(gym.Env):
         ]
         self.ground_vlist = pyglet.graphics.vertex_list(4, ("v3f", verts))
 
-    def reset(self, segment: bool = False):
+    def reset(self, seed = None, options: Dict = None, segment=False):
         """
         Reset the simulation at the start of a new episode
         This also randomizes many environment parameters (domain randomization)
@@ -769,7 +769,7 @@ class Simulator(gym.Env):
         obs = self.render_obs(segment=segment)
 
         # Return first observation
-        return obs
+        return obs, {}
 
     def _load_map(self, map_name: str):
         """
@@ -1689,7 +1689,7 @@ class Simulator(gym.Env):
         d = self._compute_done_reward()
         misc["Simulator"]["msg"] = d.done_why
 
-        return obs, d.reward, d.done, misc
+        return obs, d.reward, d.done, {}, misc
 
     def _compute_done_reward(self) -> DoneRewardInfo:
         # If the agent is not in a valid pose (on drivable tiles)
