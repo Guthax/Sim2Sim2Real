@@ -14,7 +14,18 @@ environment_configs = {
     "duckietown_rgb": {
         "base_env": DuckietownBaseDynamics,
         "arguments": dict(
-            render_img=False
+            render_img=True
+        ),
+        "wrappers": [ResizeWrapper, CropWrapper]
+    },
+
+    "duckietown_rgb_domain_rand": {
+        "base_env": DuckietownBaseDynamics,
+        "arguments": dict(
+            render_img=True,
+            domain_rand=True,
+            camera_rand=True,
+            randomize_maps_on_reset=True,
         ),
         "wrappers": [ResizeWrapper, CropWrapper]
     },

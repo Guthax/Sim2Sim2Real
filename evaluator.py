@@ -96,13 +96,14 @@ class Evaluator:
         #obs = obs["camera_rgb"]
         obs = obs.squeeze(0)
         obs = np.transpose(obs, (2,1,0))
-        heatmap = cv2.resize(gradcam, (obs.shape[1], obs.shape[0]))
+        print(obs.shape)
+        heatmap = cv2.resize(gradcam, (obs.shape[0], obs.shape[1]))
         heatmap = np.uint8(255 * heatmap)
         heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
 
         # Overlay heatmap on original image
-        overlay = cv2.addWeighted(obs, 0.5, heatmap, 0.5, 0)
-        overlay = cv2.resize(overlay, dsize=(640, 480))
+        #overlay = cv2.addWeighted(obs, 0.5, heatmap, 0.5, 0)
+        #overlay = cv2.resize(overlay, dsize=(480, 680))
         # Show the result
         #plt.figure(figsize=(10, 5))
         #plt.subplot(1, 2, 1)
