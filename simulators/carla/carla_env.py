@@ -8,7 +8,7 @@ from gymnasium import spaces
 
 
 class SelfCarlaEnv(gym.Env):
-    def __init__(self, host='localhost', port=2000, render=True):
+    def __init__(self, host='localhost', port=2000, render=False):
         super(SelfCarlaEnv, self).__init__()
         self.client = carla.Client(host, port)
         self.client.set_timeout(20.0)
