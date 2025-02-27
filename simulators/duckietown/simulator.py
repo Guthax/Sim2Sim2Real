@@ -17,14 +17,14 @@ from typing import Any, cast, Dict, List, NewType, Optional, Sequence, Tuple, Un
 
 import geometry
 import geometry as g
-import gym
+import gymnasium as gym
 import math
 import numpy as np
 import pyglet
 import yaml
 from geometry import SE2value
-from gym import spaces
-from gym.utils import seeding
+from gymnasium import spaces
+from gymnasium.utils import seeding
 from numpy.random.mtrand import RandomState
 from pyglet import gl, image, window
 
@@ -172,7 +172,8 @@ DEFAULT_MAP_NAME = "ETH_small_loop_1"
 
 DEFAULT_FRAME_SKIP = 1
 
-DEFAULT_ACCEPT_START_ANGLE_DEG = 60
+DEFAULT_ACCEPT_START_ANGLE_DEG = 10
+
 
 REWARD_INVALID_POSE = 0
 
@@ -376,14 +377,14 @@ class Simulator(gym.Env):
             self.map_names = [
                 "Caltech_loop01",
                 "ETHZ_autolab_fast_track",
-                "ETHZ_autolab_technical_track",
-                "ETH_intersection_map",
+                #"ETHZ_autolab_technical_track",
+                #"ETH_intersection_map",
                 "ETH_large_loop",
                 "ETH_small_loop_1",
                 "ETH_small_loop_2",
                 "ETH_small_loop_3",
                 "TTIC_large_loop",
-                "TTIC_ripltown"
+                #"TTIC_ripltown"
             ]
 
         # Initialize the state
@@ -534,7 +535,7 @@ class Simulator(gym.Env):
         ]
         self.ground_vlist = pyglet.graphics.vertex_list(4, ("v3f", verts))
 
-    def reset(self, segment: bool = False):
+    def reset(self, seed = None, options: Dict = None, segment=False):
         """
         Reset the simulation at the start of a new episode
         This also randomizes many environment parameters (domain randomization)
@@ -769,7 +770,7 @@ class Simulator(gym.Env):
         obs = self.render_obs(segment=segment)
 
         # Return first observation
-        return obs
+        return obs, {}
 
     def _load_map(self, map_name: str):
         """
@@ -848,11 +849,11 @@ class Simulator(gym.Env):
 
                     DRIVABLE_TILES = [
                         "straight",
-                        "curve_left",
-                        "curve_right",
-                        "3way_left",
-                        "3way_right",
-                        "4way",
+                        #"curve_left",
+                        #"curve_right",
+                        #"3way_left",
+                        #"3way_right",
+                        #"4way",
                     ]
                     drivable = kind in DRIVABLE_TILES
 
@@ -1689,7 +1690,7 @@ class Simulator(gym.Env):
         d = self._compute_done_reward()
         misc["Simulator"]["msg"] = d.done_why
 
-        return obs, d.reward, d.done, misc
+        return obs, d.reward, d.done, {}, misc
 
     def _compute_done_reward(self) -> DoneRewardInfo:
         # If the agent is not in a valid pose (on drivable tiles)

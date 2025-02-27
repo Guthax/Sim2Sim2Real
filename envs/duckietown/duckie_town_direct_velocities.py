@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from gym import spaces
+from gymnasium import spaces
 from matplotlib import pyplot as plt
 
 from envs.duckietown.duckietown_env import DuckietownEnv
