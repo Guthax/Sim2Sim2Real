@@ -13,4 +13,4 @@ args = parser.parse_args()
 
 scenario = Scenario(get_config_by_name(args.config_name))
 
-scenario.evaluate_on_environment(args.env_name, args.model_path, True)
+scenario.evaluate_on_environment(args.env_name, args.model_path, False)
