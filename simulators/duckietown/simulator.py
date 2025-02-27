@@ -172,7 +172,8 @@ DEFAULT_MAP_NAME = "ETH_small_loop_1"
 
 DEFAULT_FRAME_SKIP = 1
 
-DEFAULT_ACCEPT_START_ANGLE_DEG = 60
+DEFAULT_ACCEPT_START_ANGLE_DEG = 10
+
 
 REWARD_INVALID_POSE = 0
 
@@ -376,14 +377,14 @@ class Simulator(gym.Env):
             self.map_names = [
                 "Caltech_loop01",
                 "ETHZ_autolab_fast_track",
-                "ETHZ_autolab_technical_track",
-                "ETH_intersection_map",
+                #"ETHZ_autolab_technical_track",
+                #"ETH_intersection_map",
                 "ETH_large_loop",
                 "ETH_small_loop_1",
                 "ETH_small_loop_2",
                 "ETH_small_loop_3",
                 "TTIC_large_loop",
-                "TTIC_ripltown"
+                #"TTIC_ripltown"
             ]
 
         # Initialize the state
@@ -848,11 +849,11 @@ class Simulator(gym.Env):
 
                     DRIVABLE_TILES = [
                         "straight",
-                        "curve_left",
-                        "curve_right",
-                        "3way_left",
-                        "3way_right",
-                        "4way",
+                        #"curve_left",
+                        #"curve_right",
+                        #"3way_left",
+                        #"3way_right",
+                        #"4way",
                     ]
                     drivable = kind in DRIVABLE_TILES
 

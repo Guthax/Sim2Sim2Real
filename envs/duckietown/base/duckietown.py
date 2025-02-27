@@ -34,10 +34,6 @@ class DuckietownBaseDynamics(Simulator):
 
         # Wheel velocity limit
         self.limit = limit
-        self.distortion = False
-        self.domain_rand = False
-        self.camera_rand = False
-        self.dynamics_rand = False
         self.render_img = render_img
 
         self.total_reward = 0
