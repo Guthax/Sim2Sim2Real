@@ -1,9 +1,9 @@
 import os
 from typing import List
 
-import gym
+import gymnasium as gym
 from stable_baselines3.common.base_class import BaseAlgorithm
-from gym import Env
+from gymnasium import Env
 from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.logger import configure
 
@@ -11,11 +11,8 @@ from utils import TensorboardCallback
 
 
 class Trainer:
-    def __init__(self, gym_env: Env, algorithm: BaseAlgorithm, testing_env: gym.Env = None):
-        self.training_environment = gym_env
+    def __init__(self, algorithm: BaseAlgorithm):
         self.algorithm = algorithm
-
-        self.testing_environment = testing_env
 
     def train(self, name, num_timesteps, num_checkpoints, save_path, additional_callbacks: List = None, test_freq = -1):
         cp = [CheckpointCallback(

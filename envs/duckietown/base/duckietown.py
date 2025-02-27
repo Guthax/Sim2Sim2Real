@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from gym import spaces
+from gymnasium import spaces
 
 from simulators.duckietown import logger
 from simulators.duckietown.exceptions import NotInLane
@@ -19,10 +19,7 @@ class DuckietownBaseDynamics(Simulator):
 
         self.action_space = spaces.Box(low=np.array([-1]), high=np.array([1]), dtype=np.float32)
 
-        self.observation_space = spaces.Dict({
-            self.obs_rgb_name : spaces.Box(low=0, high=255, shape=(self.camera_height, self.camera_width, 3), dtype=np.uint8)
-        })
-
+        self.observation_space = spaces.Box(low=0, high=255, shape=(self.camera_height, self.camera_width, 3), dtype=np.uint8)
         # Should be adjusted so that the effective speed of the robot is 0.2 m/s
         self.gain = gain
 
@@ -37,10 +34,6 @@ class DuckietownBaseDynamics(Simulator):
 
         # Wheel velocity limit
         self.limit = limit
-        self.distortion = False
-        self.domain_rand = False
-        self.camera_rand = False
-        self.dynamics_rand = False
         self.render_img = render_img
 
         self.total_reward = 0
@@ -60,7 +53,7 @@ class DuckietownBaseDynamics(Simulator):
 
         vels = np.array([left_wheel_velocity, right_wheel_velocity])
 
-        obs, reward, done, info = Simulator.step(self, vels)
+        obs, reward, done, trunc, info = Simulator.step(self, vels)
         self.total_reward += reward
         self.mean_reward = self.total_reward / self.step_count
 
@@ -97,10 +90,7 @@ class DuckietownBaseDynamics(Simulator):
             cv2.waitKey(1)
 
             # Add a small delay for frame rate control
-        obs = {
-            self.obs_rgb_name: obs
-        }
-        return obs, reward, done, info
+        return obs, reward, done, trunc, info
 
 
     def compute_reward(self, pos, angle, speed):
@@ -124,12 +114,10 @@ class DuckietownBaseDynamics(Simulator):
             reward = -10.0
         return reward
 
-    def reset(self, segment: bool = False):
-        obs = super().reset()
+    def reset(self, seed = None, options = None, segment: bool = False):
+        obs, _ = super().reset(seed, options, segment)
         obs = cv2.cvtColor(obs, cv2.COLOR_BGR2RGB)
-        return {
-            self.obs_rgb_name: obs
-        }
+        return obs, {}
 
     def render_obs(self, segment: bool = False):
         img = Simulator.render_obs(self, segment)

@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from gym import spaces
+from gymnasium import spaces
 
 from simulators.duckietown.simulator import Simulator
 from simulators.duckietown import logger
