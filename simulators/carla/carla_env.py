@@ -4,7 +4,11 @@ import numpy as np
 import random
 import time
 import cv2
+from carla import LaneMarking
 from gymnasium import spaces
+
+from simulators.carla.misc import get_pos, get_lane_dis
+from simulators.carla.route_planner import RoutePlanner
 
 
 class SelfCarlaEnv(gym.Env):
@@ -32,6 +36,7 @@ class SelfCarlaEnv(gym.Env):
         self.collision_occurred = False
         self.offroad_occurred = False
         self.lane_invasion_occured = False
+        self.route_planner = None
 
         self.action_space = spaces.Box(low=np.array([-1]), high=np.array([1]), dtype=np.float32)  # Only Steering
         self.observation_space = spaces.Box(low=0, high=255, shape=(200, 400, 3),
@@ -83,8 +88,10 @@ class SelfCarlaEnv(gym.Env):
         self.collision_occurred = True
 
     def _on_lane_invasion(self, invasion_info):
-        print("Lane invasion detected!")
-        self.lane_invasion_occured = True
+        #penalized_lane_markings = [LaneMarking.Curb, LaneMarking.Grass, LaneMarking]
+        types_crossed = [str(lane.type) for lane in invasion_info.crossed_lane_markings]
+        if 'Curb' in types_crossed or 'NONE' in types_crossed:
+            self.collision_occurred = True
 
     def _process_image(self, image):
         array = np.frombuffer(image.raw_data, dtype=np.uint8)
@@ -101,6 +108,8 @@ class SelfCarlaEnv(gym.Env):
         self.lane_invasion_occured = False
 
         self._setup_vehicle()
+        self.route_planner = RoutePlanner(self.vehicle, 12)
+        self.waypoints, _, self.vehicle_front = self.route_planner.run_step()
 
         start_time = time.time()
         while self.image is None:
@@ -112,52 +121,61 @@ class SelfCarlaEnv(gym.Env):
         return obs, {}
 
     def step(self, action):
-
         steer = action[0]
         self.vehicle.apply_control(carla.VehicleControl(throttle=0.5, steer=float(steer)))  # Fixed speed of 30 kph
         self.world.tick()
         observation = self.image if self.image is not None else np.zeros((84, 84, 3), dtype=np.uint8)
+        self.waypoints, _, self.vehicle_front = self.route_planner.run_step()
 
         # Calculate reward
-        reward = self._calculate_reward()
-        done = self.collision_occurred or self.offroad_occurred
+        reward, done = self._calculate_reward()
         info = {}
-
-        if self.collision_occurred or self.offroad_occurred or self.lane_invasion_occured:
-            reward = -10
-            done = True
 
         if self.render_mode:
             self.render()
 
         return observation, reward, done, False, info
 
+
     def _calculate_reward(self):
-        """
-        angle_factor = max(1.0 - abs(angle / np.deg2rad(max_angle_center_lane)), 0.0)
+        done = False
+        ego_x, ego_y = get_pos(self.vehicle)
+        dist, w = get_lane_dis(self.waypoints, ego_x, ego_y)
 
-        std = np.std(env.distance_from_center_history)
-        distance_std_factor = max(1.0 - abs(std / max_std_center_lane), 0.0)
-        reward =  centering_factor + angle_factor + distance_std_factor
-        """
+        abs_dist = abs(dist)
 
+        # Reward function: Penalize larger distances, maximize at r=0
+        max_penalty = -10  # Minimum reward when completely out of bounds
+        max_reward = 1.0  # Maximum reward at r=0
+
+        reward = 1 - abs_dist
+
+        if abs_dist > 3.0:
+            done = True
+            reward = -5  # Heavy penalty for going out of bounds
+
+        if self.collision_occurred:
+            reward = max_penalty
+            done = True
+
+
+        return reward, done
 
         # Get vehicle transform and lane information
+        """
         transform = self.vehicle.get_transform()
         location = transform.location
         waypoint = self.world.get_map().get_waypoint(location, project_to_road=True, lane_type=carla.LaneType.Driving)
 
-        if waypoint is None:
-            print("Offroad detected")
-            self.offroad_occurred = True
-            return -10  # Big penalty for going off-road
 
         lane_center = waypoint.transform.location
         distance_from_center = abs(location.y - lane_center.y)  # Assuming y is lateral direction
-
+        print(f"Location(Lane, Vehicle) X: {location.x}, {lane_center.x}")
+        print(f"Location(Lane, Vehicle) Y: {location.y}, {lane_center.y}")
         # Reward for staying in lane center
         reward = max(0, 1.0 - (distance_from_center / 2.0))  # Normalize to 0-1 range
         return reward
+        """
 
     def render(self, mode='human'):
         if self.image is not None:

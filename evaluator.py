@@ -70,7 +70,7 @@ class Evaluator:
         forward_handle = last_cnn_layer.register_forward_hook(forward_hook)
         backward_handle = last_cnn_layer.register_backward_hook(backward_hook)
 
-        tensor = obs_as_tensor(obs, device=torch.device("cpu"))
+        tensor = obs_as_tensor(obs, device='cuda' if torch.cuda.is_available() else 'cpu')
         tensor = preprocess_obs(tensor, self.algorithm.observation_space)
         #tensor["camera_rgb"] = tensor["camera_rgb"].permute(2,0,1).unsqueeze(0)
 
