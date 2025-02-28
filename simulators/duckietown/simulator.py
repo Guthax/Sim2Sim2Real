@@ -679,11 +679,13 @@ class Simulator(gym.Env):
                 tile = self.start_tile
             else:
                 # Select a random drivable tile to start on
-                if not self.drivable_tiles:
-                    msg = "There are no drivable tiles. Use start_tile or self.user_tile_start"
+                print(self.drivable_tiles)
+                self.spawnable_tiles = [tile for tile in self.drivable_tiles if tile['kind'] == "straight"]
+                if not self.spawnable_tiles:
+                    msg = "There are no spawnable tiles. Use start_tile or self.user_tile_start"
                     raise Exception(msg)
-                tile_idx = np.random.randint(0, len(self.drivable_tiles))
-                tile = self.drivable_tiles[tile_idx]
+                tile_idx = np.random.randint(0, len(self.spawnable_tiles))
+                tile = self.spawnable_tiles[tile_idx]
 
         # If the map specifies a starting pose
         if self.start_pose is not None:
@@ -849,11 +851,11 @@ class Simulator(gym.Env):
 
                     DRIVABLE_TILES = [
                         "straight",
-                        #"curve_left",
-                        #"curve_right",
-                        #"3way_left",
-                        #"3way_right",
-                        #"4way",
+                        "curve_left",
+                        "curve_right",
+                        "3way_left",
+                        "3way_right",
+                        "4way",
                     ]
                     drivable = kind in DRIVABLE_TILES
 
