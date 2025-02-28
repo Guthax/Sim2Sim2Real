@@ -44,8 +44,8 @@ else:
 print(torch_url, torchvis_url)
 install_requires = [
     "gymnasium==0.28.1"
-    "gym>=0.17.1",
     "numpy>=1.10.0",
+    "grad-cam",
     "pyglet<=1.5.0",
     "pygame==2.1.2",
     "pyzmq>=16.0.0",
@@ -58,6 +58,7 @@ install_requires = [
     "zuper-commons-z6",
     "typing_extensions",
     "Pillow",
+    "scikit-image",
     "pipdeptree",
     "typing-extensions",
     f"torch@{torch_url}",
