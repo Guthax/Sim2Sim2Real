@@ -14,7 +14,7 @@ environment_configs = {
     "duckietown_rgb": {
         "base_env": DuckietownBaseDynamics,
         "arguments": dict(
-            render_img=True
+            render_img=False
         ),
         "wrappers": [ResizeWrapper, CropWrapper]
     },
