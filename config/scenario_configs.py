@@ -11,7 +11,7 @@ _CONFIG_PPO_CNN_CARLA_RGB_STEER = {
     "algorithm_policy_network": "CnnPolicy",
     "algorithm_hyperparams": algorithm_params["PPO"],
     "observation_space": gym.spaces.Box(low=0, high=255, shape=(80, 160, 3), dtype=np.uint8),
-    "action_space": gym.spaces.Box(low=np.array([-1]), high=np.array([1]), dtype=np.float32),
+    "action_space": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
     "environments": {
         "carla": environment_configs["carla_rgb"],
     }
