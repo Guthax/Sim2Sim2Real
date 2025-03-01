@@ -17,7 +17,7 @@ class DuckietownBaseDynamics(Simulator):
         self.obs_rgb_name = "camera_rgb"
         Simulator.__init__(self, **kwargs)
 
-        self.action_space = spaces.Box(low=np.array([-1]), high=np.array([1]), dtype=np.float32)
+        self.action_space = spaces.Box(low=np.float32(-1), high=np.float32(1))
 
         self.observation_space = spaces.Box(low=0, high=255, shape=(self.camera_height, self.camera_width, 3), dtype=np.uint8)
         # Should be adjusted so that the effective speed of the robot is 0.2 m/s
@@ -44,7 +44,6 @@ class DuckietownBaseDynamics(Simulator):
 
 
     def step(self, action):
-        print(action)
         # Ensure the steering angle is within the valid range
         steering_angle = max(-1, min(1, action))
 
