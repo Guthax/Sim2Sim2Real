@@ -39,6 +39,7 @@ class Evaluator:
                 action, _states = self.algorithm.predict(state, deterministic=True)
                 print(f"Action: {action}")
                 state, reward, done, info = self.evaluation_environment.step(action)
+                print(reward)
                 if self.apply_grad_cam:
                     self.grad_cam(state)
                 total_reward += reward
