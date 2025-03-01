@@ -36,8 +36,11 @@ environment_configs = {
     "duckietown_rgb_canny": {
         "base_env": DuckietownBaseDynamics,
         "arguments": dict(
-            render_img=False
+            render_img=False,
+            domain_rand=True,
+            camera_rand=True,
+            randomize_maps_on_reset=True
         ),
-        "wrappers": [ResizeWrapper, CropWrapper, CannyWrapper]
+        "wrappers": [ResizeWrapper, CropWrapper, CannyWrapper, TimeLimit]
     }
 }
