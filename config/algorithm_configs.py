@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 from stable_baselines3.common.noise import NormalActionNoise
 
 from utils import lr_schedule
@@ -13,8 +14,11 @@ algorithm_params = {
         ent_coef=0.05,
         n_epochs=10,
         n_steps=1024,
-        policy_kwargs=dict(activation_fn=th.nn.ReLU,
-                           net_arch=[dict(pi=[500, 300], vf=[500, 300])])
+        #use_sde=True,
+        #sde_sample_freq=4,
+        policy_kwargs = dict(net_arch=[64, 64], activation_fn=torch.nn.Tanh)
+        #policy_kwargs=dict(activation_fn=th.nn.ReLU,
+        #                   net_arch=[dict(pi=[500, 300], vf=[500, 300])])
     ),
     "SAC": dict(
         learning_rate=lr_schedule(5e-4, 1e-6, 2),
