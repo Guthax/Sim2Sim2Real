@@ -1,3 +1,5 @@
+from gymnasium.wrappers import TimeLimit
+
 from envs.duckietown.base.duckietown import DuckietownBaseDynamics
 from simulators.carla.carla_env import SelfCarlaEnv
 from util.general_wrappers import ResizeWrapper, CropWrapper, CannyWrapper
@@ -15,15 +17,15 @@ environment_configs = {
         "base_env": DuckietownBaseDynamics,
         "arguments": dict(
             render_img=False,
-            randomize_maps_on_reset=False,
+            randomize_maps_on_reset=True,
         ),
-        "wrappers": [ResizeWrapper, CropWrapper]
+        "wrappers": [ResizeWrapper, CropWrapper, TimeLimit]
     },
 
     "duckietown_rgb_domain_rand": {
         "base_env": DuckietownBaseDynamics,
         "arguments": dict(
-            render_img=True,
+            render_img=False,
             domain_rand=True,
             camera_rand=True,
             randomize_maps_on_reset=True,
