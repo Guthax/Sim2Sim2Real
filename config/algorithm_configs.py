@@ -7,7 +7,7 @@ import torch as th
 
 algorithm_params = {
     "PPO": dict(
-        learning_rate=lr_schedule(1e-4, 1e-6, 2),
+        learning_rate=1e-4,
         gamma=0.98,
         gae_lambda=0.95,
         clip_range=0.2,
@@ -16,7 +16,11 @@ algorithm_params = {
         n_steps=1024,
         #use_sde=True,
         #sde_sample_freq=4,
-        policy_kwargs = dict(net_arch=[64, 64], activation_fn=torch.nn.Tanh)
+        policy_kwargs=dict(
+            net_arch=[dict(pi=[500, 300], vf=[500, 300])],  # Larger network for better feature extraction
+            activation_fn=torch.nn.ReLU,  # ReLU activation for stable gradients
+            log_std_init=-1,  # Lower initial std to encourage smaller actions
+        )
         #policy_kwargs=dict(activation_fn=th.nn.ReLU,
         #                   net_arch=[dict(pi=[500, 300], vf=[500, 300])])
     ),

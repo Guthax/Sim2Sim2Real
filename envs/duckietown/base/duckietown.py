@@ -44,7 +44,7 @@ class DuckietownBaseDynamics(Simulator):
 
 
     def step(self, action):
-        #print(action)
+        print(action)
         # Ensure the steering angle is within the valid range
         steering_angle = max(-1, min(1, action))
 
