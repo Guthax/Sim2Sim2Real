@@ -30,7 +30,7 @@ environment_configs = {
             camera_rand=True,
             randomize_maps_on_reset=True,
         ),
-        "wrappers": [ResizeWrapper, CropWrapper]
+        "wrappers": [ResizeWrapper, CropWrapper, TimeLimit]
     },
 
     "duckietown_rgb_canny": {
