@@ -3,6 +3,7 @@ import os
 import numpy as np
 import torch.cuda
 from contracts.library.extensions import kwarg
+from gymnasium.wrappers import TimeLimit
 from stable_baselines3 import PPO
 
 import gymnasium as gym
@@ -41,7 +42,10 @@ class Scenario:
 
             current_env = base_env
             for wrapper in wrappers:
-                current_env = wrapper(current_env)
+                if wrapper is TimeLimit:
+                    current_env = wrapper(current_env, 2000)
+                else:
+                    current_env = wrapper(current_env)
 
             if current_env.observation_space == self.config["observation_space"] and current_env.action_space == self.config["action_space"]:
                 self.environments[key] = current_env

@@ -7,7 +7,7 @@ import torch as th
 
 algorithm_params = {
     "PPO": dict(
-        learning_rate=1e-6,
+        learning_rate=lr_schedule(1e-4, 1e-6, 2),
         gamma=0.98,
         gae_lambda=0.95,
         clip_range=0.2,
