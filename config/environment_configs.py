@@ -10,7 +10,7 @@ environment_configs = {
         "arguments": dict(
             render=False
         ),
-        "wrappers": [ResizeWrapper, CropWrapper]
+        "wrappers": [ResizeWrapper, CropWrapper, TimeLimit]
     },
 
     "duckietown_rgb": {
