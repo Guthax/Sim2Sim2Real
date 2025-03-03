@@ -53,6 +53,7 @@ class Evaluator:
         print(f"AVERAGE REWARD: {avg_reward}")
 
     def grad_cam(self, obs):
+        print(obs.shape)
         policy_net = self.algorithm.policy
         last_cnn_layer = policy_net.features_extractor.cnn[0]
 
