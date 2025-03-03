@@ -44,6 +44,10 @@ class SelfCarlaEnv(gym.Env):
 
         self._setup_vehicle()
 
+        self.count_until_randomization = 0
+        self.randomize_every_steps = 10000
+
+
     def _setup_vehicle(self):
         spawn_points = self.world.get_map().get_spawn_points()
         for _ in range(10):  # Try up to 10 times to find a valid spawn point
@@ -83,6 +87,20 @@ class SelfCarlaEnv(gym.Env):
         self.actor_list.append(self.invasion_sensor)
         self.invasion_sensor.listen(self._on_lane_invasion)
 
+    def _randomize_weather(self):
+        weather = carla.WeatherParameters(
+            cloudiness=random.uniform(0, 100),
+            precipitation=random.uniform(0, 100),
+            sun_altitude_angle=random.uniform(-90, 90),
+            fog_density=random.uniform(0, 100)
+        )
+        self.world.set_weather(weather)
+
+    def _randomize_time_of_day(self):
+        weather = self.world.get_weather()
+        weather.sun_altitude_angle = random.uniform(-90, 90)
+        self.world.set_weather(weather)
+
     def _on_collision(self, event):
         print("Collision detected!")
         self.collision_occurred = True
@@ -101,6 +119,12 @@ class SelfCarlaEnv(gym.Env):
     def reset(self, *, seed=None, options=None):
         for actor in self.actor_list:
             actor.destroy()
+
+        if self.count_until_randomization >= self.randomize_every_steps:
+            self._randomize_time_of_day()
+            self._randomize_weather()
+            self.count_until_randomization = 0
+
         self.actor_list = []
 
         self.collision_occurred = False
@@ -134,6 +158,8 @@ class SelfCarlaEnv(gym.Env):
         if self.render_mode:
             self.render()
 
+        self.count_until_randomization += 1
+
         return observation, reward, done, False, info
 
 
@@ -141,18 +167,17 @@ class SelfCarlaEnv(gym.Env):
         done = False
         ego_x, ego_y = get_pos(self.vehicle)
         dist, w = get_lane_dis(self.waypoints, ego_x, ego_y)
-
         abs_dist = abs(dist)
 
         # Reward function: Penalize larger distances, maximize at r=0
-        max_penalty = -10  # Minimum reward when completely out of bounds
+        max_penalty = -40  # Minimum reward when completely out of bounds
         max_reward = 1.0  # Maximum reward at r=0
 
-        reward = 1 - abs_dist
+        reward = -10 * np.abs(dist)
 
         if abs_dist > 3.0:
             done = True
-            reward = -5  # Heavy penalty for going out of bounds
+            #reward = -5  # Heavy penalty for going out of bounds
 
         if self.collision_occurred:
             reward = max_penalty

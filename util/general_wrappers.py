@@ -62,6 +62,8 @@ class CannyWrapper(gym.ObservationWrapper):
             "camera_rgb": img_rgb,
             "camera_canny": canny
         }
+        cv2.imshow("camera_canny", canny)
+        cv2.waitKey(1)
 
         return dict
 
