@@ -173,7 +173,8 @@ class SelfCarlaEnv(gym.Env):
         max_penalty = -40  # Minimum reward when completely out of bounds
         max_reward = 1.0  # Maximum reward at r=0
 
-        reward = -10 * np.abs(dist)
+        reward = -10 * abs_dist
+        print(abs_dist)
 
         if abs_dist > 3.0:
             done = True

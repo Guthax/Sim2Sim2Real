@@ -19,7 +19,7 @@ algorithm_params = {
         policy_kwargs=dict(
             net_arch=dict(pi=[500, 300], vf=[500, 300]),  # Larger network for better feature extraction
             activation_fn=torch.nn.ReLU,  # ReLU activation for stable gradients
-            log_std_init=-1,  # Lower initial std to encourage smaller actions
+            log_std_init=-2,  # Lower initial std to encourage smaller actions
         )
         #policy_kwargs=dict(activation_fn=th.nn.ReLU,
         #                   net_arch=[dict(pi=[500, 300], vf=[500, 300])])
