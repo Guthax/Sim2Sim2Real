@@ -8,7 +8,7 @@ environment_configs = {
     "carla_rgb": {
         "base_env": SelfCarlaEnv,
         "arguments": dict(
-            render=False
+            render=True
         ),
         "wrappers": [ResizeWrapper, CropWrapper, TimeLimit]
     },
