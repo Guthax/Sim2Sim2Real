@@ -18,6 +18,11 @@ class SelfCarlaEnv(gym.Env):
         self.client.set_timeout(20.0)
         self.world = self.client.load_world("Town02_opt")
 
+        settings = self.world.get_settings()
+        settings.fixed_delta_seconds = 1 / 60
+        settings.synchronous_mode = True
+        self.world.apply_settings(settings)
+        
         self.client.reload_world(False)  # reload map keeping the world settings
         self.world.unload_map_layer(carla.MapLayer.Buildings)
         self.world.unload_map_layer(carla.MapLayer.Decals)
