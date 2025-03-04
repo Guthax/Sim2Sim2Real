@@ -17,7 +17,7 @@ class DuckietownBaseDynamics(Simulator):
         self.obs_rgb_name = "camera_rgb"
         Simulator.__init__(self, **kwargs)
 
-        self.action_space = spaces.Box(low=np.array([-1]), high=np.array([1]), dtype=np.float32)
+        self.action_space = spaces.Box(low=np.float32(-1), high=np.float32(1))
 
         self.observation_space = spaces.Box(low=0, high=255, shape=(self.camera_height, self.camera_width, 3), dtype=np.uint8)
         # Should be adjusted so that the effective speed of the robot is 0.2 m/s
@@ -94,7 +94,9 @@ class DuckietownBaseDynamics(Simulator):
 
 
     def compute_reward(self, pos, angle, speed):
+        """
         try:
+
             lane_pos = self.get_lane_pos2(pos, angle)
 
             # Reward for being close to the center of the right lane
@@ -104,15 +106,24 @@ class DuckietownBaseDynamics(Simulator):
             direction_reward = lane_pos.dot_dir  # Higher when aligned with the lane
 
             # Penalize large misalignment (angle deviation from tangent)
-            angle_penalty = -abs(lane_pos.angle_deg) / 45.0  # Normalize to [-1, 0]
-
+            #angle_penalty = -abs(lane_pos.angle_deg) / 45.0  # Normalize to [-1, 0]
+            print(dist_penalty, direction_reward)
             # Compute total reward
-            reward = 1.0 + dist_penalty + direction_reward + angle_penalty
+            reward = 1.0 + dist_penalty + direction_reward # + angle_penalty
 
         except NotInLane:
             # Heavy penalty for going out of lane
             reward = -10.0
-        return reward
+        """
+        col_penalty = self.proximity_penalty2(pos, angle)
+
+        # Get the position relative to the right lane tangent
+        try:
+            lp = self.get_lane_pos2(pos, angle)
+            reward = +1.0  * lp.dot_dir + -10 * np.abs(lp.dist)
+            return reward
+        except NotInLane:
+            return -40
 
     def reset(self, seed = None, options = None, segment: bool = False):
         obs, _ = super().reset(seed, options, segment)
