@@ -1,3 +1,5 @@
+import math
+
 import gymnasium as gym
 import carla
 import numpy as np
@@ -7,7 +9,7 @@ import cv2
 from carla import LaneMarking
 from gymnasium import spaces
 
-from simulators.carla.misc import get_pos, get_lane_dis
+from simulators.carla.misc import get_pos, get_lane_dis, get_closest_waypoint
 from simulators.carla.route_planner import RoutePlanner
 
 
@@ -18,10 +20,10 @@ class SelfCarlaEnv(gym.Env):
         self.client.set_timeout(20.0)
         self.world = self.client.load_world("Town02_opt")
 
-        settings = self.world.get_settings()
-        settings.fixed_delta_seconds = 1 / 15
-        settings.synchronous_mode = True
-        self.world.apply_settings(settings)
+        #settings = self.world.get_settings()
+        #settings.fixed_delta_seconds = 1 / 15
+        #settings.synchronous_mode = True
+        #self.world.apply_settings(settings)
 
         self.client.reload_world(False)  # reload map keeping the world settings
         self.world.unload_map_layer(carla.MapLayer.Buildings)
@@ -167,6 +169,44 @@ class SelfCarlaEnv(gym.Env):
 
         return observation, reward, done, False, info
 
+    def compute_angle_to_point(self, waypoint_location):
+        """
+        Computes the angle between the ego vehicle's orientation and a target point.
+
+        :param vehicle: The ego vehicle (carla.Actor).
+        :param waypoint_location: The next waypoint as a carla.Location (x, y, z).
+        :return: Angle difference in degrees.
+        """
+        # Get vehicle transform
+        vehicle_transform = self.vehicle.get_transform()
+        vehicle_location = vehicle_transform.location
+        vehicle_yaw = math.radians(vehicle_transform.rotation.yaw)  # Convert to radians
+
+        # Compute vector from vehicle to waypoint
+        direction_vector = carla.Vector3D(
+            waypoint_location[0] - vehicle_location.x,
+            waypoint_location[1] - vehicle_location.y,
+            0  # Ignore Z difference for 2D orientation comparison
+        )
+
+        # Compute angle to waypoint in world coordinates
+        target_angle = math.atan2(direction_vector.y, direction_vector.x)
+
+        # Compute difference between vehicle yaw and target angle
+        angle_diff = math.degrees(target_angle) - math.degrees(vehicle_yaw)
+
+        # Normalize angle to range [-180, 180]
+        angle_diff = (angle_diff + 180) % 360 - 180
+
+        return angle_diff
+
+    def get_angle(self):
+        x, y =  get_pos(self.vehicle)
+        way_pt = get_closest_waypoint(self.waypoints, x, y)
+        angle = self.compute_angle_to_point(way_pt)
+        return angle
+
+
 
     def _calculate_reward(self):
         done = False
@@ -174,12 +214,15 @@ class SelfCarlaEnv(gym.Env):
         dist, w = get_lane_dis(self.waypoints, ego_x, ego_y)
         abs_dist = abs(dist)
 
+        #angle = self.get_angle()
+        #print(abs_dist, angle)
+
         # Reward function: Penalize larger distances, maximize at r=0
         max_penalty = -40  # Minimum reward when completely out of bounds
         max_reward = 1.0  # Maximum reward at r=0
 
-        reward = -5 * abs_dist
-
+        reward = 1 + -(abs_dist ** 2)
+        #print(reward)
         if abs_dist > 3.0:
             done = True
             reward = -20

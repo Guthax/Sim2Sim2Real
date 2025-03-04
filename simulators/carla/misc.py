@@ -122,6 +122,16 @@ def get_pixels_inside_vehicle(pixel_info, pixel_grid):
   return pixels
 
 
+def get_closest_waypoint(waypoints, x, y):
+  dis_min = 1000
+  waypt = waypoints[0]
+  for pt in waypoints:
+    d = np.sqrt((x - pt[0]) ** 2 + (y - pt[1]) ** 2)
+    if d < dis_min:
+      dis_min = d
+      waypt = pt
+  return waypt
+
 def get_lane_dis(waypoints, x, y):
   """
   Calculate distance from (x, y) to waypoints.
@@ -131,12 +141,7 @@ def get_lane_dis(waypoints, x, y):
   :return: a tuple of the distance and the closest waypoint orientation
   """
   dis_min = 1000
-  waypt = waypoints[0]
-  for pt in waypoints:
-    d = np.sqrt((x-pt[0])**2 + (y-pt[1])**2)
-    if d < dis_min:
-      dis_min = d
-      waypt=pt
+  waypt = get_closest_waypoint(waypoints,x,y)
   vec = np.array([x - waypt[0], y - waypt[1]])
   lv = np.linalg.norm(np.array(vec))
   w = np.array([np.cos(waypt[2]/180*np.pi), np.sin(waypt[2]/180*np.pi)])
