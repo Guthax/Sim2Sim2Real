@@ -45,7 +45,7 @@ class SelfCarlaEnv(gym.Env):
         self.lane_invasion_occured = False
         self.route_planner = None
 
-        self.action_space = spaces.Box(low=np.array([-1]), high=np.array([1]), dtype=np.float32)  # Only Steering
+        self.action_space = spaces.Box(low=np.float32(-1), high=np.float32(1))
         self.observation_space = spaces.Box(low=0, high=255, shape=(200, 400, 3),
                                             dtype=np.uint8)  # Example observation (image input)
 
@@ -179,7 +179,7 @@ class SelfCarlaEnv(gym.Env):
         #    life_time, False)
 
     def step(self, action):
-        steer = action[0]
+        steer = action
 
         #target_speed = 4.77778  # 20 m/s, you can change this to any desired speed
         #transform = self.vehicle.get_transform()
@@ -257,10 +257,10 @@ class SelfCarlaEnv(gym.Env):
         max_penalty = -10  # Minimum reward when completely out of bounds
         max_reward = 1.0  # Maximum reward at r=0
 
-        reward = 1 -abs_dist
+        reward = 1 - abs_dist
         #print(reward)
-        if abs_dist > 3.0:
-            reward = -abs_dist
+        #if abs_dist > 3.0:
+        #    reward = -abs_dist
             #reward = -5  # Heavy penalty for going out of bounds
 
         if self.collision_occurred:
