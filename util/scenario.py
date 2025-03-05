@@ -43,7 +43,7 @@ class Scenario:
             current_env = base_env
             for wrapper in wrappers:
                 if wrapper is TimeLimit:
-                    current_env = wrapper(current_env, 2000)
+                    current_env = wrapper(current_env, 10000)
                 else:
                     current_env = wrapper(current_env)
 
