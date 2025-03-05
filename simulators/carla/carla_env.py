@@ -57,8 +57,10 @@ class SelfCarlaEnv(gym.Env):
 
     def _setup_vehicle(self):
         spawn_points = self.world.get_map().get_spawn_points()
+        valid_spawn_point_indexes = [1, 2,3, 23,25, 26,27,28,29 ]
         for _ in range(10):  # Try up to 10 times to find a valid spawn point
-            spawn_point = random.choice(spawn_points)
+            spawn_point_index = random.choice(valid_spawn_point_indexes)
+            spawn_point = spawn_points[spawn_point_index]
             self.vehicle = self.world.try_spawn_actor(self.vehicle_bp, spawn_point)
             if self.vehicle is not None:
                 break
@@ -142,6 +144,9 @@ class SelfCarlaEnv(gym.Env):
         self.route_planner = RoutePlanner(self.vehicle, 12)
         self.waypoints, _, self.vehicle_front = self.route_planner.run_step()
 
+        if self.render_mode:
+            self._draw_points()
+
         start_time = time.time()
         while self.image is None:
             if time.time() - start_time > 2.0:  # Timeout after 2 seconds
@@ -151,10 +156,41 @@ class SelfCarlaEnv(gym.Env):
         obs = self.image if self.image is not None else np.zeros((84, 84, 3), dtype=np.uint8)
         return obs, {}
 
+    def _draw_points(self):
+        life_time = 10
+        for i in range(0, len(self.waypoints)-1):
+            w0 = self.waypoints[i]
+            w1 = self.waypoints[i+1]
+
+            w0 = carla.Location(w0[0], w0[1], 0.25)
+            w1 = carla.Location(w1[0], w1[1], 0.25)
+            self.world.debug.draw_line(
+                w0,
+                w1,
+                thickness=0.1, color=carla.Color(255, 0, 0),
+                life_time=life_time, persistent_lines=False)
+            self.world.debug.draw_point(
+                w0, 0.1,
+                carla.Color(0, 255, 0) if i == 0 else carla.Color(255, 0, 0),
+                life_time, False)
+        #self.world.debug.draw_point(
+        #    self.waypoints[-1][0], 0.1,
+        #    carla.Color(0, 0, 255),
+        #    life_time, False)
+
     def step(self, action):
         steer = action[0]
-        self.vehicle.apply_control(carla.VehicleControl(throttle=0.5, steer=float(steer)))  # Fixed speed of 30 kph
+
+        target_speed = 4.77778  # 20 m/s, you can change this to any desired speed
+        transform = self.vehicle.get_transform()
+        forward_vector = transform.get_forward_vector()
+        target_velocity = forward_vector * target_speed
+
+        # Set the target velocity (in the vehicle's local frame)
+        self.vehicle.apply_control(carla.VehicleControl(steer=float(steer)))  # Fixed speed of 30 kph
+        self.vehicle.set_target_velocity(target_velocity)
         self.world.tick()
+
         observation = self.image if self.image is not None else np.zeros((84, 84, 3), dtype=np.uint8)
         self.waypoints, _, self.vehicle_front = self.route_planner.run_step()
 
@@ -224,8 +260,7 @@ class SelfCarlaEnv(gym.Env):
         reward = 1 + -(abs_dist ** 2)
         #print(reward)
         if abs_dist > 3.0:
-            done = True
-            reward = -20
+            reward = -2 * (abs_dist ** 2)
             #reward = -5  # Heavy penalty for going out of bounds
 
         if self.collision_occurred:
@@ -236,20 +271,6 @@ class SelfCarlaEnv(gym.Env):
         return reward, done
 
         # Get vehicle transform and lane information
-        """
-        transform = self.vehicle.get_transform()
-        location = transform.location
-        waypoint = self.world.get_map().get_waypoint(location, project_to_road=True, lane_type=carla.LaneType.Driving)
-
-
-        lane_center = waypoint.transform.location
-        distance_from_center = abs(location.y - lane_center.y)  # Assuming y is lateral direction
-        print(f"Location(Lane, Vehicle) X: {location.x}, {lane_center.x}")
-        print(f"Location(Lane, Vehicle) Y: {location.y}, {lane_center.y}")
-        # Reward for staying in lane center
-        reward = max(0, 1.0 - (distance_from_center / 2.0))  # Normalize to 0-1 range
-        return reward
-        """
 
     def render(self, mode='human'):
         if self.image is not None:
