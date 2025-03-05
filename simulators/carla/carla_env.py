@@ -259,9 +259,9 @@ class SelfCarlaEnv(gym.Env):
 
         reward = 1 - abs_dist
         #print(reward)
-        #if abs_dist > 3.0:
-        #    reward = -abs_dist
-            #reward = -5  # Heavy penalty for going out of bounds
+        if abs_dist > 4.0:
+            done = True
+            reward = -5  # Heavy penalty for going out of bounds
 
         if self.collision_occurred:
             reward = max_penalty
