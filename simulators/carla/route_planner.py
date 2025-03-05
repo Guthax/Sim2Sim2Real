@@ -30,13 +30,15 @@ class RoadOption(Enum):
 
 
 class RoutePlanner():
-    def __init__(self, vehicle, buffer_size):
+    def __init__(self, vehicle, buffer_size, ignore_intersections=False):
         self._vehicle = vehicle
         self._world = self._vehicle.get_world()
         self._map = self._world.get_map()
 
         self._sampling_radius = 5
         self._min_distance = 4
+
+        self._ignore_intersections = ignore_intersections
 
         self._target_waypoint = None
         self._buffer_size = buffer_size
@@ -50,7 +52,9 @@ class RoutePlanner():
         self._last_traffic_light = None
         self._proximity_threshold = 15.0
 
+
         self._compute_next_waypoints(k=200)
+
 
     def _compute_next_waypoints(self, k=1):
         """
@@ -73,11 +77,18 @@ class RoutePlanner():
                 road_option = RoadOption.LANEFOLLOW
             else:
                 # random choice between the possible options
-                road_options_list = retrieve_options(
-                    next_waypoints, last_waypoint)
 
-                road_option = road_options_list[1]
-                # road_option = random.choice(road_options_list)
+                road_options_list = retrieve_options(next_waypoints, last_waypoint)
+
+                road_option = random.choice(road_options_list)
+                if self._ignore_intersections and len(road_options_list) > 1:
+                    preferred_options = ['STRAIGHT', 'LANE_FOLLOW']
+
+                    road_options_list = [option for option in road_options_list if option.name in preferred_options]
+                    if len(road_options_list) > 0:
+                        road_option = road_options_list[0]
+
+
 
                 next_waypoint = next_waypoints[road_options_list.index(
                     road_option)]
