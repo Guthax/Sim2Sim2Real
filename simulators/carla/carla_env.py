@@ -181,14 +181,14 @@ class SelfCarlaEnv(gym.Env):
     def step(self, action):
         steer = action[0]
 
-        target_speed = 4.77778  # 20 m/s, you can change this to any desired speed
-        transform = self.vehicle.get_transform()
-        forward_vector = transform.get_forward_vector()
-        target_velocity = forward_vector * target_speed
+        #target_speed = 4.77778  # 20 m/s, you can change this to any desired speed
+        #transform = self.vehicle.get_transform()
+        #forward_vector = transform.get_forward_vector()
+        #target_velocity = forward_vector * target_speed
 
         # Set the target velocity (in the vehicle's local frame)
-        self.vehicle.set_target_velocity(target_velocity)
-        self.vehicle.apply_control(carla.VehicleControl(steer=float(steer)))  # Fixed speed of 30 kph
+        #self.vehicle.set_target_velocity(target_velocity)
+        self.vehicle.apply_control(carla.VehicleControl(throttle=float(0.1), steer=float(steer)))  # Fixed speed of 30 kph
         self.world.tick()
 
         observation = self.image if self.image is not None else np.zeros((84, 84, 3), dtype=np.uint8)
