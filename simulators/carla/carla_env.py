@@ -196,7 +196,6 @@ class SelfCarlaEnv(gym.Env):
 
         # Calculate reward
         reward, done = self._calculate_reward()
-        print(reward, done)
         info = {}
 
         if self.render_mode:
