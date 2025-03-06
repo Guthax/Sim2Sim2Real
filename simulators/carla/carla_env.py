@@ -188,7 +188,22 @@ class SelfCarlaEnv(gym.Env):
 
         # Set the target velocity (in the vehicle's local frame)
         #self.vehicle.set_target_velocity(target_velocity)
-        self.vehicle.apply_control(carla.VehicleControl(throttle=float(0.5), steer=float(steer)))  # Fixed speed of 30 kph
+
+        target_speed = 8
+        velocity = self.vehicle.get_velocity()
+        current_speed = (velocity.x ** 2 + velocity.y ** 2 + velocity.z ** 2) ** 0.5  # Convert to m/s
+
+        # Simple proportional controller
+        if current_speed < target_speed:
+            throttle = min(0.5 + (target_speed - current_speed) * 0.1, 1.0)  # Increase throttle
+        else:
+            throttle = 0.0  # Cut throttle when speed is reached
+
+        control = carla.VehicleControl(throttle=throttle, steer=steer, brake=0.0)
+        self.vehicle.apply_control(control)
+
+
+        #self.vehicle.apply_control(carla.VehicleControl(throttle=float(0.5), steer=float(steer)))  # Fixed speed of 30 kph
         self.world.tick()
 
         observation = self.image if self.image is not None else np.zeros((84, 84, 3), dtype=np.uint8)
