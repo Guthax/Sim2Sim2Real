@@ -30,7 +30,7 @@ class RoadOption(Enum):
 
 
 class RoutePlanner():
-    def __init__(self, vehicle, buffer_size, ignore_intersections=False):
+    def __init__(self, vehicle, buffer_size, ignore_intersections=True):
         self._vehicle = vehicle
         self._world = self._vehicle.get_world()
         self._map = self._world.get_map()
@@ -84,8 +84,8 @@ class RoutePlanner():
                 if self._ignore_intersections and len(road_options_list) > 1:
                     preferred_options = ['STRAIGHT', 'LANE_FOLLOW']
 
-                    road_options_list = [option for option in road_options_list if option.name in preferred_options]
-                    if len(road_options_list) > 0:
+                    preferred_options_list = [option for option in road_options_list if option.name in preferred_options]
+                    if len(preferred_options_list) > 0:
                         road_option = road_options_list[0]
 
 
