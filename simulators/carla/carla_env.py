@@ -6,7 +6,7 @@ import numpy as np
 import random
 import time
 import cv2
-from carla import LaneMarking
+from carla import LaneMarking, CityObjectLabel
 from gymnasium import spaces
 
 from simulators.carla.misc import get_pos, get_lane_dis, get_closest_waypoint
@@ -26,6 +26,7 @@ class SelfCarlaEnv(gym.Env):
         #self.world.apply_settings(settings)
 
         self.client.reload_world(False)  # reload map keeping the world settings
+
         self.world.unload_map_layer(carla.MapLayer.Buildings)
         self.world.unload_map_layer(carla.MapLayer.Decals)
         self.world.unload_map_layer(carla.MapLayer.Foliage)
@@ -54,6 +55,14 @@ class SelfCarlaEnv(gym.Env):
         self.count_until_randomization = 0
         self.randomize_every_steps = 10000
 
+    def is_on_sidewalk(self):
+        """Checks if the vehicle is on a sidewalk using raycasting."""
+        location = self.vehicle.get_location()
+        ray_start = location + carla.Location(z=1.5)  # Start above the vehicle
+        ray_end = location + carla.Location(z=-1.5)  # Shoot downward
+
+        result = self.world.cast_ray(ray_start, ray_end)
+        return any([True for point in result if point.label == CityObjectLabel.Sidewalks])
 
     def _setup_vehicle(self):
         spawn_points = self.world.get_map().get_spawn_points()
@@ -111,14 +120,18 @@ class SelfCarlaEnv(gym.Env):
         self.world.set_weather(weather)
 
     def _on_collision(self, event):
-        print("Collision detected!")
+        #print("Collision detected!")
         self.collision_occurred = True
 
     def _on_lane_invasion(self, invasion_info):
         #penalized_lane_markings = [LaneMarking.Curb, LaneMarking.Grass, LaneMarking]
         types_crossed = [str(lane.type) for lane in invasion_info.crossed_lane_markings]
-        if 'Curb' in types_crossed or 'NONE' in types_crossed:
-            self.collision_occurred = True
+        colors_crossed = [str(lane.color) for lane in invasion_info.crossed_lane_markings]
+        permissions = [str(lane.lane_change) for lane in invasion_info.crossed_lane_markings]
+        widths = [str(lane.width) for lane in invasion_info.crossed_lane_markings]
+        #print(f"Lane invasion: {types_crossed},    {colors_crossed},    {permissions},   {widths}")
+        #if 'Curb' in types_crossed or 'NONE' in types_crossed:
+            #self.collision_occurred = True
 
     def _process_image(self, image):
         array = np.frombuffer(image.raw_data, dtype=np.uint8)
@@ -141,7 +154,7 @@ class SelfCarlaEnv(gym.Env):
         self.lane_invasion_occured = False
 
         self._setup_vehicle()
-        self.route_planner = RoutePlanner(self.vehicle, 12)
+        self.route_planner = RoutePlanner(self.vehicle, 50)
         self.waypoints, _, self.vehicle_front = self.route_planner.run_step()
 
         if self.render_mode:
@@ -157,7 +170,7 @@ class SelfCarlaEnv(gym.Env):
         return obs, {}
 
     def _draw_points(self):
-        life_time = 10
+        life_time = 30
         for i in range(0, len(self.waypoints)-1):
             w0 = self.waypoints[i]
             w1 = self.waypoints[i+1]
@@ -189,7 +202,7 @@ class SelfCarlaEnv(gym.Env):
         # Set the target velocity (in the vehicle's local frame)
         #self.vehicle.set_target_velocity(target_velocity)
 
-        target_speed = 8
+        target_speed = 5
         velocity = self.vehicle.get_velocity()
         current_speed = (velocity.x ** 2 + velocity.y ** 2 + velocity.z ** 2) ** 0.5  # Convert to m/s
 
@@ -267,20 +280,19 @@ class SelfCarlaEnv(gym.Env):
 
         #angle = self.get_angle()
         #print(abs_dist, angle)
-
-        # Reward function: Penalize larger distances, maximize at r=0
-        max_penalty = -10  # Minimum reward when completely out of bounds
-        max_reward = 1.0  # Maximum reward at r=0
+        penalty_big = -20
 
         reward = 1 - abs_dist
-        #print(reward)
-        if abs_dist > 4.0:
-            done = True
-            reward = -5  # Heavy penalty for going out of bounds
 
-        if self.collision_occurred:
-            reward = max_penalty
+        if self.is_on_sidewalk() or self.collision_occurred:
             done = True
+            return penalty_big
+
+        if abs_dist > 4.0:
+            reward =  -(abs_dist ** 2)  # Heavy penalty for going out of bounds
+
+        if abs_dist > 8.0:
+            done=True
 
 
         return reward, done
