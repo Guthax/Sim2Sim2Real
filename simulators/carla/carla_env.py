@@ -188,7 +188,7 @@ class SelfCarlaEnv(gym.Env):
 
         # Set the target velocity (in the vehicle's local frame)
         #self.vehicle.set_target_velocity(target_velocity)
-        self.vehicle.apply_control(carla.VehicleControl(throttle=float(0.1), steer=float(steer)))  # Fixed speed of 30 kph
+        self.vehicle.apply_control(carla.VehicleControl(throttle=float(0.5), steer=float(steer)))  # Fixed speed of 30 kph
         self.world.tick()
 
         observation = self.image if self.image is not None else np.zeros((84, 84, 3), dtype=np.uint8)
@@ -201,7 +201,7 @@ class SelfCarlaEnv(gym.Env):
         if self.render_mode:
             self.render()
 
-        self.count_until_randomization += 1
+        #self.count_until_randomization += 1
 
         return observation, reward, done, False, info
 
