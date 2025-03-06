@@ -288,8 +288,6 @@ class SelfCarlaEnv(gym.Env):
             done = True
             reward = penalty_big
 
-        if abs_dist > 4.0:
-            reward =  -(abs_dist ** 2)  # Heavy penalty for going out of bounds
 
         if abs_dist > 8.0:
             done=True
