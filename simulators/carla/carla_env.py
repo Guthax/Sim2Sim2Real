@@ -199,7 +199,7 @@ class SelfCarlaEnv(gym.Env):
         else:
             throttle = 0.0  # Cut throttle when speed is reached
 
-        control = carla.VehicleControl(throttle=throttle, steer=steer, brake=0.0)
+        control = carla.VehicleControl(throttle=float(throttle), steer=float(steer))
         self.vehicle.apply_control(control)
 
 
