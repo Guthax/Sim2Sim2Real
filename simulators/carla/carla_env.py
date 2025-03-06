@@ -78,7 +78,7 @@ class SelfCarlaEnv(gym.Env):
         self.actor_list.append(self.vehicle)
         self._setup_camera()
         self._setup_collision_sensor()
-        self._setup_lane_invasion_sensor()
+        #self._setup_lane_invasion_sensor()
 
     def _setup_camera(self):
         camera_bp = self.blueprint_library.find('sensor.camera.rgb')
@@ -122,7 +122,7 @@ class SelfCarlaEnv(gym.Env):
     def _on_collision(self, event):
         #print("Collision detected!")
         self.collision_occurred = True
-
+    """
     def _on_lane_invasion(self, invasion_info):
         #penalized_lane_markings = [LaneMarking.Curb, LaneMarking.Grass, LaneMarking]
         types_crossed = [str(lane.type) for lane in invasion_info.crossed_lane_markings]
@@ -132,7 +132,7 @@ class SelfCarlaEnv(gym.Env):
         #print(f"Lane invasion: {types_crossed},    {colors_crossed},    {permissions},   {widths}")
         #if 'Curb' in types_crossed or 'NONE' in types_crossed:
             #self.collision_occurred = True
-
+    """
     def _process_image(self, image):
         array = np.frombuffer(image.raw_data, dtype=np.uint8)
         array = array.reshape((image.height, image.width, 4))[:, :, :3]
@@ -286,7 +286,7 @@ class SelfCarlaEnv(gym.Env):
 
         if self.is_on_sidewalk() or self.collision_occurred:
             done = True
-            return penalty_big
+            reward = penalty_big
 
         if abs_dist > 4.0:
             reward =  -(abs_dist ** 2)  # Heavy penalty for going out of bounds
