@@ -154,7 +154,7 @@ class SelfCarlaEnv(gym.Env):
         self.lane_invasion_occured = False
 
         self._setup_vehicle()
-        self.route_planner = RoutePlanner(self.vehicle, 50)
+        self.route_planner = RoutePlanner(self.vehicle, 12)
         self.waypoints, _, self.vehicle_front = self.route_planner.run_step()
 
         if self.render_mode:
