@@ -56,13 +56,29 @@ class SelfCarlaEnv(gym.Env):
         self.randomize_every_steps = 10000
 
     def is_on_sidewalk(self):
-        """Checks if the vehicle is on a sidewalk using raycasting."""
+        """Checks if any part of the vehicle is on a sidewalk using map-based queries."""
         location = self.vehicle.get_location()
-        ray_start = location + carla.Location(z=1.5)  # Start above the vehicle
-        ray_end = location + carla.Location(z=-1.5)  # Shoot downward
+        bounding_box = self.vehicle.bounding_box
+        extent = bounding_box.extent
+        world_map = self.world.get_map()
 
-        result = self.world.cast_ray(ray_start, ray_end)
-        return any([True for point in result if point.label == CityObjectLabel.Sidewalks])
+        # Define key points around the vehicle
+        offsets = [
+            carla.Location(extent.x, extent.y, 0),  # Front-right
+            carla.Location(-extent.x, extent.y, 0),  # Rear-right
+            carla.Location(extent.x, -extent.y, 0),  # Front-left
+            carla.Location(-extent.x, -extent.y, 0),  # Rear-left
+            carla.Location(0, 0, 0)  # Center
+        ]
+
+        for offset in offsets:
+            world_pos = location + offset
+            waypoint = world_map.get_waypoint(world_pos, project_to_road=False)
+
+            if not waypoint or(waypoint and waypoint.lane_type == carla.LaneType.Sidewalk):
+                return True
+
+        return False
 
     def _setup_vehicle(self):
         spawn_points = self.world.get_map().get_spawn_points()
@@ -157,8 +173,8 @@ class SelfCarlaEnv(gym.Env):
         self.route_planner = RoutePlanner(self.vehicle, 12)
         self.waypoints, _, self.vehicle_front = self.route_planner.run_step()
 
-        if self.render_mode:
-            self._draw_points()
+        #if self.render_mode:
+        #    self._draw_points()
 
         start_time = time.time()
         while self.image is None:
