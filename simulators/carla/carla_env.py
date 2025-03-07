@@ -142,10 +142,10 @@ class SelfCarlaEnv(gym.Env):
         for actor in self.actor_list:
             actor.destroy()
 
-        #if self.count_until_randomization >= self.randomize_every_steps:
-        #    self._randomize_time_of_day()
-        #    self._randomize_weather()
-        #    self.count_until_randomization = 0
+        if self.count_until_randomization >= self.randomize_every_steps:
+            self._randomize_time_of_day()
+            self._randomize_weather()
+            self.count_until_randomization = 0
 
         self.actor_list = []
 
@@ -229,7 +229,7 @@ class SelfCarlaEnv(gym.Env):
         if self.render_mode:
             self.render()
 
-        #self.count_until_randomization += 1
+        self.count_until_randomization += 1
 
         return observation, reward, done, False, info
 
@@ -287,6 +287,7 @@ class SelfCarlaEnv(gym.Env):
         if self.is_on_sidewalk() or self.collision_occurred:
             done = True
             reward = penalty_big
+            print("BAD")
 
 
         if abs_dist > 8.0:
