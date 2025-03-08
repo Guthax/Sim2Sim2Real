@@ -145,7 +145,7 @@ class SelfCarlaEnv(gym.Env):
         #permissions = [str(lane.lane_change) for lane in invasion_info.crossed_lane_markings]
         #widths = [str(lane.width) for lane in invasion_info.crossed_lane_markings]
         #print(f"Lane invasion: {types_crossed},    {colors_crossed},    {permissions},   {widths}")
-        print(types_crossed)
+        #print(types_crossed)
         if 'Curb' in types_crossed or 'NONE' in types_crossed:
             self.collision_occurred = True
 
@@ -310,7 +310,7 @@ class SelfCarlaEnv(gym.Env):
 
         # Final reward sum
         reward = lane_reward + steer_penalty
-        print(reward)
+        #print(reward)
         return reward, done
 
 
