@@ -18,15 +18,15 @@ class SelfCarlaEnv(gym.Env):
         super(SelfCarlaEnv, self).__init__()
         self.client = carla.Client(host, port)
         self.client.set_timeout(20.0)
-        self.world = self.client.load_world("Town02_opt")
+        self.world = self.client.load_world("Town02")
 
         #settings = self.world.get_settings()
         #settings.fixed_delta_seconds = 1 / 15
         #settings.synchronous_mode = True
         #self.world.apply_settings(settings)
-
+        """
         self.client.reload_world(False)  # reload map keeping the world settings
-
+        
         self.world.unload_map_layer(carla.MapLayer.Buildings)
         self.world.unload_map_layer(carla.MapLayer.Decals)
         self.world.unload_map_layer(carla.MapLayer.Foliage)
@@ -35,7 +35,7 @@ class SelfCarlaEnv(gym.Env):
         self.world.unload_map_layer(carla.MapLayer.Props)
         self.world.unload_map_layer(carla.MapLayer.StreetLights)
         self.world.unload_map_layer(carla.MapLayer.Walls)
-
+        """
 
         self.blueprint_library = self.world.get_blueprint_library()
         self.vehicle_bp = self.blueprint_library.filter('model3')[0]
@@ -74,15 +74,14 @@ class SelfCarlaEnv(gym.Env):
         for offset in offsets:
             world_pos = location + offset
             waypoint = world_map.get_waypoint(world_pos, project_to_road=False)
-
-            if not waypoint or(waypoint and waypoint.lane_type == carla.LaneType.Sidewalk):
+            if waypoint and waypoint.lane_type == carla.LaneType.Sidewalk:
                 return True
 
         return False
 
     def _setup_vehicle(self):
         spawn_points = self.world.get_map().get_spawn_points()
-        valid_spawn_point_indexes = [1, 2,3, 23,25, 26,27,28,29 ]
+        valid_spawn_point_indexes = [1, 2,3, 6, 23,25, 26,27,28,29,32,33,36, 39,93, ]
         for _ in range(10):  # Try up to 10 times to find a valid spawn point
             spawn_point_index = random.choice(valid_spawn_point_indexes)
             spawn_point = spawn_points[spawn_point_index]
@@ -138,17 +137,17 @@ class SelfCarlaEnv(gym.Env):
     def _on_collision(self, event):
         #print("Collision detected!")
         self.collision_occurred = True
-    """
+
     def _on_lane_invasion(self, invasion_info):
         #penalized_lane_markings = [LaneMarking.Curb, LaneMarking.Grass, LaneMarking]
         types_crossed = [str(lane.type) for lane in invasion_info.crossed_lane_markings]
-        colors_crossed = [str(lane.color) for lane in invasion_info.crossed_lane_markings]
-        permissions = [str(lane.lane_change) for lane in invasion_info.crossed_lane_markings]
-        widths = [str(lane.width) for lane in invasion_info.crossed_lane_markings]
+        #colors_crossed = [str(lane.color) for lane in invasion_info.crossed_lane_markings]
+        #permissions = [str(lane.lane_change) for lane in invasion_info.crossed_lane_markings]
+        #widths = [str(lane.width) for lane in invasion_info.crossed_lane_markings]
         #print(f"Lane invasion: {types_crossed},    {colors_crossed},    {permissions},   {widths}")
-        #if 'Curb' in types_crossed or 'NONE' in types_crossed:
-            #self.collision_occurred = True
-    """
+        if 'Curb' in types_crossed or 'NONE' in types_crossed:
+            self.collision_occurred = True
+
     def _process_image(self, image):
         array = np.frombuffer(image.raw_data, dtype=np.uint8)
         array = array.reshape((image.height, image.width, 4))[:, :, :3]
@@ -286,31 +285,33 @@ class SelfCarlaEnv(gym.Env):
         angle = self.compute_angle_to_point(way_pt)
         return angle
 
-
-
     def _calculate_reward(self):
         done = False
         ego_x, ego_y = get_pos(self.vehicle)
         dist, w = get_lane_dis(self.waypoints, ego_x, ego_y)
         abs_dist = abs(dist)
 
-        #angle = self.get_angle()
-        #print(abs_dist, angle)
-        penalty_big = -20
+        # Encouraging staying in the lane (normalized reward)
+        lane_reward = max(0, 1 - (abs_dist / 8.0))
 
-        reward = 1 - abs_dist
+        # Penalizing excessive steering to encourage smooth actions
+        steer_penalty = -abs(self.vehicle.get_control().steer) * 0.1
 
-        if self.is_on_sidewalk() or self.collision_occurred:
+        # Collision and sidewalk penalties
+        if self.collision_occurred:
             done = True
-            reward = penalty_big
-            print("BAD")
+            return -50, done  # Strong crash penalty
 
+        # Terminate episode if too far from lane
+        if abs_dist > 5.0:
+            done = True
+            return -20, done
 
-        if abs_dist > 8.0:
-            done=True
-
-
+        # Final reward sum
+        reward = lane_reward + steer_penalty
+        print(reward)
         return reward, done
+
 
         # Get vehicle transform and lane information
 
