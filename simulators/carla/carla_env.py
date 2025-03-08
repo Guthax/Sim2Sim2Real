@@ -93,7 +93,7 @@ class SelfCarlaEnv(gym.Env):
         self.actor_list.append(self.vehicle)
         self._setup_camera()
         self._setup_collision_sensor()
-        #self._setup_lane_invasion_sensor()
+        self._setup_lane_invasion_sensor()
 
     def _setup_camera(self):
         camera_bp = self.blueprint_library.find('sensor.camera.rgb')
@@ -145,6 +145,7 @@ class SelfCarlaEnv(gym.Env):
         #permissions = [str(lane.lane_change) for lane in invasion_info.crossed_lane_markings]
         #widths = [str(lane.width) for lane in invasion_info.crossed_lane_markings]
         #print(f"Lane invasion: {types_crossed},    {colors_crossed},    {permissions},   {widths}")
+        print(types_crossed)
         if 'Curb' in types_crossed or 'NONE' in types_crossed:
             self.collision_occurred = True
 
