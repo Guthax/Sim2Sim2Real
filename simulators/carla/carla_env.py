@@ -81,7 +81,7 @@ class SelfCarlaEnv(gym.Env):
 
     def _setup_vehicle(self):
         spawn_points = self.world.get_map().get_spawn_points()
-        valid_spawn_point_indexes = [1, 2,3, 6, 23,25, 26,27,28,29,32,33,36, 39,93, ]
+        valid_spawn_point_indexes = [4,10, 15,17, 28, 35,36, 41, 43, 45, 89, 95, 97 ]
         for _ in range(10):  # Try up to 10 times to find a valid spawn point
             spawn_point_index = random.choice(valid_spawn_point_indexes)
             spawn_point = spawn_points[spawn_point_index]
@@ -293,7 +293,7 @@ class SelfCarlaEnv(gym.Env):
         abs_dist = abs(dist)
 
         # Encouraging staying in the lane (normalized reward)
-        lane_reward = max(0, 1 - (abs_dist / 5.0))
+        lane_reward = max(0, 1 - (abs_dist / 3.0))
 
         # Penalizing excessive steering to encourage smooth actions
         steer_penalty = -abs(self.vehicle.get_control().steer) * 0.1
@@ -314,13 +314,10 @@ class SelfCarlaEnv(gym.Env):
             reward = -abs_dist
             #print(reward)
             return reward, done
-        if abs_dist > 3.0:
-            done = True
-            #print(-2)
-            return -2, done
+
 
         # Final reward sum
-        reward = lane_reward + steer_penalty
+        reward = lane_reward # + steer_penalty
         #print(reward)
         return reward, done
 
