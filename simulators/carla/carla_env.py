@@ -18,13 +18,13 @@ class SelfCarlaEnv(gym.Env):
         super(SelfCarlaEnv, self).__init__()
         self.client = carla.Client(host, port)
         self.client.set_timeout(20.0)
-        self.world = self.client.load_world("Town02")
+        self.world = self.client.load_world("Town02_opt")
 
         #settings = self.world.get_settings()
         #settings.fixed_delta_seconds = 1 / 15
         #settings.synchronous_mode = True
         #self.world.apply_settings(settings)
-        """
+
         self.client.reload_world(False)  # reload map keeping the world settings
         
         self.world.unload_map_layer(carla.MapLayer.Buildings)
@@ -35,7 +35,7 @@ class SelfCarlaEnv(gym.Env):
         self.world.unload_map_layer(carla.MapLayer.Props)
         self.world.unload_map_layer(carla.MapLayer.StreetLights)
         self.world.unload_map_layer(carla.MapLayer.Walls)
-        """
+
 
         self.blueprint_library = self.world.get_blueprint_library()
         self.vehicle_bp = self.blueprint_library.filter('model3')[0]
@@ -53,7 +53,7 @@ class SelfCarlaEnv(gym.Env):
         self._setup_vehicle()
 
         self.count_until_randomization = 0
-        self.randomize_every_steps = 10000
+        self.randomize_every_steps = 50000
 
     def is_on_sidewalk(self):
         """Checks if any part of the vehicle is on a sidewalk using map-based queries."""
@@ -118,7 +118,7 @@ class SelfCarlaEnv(gym.Env):
         spawn_point = carla.Transform()
         self.invasion_sensor = self.world.spawn_actor(invasion_bp, spawn_point, attach_to=self.vehicle)
         self.actor_list.append(self.invasion_sensor)
-        self.invasion_sensor.listen(self._on_lane_invasion)
+        #self.invasion_sensor.listen(self._on_lane_invasion)
 
     def _randomize_weather(self):
         weather = carla.WeatherParameters(
@@ -293,7 +293,7 @@ class SelfCarlaEnv(gym.Env):
         abs_dist = abs(dist)
 
         # Encouraging staying in the lane (normalized reward)
-        lane_reward = max(0, 1 - (abs_dist / 8.0))
+        lane_reward = max(0, 1 - (abs_dist / 5.0))
 
         # Penalizing excessive steering to encourage smooth actions
         steer_penalty = -abs(self.vehicle.get_control().steer) * 0.1
@@ -301,12 +301,23 @@ class SelfCarlaEnv(gym.Env):
         # Collision and sidewalk penalties
         if self.collision_occurred:
             done = True
+            print(-50)
             return -50, done  # Strong crash penalty
 
         # Terminate episode if too far from lane
-        if abs_dist > 5.0:
+        if abs_dist > 3.0:
             done = True
-            return -20, done
+            #print(-2)
+            return -2, done
+
+        if abs_dist > 1.5:
+            reward = -abs_dist
+            #print(reward)
+            return reward, done
+        if abs_dist > 3.0:
+            done = True
+            #print(-2)
+            return -2, done
 
         # Final reward sum
         reward = lane_reward + steer_penalty
