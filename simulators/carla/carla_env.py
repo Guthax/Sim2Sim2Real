@@ -118,7 +118,7 @@ class SelfCarlaEnv(gym.Env):
         spawn_point = carla.Transform()
         self.invasion_sensor = self.world.spawn_actor(invasion_bp, spawn_point, attach_to=self.vehicle)
         self.actor_list.append(self.invasion_sensor)
-        #self.invasion_sensor.listen(self._on_lane_invasion)
+        self.invasion_sensor.listen(self._on_lane_invasion)
 
     def _randomize_weather(self):
         weather = carla.WeatherParameters(
@@ -146,8 +146,7 @@ class SelfCarlaEnv(gym.Env):
         #widths = [str(lane.width) for lane in invasion_info.crossed_lane_markings]
         #print(f"Lane invasion: {types_crossed},    {colors_crossed},    {permissions},   {widths}")
         #print(types_crossed)
-        if 'Curb' in types_crossed or 'NONE' in types_crossed:
-            self.collision_occurred = True
+        self.lane_invasion_occured = True
 
     def _process_image(self, image):
         array = np.frombuffer(image.raw_data, dtype=np.uint8)
@@ -293,7 +292,7 @@ class SelfCarlaEnv(gym.Env):
         abs_dist = abs(dist)
 
         # Encouraging staying in the lane (normalized reward)
-        lane_reward = max(0, 1 - (abs_dist / 3.0))
+        lane_reward = max(0, 1 - (abs_dist / 5.0))
 
         # Penalizing excessive steering to encourage smooth actions
         steer_penalty = -abs(self.vehicle.get_control().steer) * 0.1
@@ -305,16 +304,15 @@ class SelfCarlaEnv(gym.Env):
             return -50, done  # Strong crash penalty
 
         # Terminate episode if too far from lane
-        if abs_dist > 3.0:
+
+        if abs_dist > 5.0:
             done = True
-            #print(-2)
-            return -2, done
+            # print(-2)
+            return -10, done
 
-        if abs_dist > 1.5:
+        if self.lane_invasion_occured:
             reward = -abs_dist
-            #print(reward)
-            return reward, done
-
+            self.lane_invasion_occured = False
 
         # Final reward sum
         reward = lane_reward # + steer_penalty

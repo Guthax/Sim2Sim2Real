@@ -8,7 +8,7 @@ from stable_baselines3 import PPO
 
 import gymnasium as gym
 from stable_baselines3.common.logger import configure
-from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.vec_env import DummyVecEnv, VecFrameStack
 
 from evaluator import Evaluator
 from trainer import Trainer
@@ -43,7 +43,9 @@ class Scenario:
             current_env = base_env
             for wrapper in wrappers:
                 if wrapper is TimeLimit:
-                    current_env = wrapper(current_env, 10000)
+                    current_env = wrapper(current_env, 800)
+                elif wrapper is VecFrameStack:
+                    current_env = wrapper(current_env, 4)
                 else:
                     current_env = wrapper(current_env)
 
