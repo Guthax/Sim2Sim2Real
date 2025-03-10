@@ -53,7 +53,7 @@ class SelfCarlaEnv(gym.Env):
         self._setup_vehicle()
 
         self.count_until_randomization = 0
-        self.randomize_every_steps = 50000
+        self.randomize_every_steps = 20000
 
     def is_on_sidewalk(self):
         """Checks if any part of the vehicle is on a sidewalk using map-based queries."""
@@ -238,7 +238,8 @@ class SelfCarlaEnv(gym.Env):
         self.waypoints, _, self.vehicle_front = self.route_planner.run_step()
 
         # Calculate reward
-        reward, done = self._calculate_reward()
+        reward, done = self._get_reward_2()
+        print(reward)
         info = {}
 
         if self.render_mode:
@@ -321,6 +322,32 @@ class SelfCarlaEnv(gym.Env):
 
 
         # Get vehicle transform and lane information
+
+    def _get_reward_2(self):
+        done = False
+        ego_x, ego_y = get_pos(self.vehicle)
+        dist, w = get_lane_dis(self.waypoints, ego_x, ego_y)
+        abs_dist = abs(dist)
+        base_reward = 1 - abs_dist
+        if self.collision_occurred:
+            reward = base_reward - 100
+            return reward, True
+
+        if self.lane_invasion_occured:
+            reward = aaaaaaaaaaaa - 10
+            return reward, True
+
+
+        return base_reward, done
+
+    def _get_follow_waypoint_reward(self, location):
+        nearest_wp = self.world.get_map().get_waypoint(location, project_to_road=True)
+        distance = np.sqrt(
+            (location.x - nearest_wp.transform.location.x) ** 2 +
+            (location.y - nearest_wp.transform.location.y) ** 2
+        )
+        return - distance
+
 
     def render(self, mode='human'):
         if self.image is not None:
