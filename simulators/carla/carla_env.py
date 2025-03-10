@@ -239,7 +239,7 @@ class SelfCarlaEnv(gym.Env):
 
         # Calculate reward
         reward, done = self._get_reward_2()
-        print(reward)
+        #print(reward)
         info = {}
 
         if self.render_mode:
@@ -334,7 +334,7 @@ class SelfCarlaEnv(gym.Env):
             return reward, True
 
         if self.lane_invasion_occured:
-            reward = aaaaaaaaaaaa - 10
+            reward = base_reward - 10
             return reward, True
 
 
