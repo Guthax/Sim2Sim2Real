@@ -35,8 +35,8 @@ class RoutePlanner():
         self._world = self._vehicle.get_world()
         self._map = self._world.get_map()
 
-        self._sampling_radius = 5
-        self._min_distance = 4
+        self._sampling_radius = 0.5
+        self._min_distance = 2
 
         self._ignore_intersections = ignore_intersections
 
@@ -97,9 +97,8 @@ class RoutePlanner():
 
     def run_step(self):
         waypoints = self._get_waypoints()
-        red_light, vehicle_front = self._get_hazard()
         # red_light = False
-        return waypoints, red_light, vehicle_front
+        return waypoints
 
     def _get_waypoints(self):
         """
@@ -125,8 +124,7 @@ class RoutePlanner():
         waypoints = []
 
         for i, (waypoint, _) in enumerate(self._waypoint_buffer):
-            waypoints.append(
-                [waypoint.transform.location.x, waypoint.transform.location.y, waypoint.transform.rotation.yaw])
+            waypoints.append(waypoint)
 
         # current vehicle waypoint
         self._current_waypoint = self._map.get_waypoint(self._vehicle.get_location())
@@ -146,107 +144,6 @@ class RoutePlanner():
                 self._waypoint_buffer.popleft()
 
         return waypoints
-
-    def _get_hazard(self):
-        # retrieve relevant elements for safe navigation, i.e.: traffic lights
-        # and other vehicles
-        actor_list = self._world.get_actors()
-        vehicle_list = actor_list.filter("*vehicle*")
-        lights_list = actor_list.filter("*traffic_light*")
-
-        # check possible obstacles
-        vehicle_state = self._is_vehicle_hazard(vehicle_list)
-
-        # check for the state of the traffic lights
-        light_state = self._is_light_red_us_style(lights_list)
-
-        return light_state, vehicle_state
-
-    def _is_vehicle_hazard(self, vehicle_list):
-        """
-        Check if a given vehicle is an obstacle in our way. To this end we take
-        into account the road and lane the target vehicle is on and run a
-        geometry test to check if the target vehicle is under a certain distance
-        in front of our ego vehicle.
-
-        WARNING: This method is an approximation that could fail for very large
-         vehicles, which center is actually on a different lane but their
-         extension falls within the ego vehicle lane.
-
-        :param vehicle_list: list of potential obstacle to check
-        :return: a tuple given by (bool_flag, vehicle), where
-             - bool_flag is True if there is a vehicle ahead blocking us
-               and False otherwise
-             - vehicle is the blocker object itself
-        """
-
-        ego_vehicle_location = self._vehicle.get_location()
-        ego_vehicle_waypoint = self._map.get_waypoint(ego_vehicle_location)
-
-        for target_vehicle in vehicle_list:
-            # do not account for the ego vehicle
-            if target_vehicle.id == self._vehicle.id:
-                continue
-
-            # if the object is not in our lane it's not an obstacle
-            target_vehicle_waypoint = self._map.get_waypoint(target_vehicle.get_location())
-            if target_vehicle_waypoint.road_id != ego_vehicle_waypoint.road_id or \
-                    target_vehicle_waypoint.lane_id != ego_vehicle_waypoint.lane_id:
-                continue
-
-            loc = target_vehicle.get_location()
-            if is_within_distance_ahead(loc, ego_vehicle_location,
-                                        self._vehicle.get_transform().rotation.yaw,
-                                        self._proximity_threshold):
-                return True
-
-        return False
-
-    def _is_light_red_us_style(self, lights_list):
-        """
-        This method is specialized to check US style traffic lights.
-
-        :param lights_list: list containing TrafficLight objects
-        :return: a tuple given by (bool_flag, traffic_light), where
-             - bool_flag is True if there is a traffic light in RED
-               affecting us and False otherwise
-             - traffic_light is the object itself or None if there is no
-               red traffic light affecting us
-        """
-        ego_vehicle_location = self._vehicle.get_location()
-        ego_vehicle_waypoint = self._map.get_waypoint(ego_vehicle_location)
-
-        if ego_vehicle_waypoint.is_intersection:
-            # It is too late. Do not block the intersection! Keep going!
-            return False
-
-        if self._target_waypoint is not None:
-            if self._target_waypoint.is_intersection:
-                potential_lights = []
-                min_angle = 180.0
-                sel_magnitude = 0.0
-                sel_traffic_light = None
-                for traffic_light in lights_list:
-                    loc = traffic_light.get_location()
-                    magnitude, angle = compute_magnitude_angle(loc,
-                                                               ego_vehicle_location,
-                                                               self._vehicle.get_transform().rotation.yaw)
-                    if magnitude < 80.0 and angle < min(25.0, min_angle):
-                        sel_magnitude = magnitude
-                        sel_traffic_light = traffic_light
-                        min_angle = angle
-
-                if sel_traffic_light is not None:
-                    if self._last_traffic_light is None:
-                        self._last_traffic_light = sel_traffic_light
-
-                    if self._last_traffic_light.state == carla.libcarla.TrafficLightState.Red:
-                        return True
-                else:
-                    self._last_traffic_light = None
-
-        return False
-
 
 def retrieve_options(list_waypoints, current_waypoint):
     """
