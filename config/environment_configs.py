@@ -1,4 +1,5 @@
 from gymnasium.wrappers import TimeLimit
+from stable_baselines3.common.vec_env import VecFrameStack
 
 from envs.duckietown.base.duckietown import DuckietownBaseDynamics
 from simulators.carla.carla_env import SelfCarlaEnv
@@ -8,7 +9,7 @@ environment_configs = {
     "carla_rgb": {
         "base_env": SelfCarlaEnv,
         "arguments": dict(
-            render=True
+            render=False
         ),
         "wrappers": [ResizeWrapper, CropWrapper, TimeLimit]
     },
