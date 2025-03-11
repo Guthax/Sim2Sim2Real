@@ -43,7 +43,7 @@ class Scenario:
             current_env = base_env
             for wrapper in wrappers:
                 if wrapper is TimeLimit:
-                    current_env = wrapper(current_env, 800)
+                    current_env = wrapper(current_env, 1000)
                 elif wrapper is VecFrameStack:
                     current_env = wrapper(current_env, 4)
                 else:

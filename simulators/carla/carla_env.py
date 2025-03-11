@@ -6,10 +6,11 @@ import numpy as np
 import random
 import time
 import cv2
-from carla import LaneMarking, CityObjectLabel
+from carla import LaneMarking, CityObjectLabel, Waypoint
 from gymnasium import spaces
+from jedi.inference.arguments import repack_with_argument_clinic
 
-from simulators.carla.misc import get_pos, get_lane_dis, get_closest_waypoint
+from simulators.carla.misc import get_pos, get_closest_waypoint, get_next_waypoint, compute_angle
 from simulators.carla.route_planner import RoutePlanner
 
 
@@ -20,13 +21,13 @@ class SelfCarlaEnv(gym.Env):
         self.client.set_timeout(20.0)
         self.world = self.client.load_world("Town02_opt")
 
-        #settings = self.world.get_settings()
-        #settings.fixed_delta_seconds = 1 / 15
-        #settings.synchronous_mode = True
-        #self.world.apply_settings(settings)
-
+        settings = self.world.get_settings()
+        settings.fixed_delta_seconds = 0.05
+        settings.synchronous_mode = True
+        self.world.apply_settings(settings)
+        self.world.tick()
         self.client.reload_world(False)  # reload map keeping the world settings
-        
+        self.world.tick()
         self.world.unload_map_layer(carla.MapLayer.Buildings)
         self.world.unload_map_layer(carla.MapLayer.Decals)
         self.world.unload_map_layer(carla.MapLayer.Foliage)
@@ -55,29 +56,8 @@ class SelfCarlaEnv(gym.Env):
         self.count_until_randomization = 0
         self.randomize_every_steps = 20000
 
-    def is_on_sidewalk(self):
-        """Checks if any part of the vehicle is on a sidewalk using map-based queries."""
-        location = self.vehicle.get_location()
-        bounding_box = self.vehicle.bounding_box
-        extent = bounding_box.extent
-        world_map = self.world.get_map()
+        self.world.tick()
 
-        # Define key points around the vehicle
-        offsets = [
-            carla.Location(extent.x, extent.y, 0),  # Front-right
-            carla.Location(-extent.x, extent.y, 0),  # Rear-right
-            carla.Location(extent.x, -extent.y, 0),  # Front-left
-            carla.Location(-extent.x, -extent.y, 0),  # Rear-left
-            carla.Location(0, 0, 0)  # Center
-        ]
-
-        for offset in offsets:
-            world_pos = location + offset
-            waypoint = world_map.get_waypoint(world_pos, project_to_road=False)
-            if waypoint and waypoint.lane_type == carla.LaneType.Sidewalk:
-                return True
-
-        return False
 
     def _setup_vehicle(self):
         spawn_points = self.world.get_map().get_spawn_points()
@@ -91,6 +71,7 @@ class SelfCarlaEnv(gym.Env):
         if self.vehicle is None:
             raise RuntimeError("Failed to spawn vehicle after multiple attempts.")
         self.actor_list.append(self.vehicle)
+        self.world.tick()
         self._setup_camera()
         self._setup_collision_sensor()
         self._setup_lane_invasion_sensor()
@@ -161,17 +142,20 @@ class SelfCarlaEnv(gym.Env):
             self._randomize_time_of_day()
             self._randomize_weather()
             self.count_until_randomization = 0
-
+        self.image = np.zeros((200, 400, 3), dtype=np.uint8)
         self.actor_list = []
 
         self.collision_occurred = False
         self.offroad_occurred = False
         self.lane_invasion_occured = False
+        self.previous_steer = None
 
         self._setup_vehicle()
+        self.world.tick()
         self.route_planner = RoutePlanner(self.vehicle, 12)
-        self.waypoints, _, self.vehicle_front = self.route_planner.run_step()
+        self.waypoints = self.route_planner.run_step()
 
+        self.steps_alive = 0
         #if self.render_mode:
         #    self._draw_points()
 
@@ -180,8 +164,11 @@ class SelfCarlaEnv(gym.Env):
             if time.time() - start_time > 2.0:  # Timeout after 2 seconds
                 print("Warning: No image received from camera sensor.")
                 break
+        self.world.tick()
+        obs = self.image if self.image is not None else np.zeros((200, 400, 3), dtype=np.uint8)
+        if self.render_mode:
+            self.render()
 
-        obs = self.image if self.image is not None else np.zeros((84, 84, 3), dtype=np.uint8)
         return obs, {}
 
     def _draw_points(self):
@@ -190,8 +177,8 @@ class SelfCarlaEnv(gym.Env):
             w0 = self.waypoints[i]
             w1 = self.waypoints[i+1]
 
-            w0 = carla.Location(w0[0], w0[1], 0.25)
-            w1 = carla.Location(w1[0], w1[1], 0.25)
+            w0 = carla.Location(w0.location.x, w0.location.y, 0.25)
+            w1 = carla.Location(w1.location.x, w1.location.y, 0.25)
             self.world.debug.draw_line(
                 w0,
                 w1,
@@ -217,7 +204,7 @@ class SelfCarlaEnv(gym.Env):
         # Set the target velocity (in the vehicle's local frame)
         #self.vehicle.set_target_velocity(target_velocity)
 
-        target_speed = 5
+        target_speed = 5.5
         velocity = self.vehicle.get_velocity()
         current_speed = (velocity.x ** 2 + velocity.y ** 2 + velocity.z ** 2) ** 0.5  # Convert to m/s
 
@@ -235,11 +222,10 @@ class SelfCarlaEnv(gym.Env):
         self.world.tick()
 
         observation = self.image if self.image is not None else np.zeros((84, 84, 3), dtype=np.uint8)
-        self.waypoints, _, self.vehicle_front = self.route_planner.run_step()
+        self.waypoints = self.route_planner.run_step()
 
         # Calculate reward
-        reward, done = self._get_reward_2()
-        #print(reward)
+        reward, done = self._get_reward_new()
         info = {}
 
         if self.render_mode:
@@ -248,106 +234,113 @@ class SelfCarlaEnv(gym.Env):
         self.count_until_randomization += 1
 
         return observation, reward, done, False, info
+    """
+    def _get_reward(self):
+        # Get the lateral distance from the center of the lane
+        ego_loc = self.vehicle.get_transform().location
+        wpt = get_closest_waypoint(self.waypoints, ego_loc.x, ego_loc.y)
+        lane_distance, w = get_lane_dis(self.waypoints, ego_loc.x, ego_loc.y)  # Distance from lane center
+        lane_distance = abs(lane_distance)
+        #print(lane_distance)
 
-    def compute_angle_to_point(self, waypoint_location):
-        """
-        Computes the angle between the ego vehicle's orientation and a target point.
+        if lane_distance > 3:
+            return -10.0, True  # Large negative reward and terminate episode
 
-        :param vehicle: The ego vehicle (carla.Actor).
-        :param waypoint_location: The next waypoint as a carla.Location (x, y, z).
-        :return: Angle difference in degrees.
-        """
-        # Get vehicle transform
-        vehicle_transform = self.vehicle.get_transform()
-        vehicle_location = vehicle_transform.location
-        vehicle_yaw = math.radians(vehicle_transform.rotation.yaw)  # Convert to radians
+        # Reward for staying close to the lane center
+        lane_penalty = max(2.5 - lane_distance, 0)
 
-        # Compute vector from vehicle to waypoint
-        direction_vector = carla.Vector3D(
-            waypoint_location[0] - vehicle_location.x,
-            waypoint_location[1] - vehicle_location.y,
-            0  # Ignore Z difference for 2D orientation comparison
-        )
+        # Get the steering action applied
+        steer_value = self.vehicle.get_control().steer
 
-        # Compute angle to waypoint in world coordinates
-        target_angle = math.atan2(direction_vector.y, direction_vector.x)
 
-        # Compute difference between vehicle yaw and target angle
-        angle_diff = math.degrees(target_angle) - math.degrees(vehicle_yaw)
+        steer_change_penalty = -abs(steer_value - self.previous_steer) * 1.0 if self.previous_steer else 0
+        self.previous_steer = steer_value  # Update previous steering value
 
-        # Normalize angle to range [-180, 180]
-        angle_diff = (angle_diff + 180) % 360 - 180
+        angle = (self.vehicle.get_transform().rotation.yaw - wpt[2]) % 360
 
-        return angle_diff
+        print("HEADING ALIGNMENT: ", angle)
+        # Additional penalties for lane invasion
+        invasion_penalty = -3.0  if self.lane_invasion_occured else 0
 
-    def get_angle(self):
-        x, y =  get_pos(self.vehicle)
-        way_pt = get_closest_waypoint(self.waypoints, x, y)
-        angle = self.compute_angle_to_point(way_pt)
-        return angle
-
-    def _calculate_reward(self):
-        done = False
-        ego_x, ego_y = get_pos(self.vehicle)
-        dist, w = get_lane_dis(self.waypoints, ego_x, ego_y)
-        abs_dist = abs(dist)
-
-        # Encouraging staying in the lane (normalized reward)
-        lane_reward = max(0, 1 - (abs_dist / 5.0))
-
-        # Penalizing excessive steering to encourage smooth actions
-        steer_penalty = -abs(self.vehicle.get_control().steer) * 0.1
-
-        # Collision and sidewalk penalties
+        # Collision is heavily penalized
         if self.collision_occurred:
-            done = True
-            print(-50)
-            return -50, done  # Strong crash penalty
+            return -20.0, True  # Large negative reward and terminate episode
 
-        # Terminate episode if too far from lane
+        # Reward is a combination of staying in lane, smooth steering, and avoiding sudden changes
+        reward = 1 + lane_penalty + (0.1 * steer_change_penalty) + invasion_penalty
+        #print(
+        #    f"Lane penalty: {lane_penalty}, Steer change: {steer_change_penalty}, invasion_penalty: {invasion_penalty}, total: {reward}")
 
-        if abs_dist > 5.0:
-            done = True
-            # print(-2)
-            return -10, done
+        done = False  # The episode continues unless a collision occurs
 
-        if self.lane_invasion_occured:
-            reward = -abs_dist
-            self.lane_invasion_occured = False
-
-        # Final reward sum
-        reward = lane_reward # + steer_penalty
-        #print(reward)
         return reward, done
 
+    """
+    def _get_reward_new(self):
+        # Get the lateral distance from the center of the lane
+        ego_loc = self.vehicle.get_transform().location
+        waypt =  get_next_waypoint(self.waypoints, ego_loc.x, ego_loc.y, ego_loc.z)
+        if waypt is None:
+            waypt = get_closest_waypoint(self.waypoints, ego_loc.x, ego_loc.y, ego_loc.z)
+            #print("No wpt")
 
-        # Get vehicle transform and lane information
+        #self.world.debug.draw_point(
+        #    carla.Location(waypt.transform.location.x, waypt.transform.location.y, 0.25), 0.1,
+        #    carla.Color(255, 0, 0),
+        #    20, False)
 
-    def _get_reward_2(self):
-        done = False
-        ego_x, ego_y = get_pos(self.vehicle)
-        dist, w = get_lane_dis(self.waypoints, ego_x, ego_y)
-        abs_dist = abs(dist)
-        base_reward = 1 - abs_dist
+        lane_distance = abs(ego_loc.y - waypt.transform.location.y)
+        lane_penalty = max(2.5 - lane_distance, 0)
+
+        angle, dot_dir = compute_angle(ego_loc, waypt.transform.location, self.vehicle.get_transform().rotation.yaw)
+
+        # Get the steering action applied
+        #steer_value = self.vehicle.get_control().steer
+
+
+        #steer_change_penalty = -abs(steer_value - self.previous_steer) * 1.0 if self.previous_steer else 0
+        #self.previous_steer = steer_value  # Update previous steering value
+        invasion_penalty = 0
+
+        # Collision is heavily penalized
         if self.collision_occurred:
-            reward = base_reward - 100
+            return -20.0, True  # Large negative reward and terminate episode
+
+        # Reward is a combination of staying in lane, smooth steering, and avoiding sudden changes
+        reward = 1.0  + dot_dir - lane_distance + invasion_penalty
+        #print(f"dot dir: {dot_dir}, lane dist: {lane_distance}, invasion: {invasion_penalty}, total: {reward}")
+
+        if lane_distance > 3:
+            reward = reward - 10.0
             return reward, True
 
+        #print(
+        #    f"Lane penalty: {lane_penalty}, Steer change: {steer_change_penalty}, invasion_penalty: {invasion_penalty}, total: {reward}")
+
+
+        return reward, False
+
+    def _get_reward_live(self):
+
+        if self.collision_occurred:
+            done = True
+            reward = -100
+            return reward, done
         if self.lane_invasion_occured:
-            reward = base_reward - 10
-            return reward, True
+            done = True
+            reward = -20
+            return reward, done
 
+        reward = 1
+        if self.steps_alive > 100:
+            reward = 2
 
-        return base_reward, done
+        if self.steps_alive > 300:
+            reward = 3
 
-    def _get_follow_waypoint_reward(self, location):
-        nearest_wp = self.world.get_map().get_waypoint(location, project_to_road=True)
-        distance = np.sqrt(
-            (location.x - nearest_wp.transform.location.x) ** 2 +
-            (location.y - nearest_wp.transform.location.y) ** 2
-        )
-        return - distance
+        self.steps_alive += 1
 
+        return reward, False
 
     def render(self, mode='human'):
         if self.image is not None:

@@ -13,6 +13,7 @@ import math
 import numpy as np
 import carla
 import pygame
+from carla.libcarla import Location
 from matplotlib.path import Path
 import skimage
 
@@ -121,33 +122,89 @@ def get_pixels_inside_vehicle(pixel_info, pixel_grid):
   pixels = np.take(pixel_grid, isinPoly, axis=0)[0]
   return pixels
 
+def get_closest_waypoint(waypoints, x, y, z):
+  if not waypoints:
+    return None  # No waypoints available
 
-def get_closest_waypoint(waypoints, x, y):
-  dis_min = 1000
-  waypt = waypoints[0]
-  for pt in waypoints:
-    d = np.sqrt((x - pt[0]) ** 2 + (y - pt[1]) ** 2)
-    if d < dis_min:
-      dis_min = d
-      waypt = pt
-  return waypt
+  # Convert lists to numpy arrays for efficient computation
+  waypoints_array = np.array([[waypoint.transform.location.x, waypoint.transform.location.y, waypoint.transform.location.z] for waypoint in waypoints])
+  car_pos_array = np.array([x,y, z])
 
-def get_lane_dis(waypoints, x, y):
+  # Compute Euclidean distances from the car to all waypoints
+  distances = np.linalg.norm(waypoints_array - car_pos_array, axis=1)
+
+  # Get the index of the closest waypoint
+  closest_index = np.argmin(distances)
+
+  return waypoints[closest_index]
+
+
+def get_next_waypoint(waypoints, x, y, z):
   """
-  Calculate distance from (x, y) to waypoints.
-  :param waypoints: a list of list storing waypoints like [[x0, y0], [x1, y1], ...]
-  :param x: x position of vehicle
-  :param y: y position of vehicle
-  :return: a tuple of the distance and the closest waypoint orientation
+  Finds the next waypoint for a CARLA car based on its current position,
+  ensuring the waypoint is ahead of the car.
+
+  :param waypoints: List of waypoints [[x1, y1], [x2, y2], ...]
+  :param car_position: Current position of the car [x, y]
+  :return: The next waypoint [x, y] or None if no valid waypoint is ahead
   """
-  dis_min = 1000
-  waypt = get_closest_waypoint(waypoints,x,y)
-  vec = np.array([x - waypt[0], y - waypt[1]])
-  lv = np.linalg.norm(np.array(vec))
-  w = np.array([np.cos(waypt[2]/180*np.pi), np.sin(waypt[2]/180*np.pi)])
-  cross = np.cross(w, vec/lv)
-  dis = - lv * cross
-  return dis, w
+  if not waypoints:
+    return None  # No waypoints available
+
+  # Convert lists to numpy arrays for efficient computation
+  waypoints_array = np.array([[waypoint.transform.location.x, waypoint.transform.location.y] for waypoint in waypoints])
+  car_pos_array = np.array([x,y])
+
+  # Compute Euclidean distances from the car to all waypoints
+  distances = np.linalg.norm(waypoints_array - car_pos_array, axis=1)
+
+  # Get the index of the closest waypoint
+  closest_index = np.argmin(distances)
+
+  # Check forward waypoints only
+  for i in range(closest_index, len(waypoints)):
+    waypoint_location = waypoints[i].transform.location
+    waypoint_coordinates = np.array([waypoint_location.x, waypoint_location.y])
+    direction = waypoint_coordinates - car_pos_array
+
+    if np.dot(direction, waypoints_array[min(i + 1, len(waypoints) - 1)] - waypoint_coordinates) > 0:
+      return waypoints[i]  # First forward waypoint
+
+  return None  # No valid next waypoint found
+
+def get_distance(loc_1: Location, loc_2: Location):
+  return loc_2.distance(loc_2)
+
+def compute_angle(vehicle_location, waypoint_location, vehicle_yaw):
+  # Step 1: Compute direction vector from vehicle to waypoint
+  direction_vector = carla.Vector3D(
+    waypoint_location.x - vehicle_location.x,
+    waypoint_location.y - vehicle_location.y,
+    0.0  # Ignore Z-axis for 2D angle computation
+  )
+
+  # Normalize the direction vector
+  magnitude = math.sqrt(direction_vector.x ** 2 + direction_vector.y ** 2)
+  direction_vector.x /= magnitude
+  direction_vector.y /= magnitude
+
+  # Step 2: Compute vehicle's forward vector from yaw
+  vehicle_forward_vector = carla.Vector3D(
+    math.cos(math.radians(vehicle_yaw)),
+    math.sin(math.radians(vehicle_yaw)),
+    0.0
+  )
+
+  # Step 3: Compute dot product
+  dot_product = (vehicle_forward_vector.x * direction_vector.x +
+                 vehicle_forward_vector.y * direction_vector.y)
+
+  dot_product = np.clip(dot_product, -1.0, 1.0)
+  # Step 4: Compute angle in degrees
+  angle = math.degrees(math.acos(dot_product))
+
+  return angle, dot_product
+
 
 
 def get_preview_lane_dis(waypoints, x, y, idx=2):
