@@ -6,12 +6,14 @@ import numpy as np
 import random
 import time
 import cv2
+import torch
 from carla import LaneMarking, CityObjectLabel, Waypoint
 from gymnasium import spaces
 from jedi.inference.arguments import repack_with_argument_clinic
 
 from simulators.carla.misc import get_pos, get_closest_waypoint, get_next_waypoint, compute_angle
 from simulators.carla.route_planner import RoutePlanner
+from vae.models import VAE
 
 
 class SelfCarlaEnv(gym.Env):
@@ -20,7 +22,6 @@ class SelfCarlaEnv(gym.Env):
         self.client = carla.Client(host, port)
         self.client.set_timeout(20.0)
         self.world = self.client.load_world("Town02_opt")
-
         settings = self.world.get_settings()
         settings.fixed_delta_seconds = 0.05
         settings.synchronous_mode = True
@@ -54,7 +55,7 @@ class SelfCarlaEnv(gym.Env):
         self._setup_vehicle()
 
         self.count_until_randomization = 0
-        self.randomize_every_steps = 20000
+        self.randomize_every_steps = 200000
 
         self.world.tick()
 
@@ -103,10 +104,10 @@ class SelfCarlaEnv(gym.Env):
 
     def _randomize_weather(self):
         weather = carla.WeatherParameters(
-            cloudiness=random.uniform(0, 100),
-            precipitation=random.uniform(0, 100),
+            cloudiness=random.uniform(0, 60),
+            precipitation=random.uniform(0, 50),
             sun_altitude_angle=random.uniform(-90, 90),
-            fog_density=random.uniform(0, 100)
+            fog_density=random.uniform(0, 50)
         )
         self.world.set_weather(weather)
 

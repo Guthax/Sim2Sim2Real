@@ -43,7 +43,7 @@ class Scenario:
             current_env = base_env
             for wrapper in wrappers:
                 if wrapper is TimeLimit:
-                    current_env = wrapper(current_env, 1000)
+                    current_env = wrapper(current_env, 2000)
                 elif wrapper is VecFrameStack:
                     current_env = wrapper(current_env, 4)
                 else:
@@ -60,7 +60,11 @@ class Scenario:
                              save_path:str,
                              log_dir:str,
                              num_timesteps:int,
-                             num_checkpoints:int):
+                             num_checkpoints:int,
+                             checkpoint_path: str = None):
+        if checkpoint_path:
+            self._init_algorithm(checkpoint_path)
+
         training_env = self.environments[env_name]
         self.algorithm.set_env(training_env, True)
 

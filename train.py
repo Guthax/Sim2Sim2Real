@@ -8,6 +8,7 @@ parser.add_argument("-config_name", help="The name of the config to use.", type=
 parser.add_argument("-env_name", help="Environment to train on", type=str)
 parser.add_argument("-model_name", help="Model output name", type=str)
 parser.add_argument("-output", help="Output directory", type=str, default="results")
+parser.add_argument("-checkpoint_path", help="checkpoint path", type=str, default=None)
 parser.add_argument("-log_dir", help="Tensorboard logdirectory", type=str, default="tensorboard")
 parser.add_argument("-steps", help="timesteps to train", type=int, default=1000000)
 parser.add_argument("-checkpoints", help="amount of checkpoints", type=int, default=5)
@@ -22,7 +23,8 @@ scenario.train_on_environment(args.env_name,
                               args.output,
                               args.log_dir,
                               args.steps,
-                              args.checkpoints)
+                              args.checkpoints,
+                              args.checkpoint_path)
 
 # python train.py -config_name scenario_1 -env_name duckietown -model_name duckietown_rgb_cnn
 
