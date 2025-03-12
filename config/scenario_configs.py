@@ -72,6 +72,20 @@ _CONFIG_PPO_MULTI_DUCKIETOWN_RGB_CANNY_STEER = {
     }
 }
 
+
+CONFIG_PPO_CARLA_CANNY = {
+    "name": "carla_canny",
+    "algorithm": "PPO",
+    "algorithm_policy_network": "CnnPolicy",
+    "algorithm_hyperparams": algorithm_params["PPO"],
+    "observation_space": gym.spaces.Box(low=0, high=255, shape=(80, 160, 1), dtype=np.uint8),
+        "action_space": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
+    "environments": {
+        "carla": environment_configs["carla_canny"]
+    }
+}
+
+
 _CONFIG_PPO_MULTI_CARLA_DUCKIETOWN_RGB_STEER = {
     "name": "scenario_1",
     "algorithm": "PPO",
@@ -86,7 +100,7 @@ _CONFIG_PPO_MULTI_CARLA_DUCKIETOWN_RGB_STEER = {
 }
 
 
-configs = [_CONFIG_PPO_CNN_CARLA_RGB_STEER, NEW, _CONFIG_PPO_CNN_DUCKIETOWN_RGB_STEER, _CONFIG_PPO_CNN_DUCKIETOWN_RGB_STEER_RAND, _CONFIG_PPO_MULTI_DUCKIETOWN_RGB_CANNY_STEER, _CONFIG_PPO_MULTI_CARLA_DUCKIETOWN_RGB_STEER]
+configs = [_CONFIG_PPO_CNN_CARLA_RGB_STEER,CONFIG_PPO_CARLA_CANNY, NEW, _CONFIG_PPO_CNN_DUCKIETOWN_RGB_STEER, _CONFIG_PPO_CNN_DUCKIETOWN_RGB_STEER_RAND, _CONFIG_PPO_MULTI_DUCKIETOWN_RGB_CANNY_STEER, _CONFIG_PPO_MULTI_CARLA_DUCKIETOWN_RGB_STEER]
 
 def get_config_by_name(name: str):
     return next((item for item in configs if item['name'] == name), None)

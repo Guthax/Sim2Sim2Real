@@ -41,13 +41,12 @@ class Scenario:
             wrappers = value["wrappers"]
 
             current_env = base_env
-            for wrapper in wrappers:
-                if wrapper is TimeLimit:
-                    current_env = wrapper(current_env, 1000)
-                elif wrapper is VecFrameStack:
-                    current_env = wrapper(current_env, 4)
+            for (wrapper, params) in wrappers:
+                if params:
+                    current_env = wrapper(current_env, **params)
                 else:
                     current_env = wrapper(current_env)
+                print(current_env.observation_space, current_env.action_space)
 
             if current_env.observation_space == self.config["observation_space"] and current_env.action_space == self.config["action_space"]:
                 self.environments[key] = current_env
