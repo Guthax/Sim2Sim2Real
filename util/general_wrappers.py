@@ -71,8 +71,10 @@ class CropWrapper(gym.ObservationWrapper):
     def __init__(self, env=None,):
         gym.ObservationWrapper.__init__(self, env)
 
-        self.observation_space = spaces.Box(low=0, high=255, shape=(80, 160, 3), dtype=np.uint8)
+        self.observation_space = spaces.Box(low=0, high=255, shape=(60, 160, 3), dtype=np.uint8)
 
     def observation(self, observation):
-        cropped = observation[40:120, :160, :]
+        cropped = observation[60:120, :160, :]
+        cv2.imshow("test", cropped)
+        cv2.waitKey(1)
         return cropped
