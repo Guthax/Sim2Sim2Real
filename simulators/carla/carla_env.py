@@ -17,7 +17,7 @@ from vae.models import VAE
 
 
 class SelfCarlaEnv(gym.Env):
-    def __init__(self, host='localhost', port=2000, render=False):
+    def __init__(self, host='localhost', port=2000, domain_randomization_steps = None, render=False):
         super(SelfCarlaEnv, self).__init__()
         self.client = carla.Client(host, port)
         self.client.set_timeout(20.0)
@@ -55,7 +55,7 @@ class SelfCarlaEnv(gym.Env):
         self._setup_vehicle()
 
         self.count_until_randomization = 0
-        self.randomize_every_steps = 200000
+        self.randomize_every_steps = domain_randomization_steps
 
         self.world.tick()
 
@@ -139,10 +139,10 @@ class SelfCarlaEnv(gym.Env):
         for actor in self.actor_list:
             actor.destroy()
 
-        #if self.count_until_randomization >= self.randomize_every_steps:
-        #    self._randomize_time_of_day()
-        #    self._randomize_weather()
-        #    self.count_until_randomization = 0
+        if self.count_until_randomization >= self.randomize_every_steps:
+            self._randomize_time_of_day()
+            self._randomize_weather()
+            self.count_until_randomization = 0
         self.image = np.zeros((200, 400, 3), dtype=np.uint8)
         self.actor_list = []
 
@@ -296,11 +296,10 @@ class SelfCarlaEnv(gym.Env):
         angle, dot_dir = compute_angle(ego_loc, waypt.transform.location, self.vehicle.get_transform().rotation.yaw)
 
         # Get the steering action applied
-        #steer_value = self.vehicle.get_control().steer
+        steer_value = self.vehicle.get_control().steer
+        steer_change_penalty = -abs(steer_value - self.previous_steer) * 1.0 if self.previous_steer else 0
+        self.previous_steer = steer_value  # Update previous steering value
 
-
-        #steer_change_penalty = -abs(steer_value - self.previous_steer) * 1.0 if self.previous_steer else 0
-        #self.previous_steer = steer_value  # Update previous steering value
         invasion_penalty = 0
 
         # Collision is heavily penalized
@@ -308,7 +307,7 @@ class SelfCarlaEnv(gym.Env):
             return -20.0, True  # Large negative reward and terminate episode
 
         # Reward is a combination of staying in lane, smooth steering, and avoiding sudden changes
-        reward = 1.0  + dot_dir - lane_distance + invasion_penalty
+        reward = 1.0  + dot_dir - lane_distance + steer_change_penalty + invasion_penalty
         #print(f"dot dir: {dot_dir}, lane dist: {lane_distance}, invasion: {invasion_penalty}, total: {reward}")
 
         if lane_distance > 3:

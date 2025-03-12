@@ -9,6 +9,7 @@ environment_configs = {
     "carla_rgb": {
         "base_env": SelfCarlaEnv,
         "arguments": dict(
+            domain_randomization_steps = 200000,
             render=False
         ),
         "wrappers": [ResizeWrapper, CropWrapper, TimeLimit]
