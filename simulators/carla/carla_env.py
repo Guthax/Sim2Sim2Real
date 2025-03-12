@@ -139,10 +139,10 @@ class SelfCarlaEnv(gym.Env):
         for actor in self.actor_list:
             actor.destroy()
 
-        if self.count_until_randomization >= self.randomize_every_steps:
-            self._randomize_time_of_day()
-            self._randomize_weather()
-            self.count_until_randomization = 0
+        #if self.count_until_randomization >= self.randomize_every_steps:
+        #    self._randomize_time_of_day()
+        #    self._randomize_weather()
+        #    self.count_until_randomization = 0
         self.image = np.zeros((200, 400, 3), dtype=np.uint8)
         self.actor_list = []
 
