@@ -54,7 +54,7 @@ class SelfCarlaEnv(gym.Env):
         self._setup_vehicle()
 
         self.count_until_randomization = 0
-        self.randomize_every_steps = 20000
+        self.randomize_every_steps = 50000
 
         self.world.tick()
 
@@ -103,16 +103,11 @@ class SelfCarlaEnv(gym.Env):
 
     def _randomize_weather(self):
         weather = carla.WeatherParameters(
-            cloudiness=random.uniform(0, 100),
-            precipitation=random.uniform(0, 100),
+            cloudiness=random.uniform(0, 50),
+            precipitation=0,
             sun_altitude_angle=random.uniform(-90, 90),
-            fog_density=random.uniform(0, 100)
+            fog_density=0
         )
-        self.world.set_weather(weather)
-
-    def _randomize_time_of_day(self):
-        weather = self.world.get_weather()
-        weather.sun_altitude_angle = random.uniform(-90, 90)
         self.world.set_weather(weather)
 
     def _on_collision(self, event):
@@ -138,10 +133,9 @@ class SelfCarlaEnv(gym.Env):
         for actor in self.actor_list:
             actor.destroy()
 
-        #if self.count_until_randomization >= self.randomize_every_steps:
-        #    self._randomize_time_of_day()
-        #    self._randomize_weather()
-        #    self.count_until_randomization = 0
+        if self.count_until_randomization >= self.randomize_every_steps:
+            self._randomize_weather()
+            self.count_until_randomization = 0
         self.image = np.zeros((200, 400, 3), dtype=np.uint8)
         self.actor_list = []
 
