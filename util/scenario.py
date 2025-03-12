@@ -53,20 +53,22 @@ class Scenario:
             else:
                 raise NotCompatibleEnvironmentException()
 
-
     def train_on_environment(self, env_name: str,
-                             model_name:str,
-                             save_path:str,
-                             log_dir:str,
-                             num_timesteps:int,
-                             num_checkpoints:int):
+                             model_name: str,
+                             save_path: str,
+                             log_dir: str,
+                             num_timesteps: int,
+                             num_checkpoints: int,
+                             checkpoint_path: str = None):
+        if checkpoint_path:
+            self._init_algorithm(checkpoint_path)
+
         training_env = self.environments[env_name]
         self.algorithm.set_env(training_env, True)
 
         trainer = Trainer(self.algorithm)
 
         num_timesteps = num_timesteps
-
 
         model_name = model_name
         log_model_dir = os.path.join(log_dir, model_name)
@@ -78,7 +80,6 @@ class Scenario:
         tb = [TensorboardCallback(1)]
 
         trainer.train(model_name, num_timesteps, num_checkpoints, save_path, tb)
-
 
     def evaluate_on_environment(self, env_name, model_path, render_grad_cam=True):
         self._init_algorithm(model_path)
