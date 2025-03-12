@@ -19,7 +19,7 @@ environment_configs = {
         "base_env": DuckietownBaseDynamics,
         "arguments": dict(
             render_img=True,
-            randomize_maps_on_reset=True,
+            randomize_maps_on_reset=False,
         ),
         "wrappers": [ResizeWrapper, CropWrapper, TimeLimit]
     },
