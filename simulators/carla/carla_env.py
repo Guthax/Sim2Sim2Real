@@ -24,10 +24,12 @@ class SelfCarlaEnv(gym.Env):
         settings = self.world.get_settings()
         settings.fixed_delta_seconds = 0.05
         settings.synchronous_mode = True
+        
         self.world.apply_settings(settings)
         self.world.tick()
         self.client.reload_world(False)  # reload map keeping the world settings
         self.world.tick()
+        """
         self.world.unload_map_layer(carla.MapLayer.Buildings)
         self.world.unload_map_layer(carla.MapLayer.Decals)
         self.world.unload_map_layer(carla.MapLayer.Foliage)
@@ -36,7 +38,7 @@ class SelfCarlaEnv(gym.Env):
         self.world.unload_map_layer(carla.MapLayer.Props)
         self.world.unload_map_layer(carla.MapLayer.StreetLights)
         self.world.unload_map_layer(carla.MapLayer.Walls)
-
+        """
 
         self.blueprint_library = self.world.get_blueprint_library()
         self.vehicle_bp = self.blueprint_library.filter('model3')[0]
@@ -78,8 +80,8 @@ class SelfCarlaEnv(gym.Env):
 
     def _setup_camera(self):
         camera_bp = self.blueprint_library.find('sensor.camera.rgb')
-        camera_bp.set_attribute('image_size_x', '400')
-        camera_bp.set_attribute('image_size_y', '200')
+        camera_bp.set_attribute('image_size_x', '640')
+        camera_bp.set_attribute('image_size_y', '640')
         camera_bp.set_attribute('fov', '90')
         spawn_point = carla.Transform(carla.Location(x=1.5, z=2.0))
         self.camera = self.world.spawn_actor(camera_bp, spawn_point, attach_to=self.vehicle)
@@ -136,7 +138,7 @@ class SelfCarlaEnv(gym.Env):
         if self.count_until_randomization >= self.randomize_every_steps:
             self._randomize_weather()
             self.count_until_randomization = 0
-        self.image = np.zeros((200, 400, 3), dtype=np.uint8)
+        self.image = np.zeros((640, 640, 3), dtype=np.uint8)
         self.actor_list = []
 
         self.collision_occurred = False
@@ -215,7 +217,7 @@ class SelfCarlaEnv(gym.Env):
         #self.vehicle.apply_control(carla.VehicleControl(throttle=float(0.5), steer=float(steer)))  # Fixed speed of 30 kph
         self.world.tick()
 
-        observation = self.image if self.image is not None else np.zeros((84, 84, 3), dtype=np.uint8)
+        observation = self.image if self.image is not None else np.zeros((640, 640, 3), dtype=np.uint8)
         self.waypoints = self.route_planner.run_step()
 
         # Calculate reward

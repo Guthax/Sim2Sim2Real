@@ -17,6 +17,30 @@ _CONFIG_CARLA = {
     }
 }
 
+_CONFIG_CARLA_CANNY = {
+    "name": "carla_canny",
+    "algorithm": "PPO",
+    "algorithm_policy_network": "CnnPolicy",
+    "algorithm_hyperparams": algorithm_params["PPO"],
+    "observation_space": gym.spaces.Box(low=0, high=255, shape=(60, 160, 1), dtype=np.uint8),
+    "action_space": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
+    "environments": {
+        "carla": environment_configs["carla_canny"],
+    }
+}
+
+_CONFIG_CARLA_LANE_DETECT = {
+    "name": "carla_lane_detect",
+    "algorithm": "PPO",
+    "algorithm_policy_network": "CnnPolicy",
+    "algorithm_hyperparams": algorithm_params["PPO"],
+    "observation_space": gym.spaces.Box(low=0, high=255, shape=(120, 120, 3), dtype=np.uint8),
+    "action_space": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
+    "environments": {
+        "carla": environment_configs["carla_lane_detect"],
+    }
+}
+
 
 _CONFIG_DUCKIE = {
     "name": "duckie",
@@ -32,7 +56,7 @@ _CONFIG_DUCKIE = {
 
 
 
-configs = [_CONFIG_CARLA, _CONFIG_DUCKIE]
+configs = [_CONFIG_CARLA,_CONFIG_CARLA_LANE_DETECT, _CONFIG_CARLA_CANNY, _CONFIG_DUCKIE]
 
 def get_config_by_name(name: str):
     return next((item for item in configs if item['name'] == name), None)
