@@ -42,10 +42,15 @@ class DuckietownBaseDynamics(Simulator):
         self.avg_center_dev = 0
         self.avg_speed = 0
 
+        self.previous_steer = None
+        self.current_action = None
+
 
     def step(self, action):
         # Ensure the steering angle is within the valid range
         steering_angle = max(-1, min(1, action))
+
+        self.current_action = steering_angle
 
         # Map the steering angle to wheel velocities
         left_wheel_velocity = 0.25 * (2 + steering_angle)
@@ -120,14 +125,20 @@ class DuckietownBaseDynamics(Simulator):
         # Get the position relative to the right lane tangent
         try:
             lp = self.get_lane_pos2(pos, angle)
-            reward = +1.0  * lp.dot_dir + -10 * np.abs(lp.dist)
+
+            steer_change_penalty = -abs(self.current_action - self.previous_steer) * 1.0 if self.previous_steer and self.current_action else 0
+            self.previous_steer = self.current_action
+
+            reward = 1.0  + lp.dot_dir - np.abs(lp.dist) + steer_change_penalty
             return reward
         except NotInLane:
-            return -40
+            return -20
 
     def reset(self, seed = None, options = None, segment: bool = False):
         obs, _ = super().reset(seed, options, segment)
         obs = cv2.cvtColor(obs, cv2.COLOR_BGR2RGB)
+        self.previous_steer = None
+        self.current_action = None
         return obs, {}
 
     def render_obs(self, segment: bool = False):
