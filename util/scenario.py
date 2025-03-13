@@ -12,7 +12,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv, VecFrameStack
 
 from evaluator import Evaluator
 from trainer import Trainer
-from utils import TensorboardCallback, write_json
+from utils import TensorboardCallback, write_json, lr_schedule
 
 
 class Scenario:
@@ -32,7 +32,12 @@ class Scenario:
                                  device='cuda' if torch.cuda.is_available() else 'cpu',
                                  **self.config["algorithm_hyperparams"])
         else:
-            self.algorithm = PPO.load(model_path, device='cuda' if torch.cuda.is_available() else 'cpu')
+            self.algorithm = PPO.load(model_path,
+                                      custom_objects = dict(
+                                          learning_rate = lr_schedule(1e-4, 5e-5, 2),
+                                          clip_range = 0.1
+                                      ),
+                                      device='cuda' if torch.cuda.is_available() else 'cpu')
 
     def _init_environments(self):
 
@@ -41,33 +46,34 @@ class Scenario:
             wrappers = value["wrappers"]
 
             current_env = base_env
-            for wrapper in wrappers:
-                if wrapper is TimeLimit:
-                    current_env = wrapper(current_env, 1000)
-                elif wrapper is VecFrameStack:
-                    current_env = wrapper(current_env, 4)
+            for (wrapper, params) in wrappers:
+                if params:
+                    current_env = wrapper(current_env, **params)
                 else:
                     current_env = wrapper(current_env)
+                print(current_env.observation_space, current_env.action_space)
 
             if current_env.observation_space == self.config["observation_space"] and current_env.action_space == self.config["action_space"]:
                 self.environments[key] = current_env
             else:
                 raise NotCompatibleEnvironmentException()
 
-
     def train_on_environment(self, env_name: str,
-                             model_name:str,
-                             save_path:str,
-                             log_dir:str,
-                             num_timesteps:int,
-                             num_checkpoints:int):
+                             model_name: str,
+                             save_path: str,
+                             log_dir: str,
+                             num_timesteps: int,
+                             num_checkpoints: int,
+                             checkpoint_path: str = None):
+        if checkpoint_path:
+            self._init_algorithm(checkpoint_path)
+
         training_env = self.environments[env_name]
         self.algorithm.set_env(training_env, True)
 
         trainer = Trainer(self.algorithm)
 
         num_timesteps = num_timesteps
-
 
         model_name = model_name
         log_model_dir = os.path.join(log_dir, model_name)
@@ -79,7 +85,6 @@ class Scenario:
         tb = [TensorboardCallback(1)]
 
         trainer.train(model_name, num_timesteps, num_checkpoints, save_path, tb)
-
 
     def evaluate_on_environment(self, env_name, model_path, render_grad_cam=True):
         self._init_algorithm(model_path)

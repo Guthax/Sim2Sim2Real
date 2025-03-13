@@ -54,7 +54,7 @@ class SelfCarlaEnv(gym.Env):
         self._setup_vehicle()
 
         self.count_until_randomization = 0
-        self.randomize_every_steps = 20000
+        self.randomize_every_steps = 50000
 
         self.world.tick()
 
@@ -103,16 +103,11 @@ class SelfCarlaEnv(gym.Env):
 
     def _randomize_weather(self):
         weather = carla.WeatherParameters(
-            cloudiness=random.uniform(0, 100),
-            precipitation=random.uniform(0, 100),
+            cloudiness=random.uniform(0, 50),
+            precipitation=0,
             sun_altitude_angle=random.uniform(-90, 90),
-            fog_density=random.uniform(0, 100)
+            fog_density=0
         )
-        self.world.set_weather(weather)
-
-    def _randomize_time_of_day(self):
-        weather = self.world.get_weather()
-        weather.sun_altitude_angle = random.uniform(-90, 90)
         self.world.set_weather(weather)
 
     def _on_collision(self, event):
@@ -139,7 +134,6 @@ class SelfCarlaEnv(gym.Env):
             actor.destroy()
 
         if self.count_until_randomization >= self.randomize_every_steps:
-            self._randomize_time_of_day()
             self._randomize_weather()
             self.count_until_randomization = 0
         self.image = np.zeros((200, 400, 3), dtype=np.uint8)
@@ -295,11 +289,9 @@ class SelfCarlaEnv(gym.Env):
         angle, dot_dir = compute_angle(ego_loc, waypt.transform.location, self.vehicle.get_transform().rotation.yaw)
 
         # Get the steering action applied
-        #steer_value = self.vehicle.get_control().steer
-
-
-        #steer_change_penalty = -abs(steer_value - self.previous_steer) * 1.0 if self.previous_steer else 0
-        #self.previous_steer = steer_value  # Update previous steering value
+        steer_value = self.vehicle.get_control().steer
+        steer_change_penalty = -abs(steer_value - self.previous_steer) * 1.0 if self.previous_steer else 0
+        self.previous_steer = steer_value  # Update previous steering value
         invasion_penalty = 0
 
         # Collision is heavily penalized
@@ -307,7 +299,7 @@ class SelfCarlaEnv(gym.Env):
             return -20.0, True  # Large negative reward and terminate episode
 
         # Reward is a combination of staying in lane, smooth steering, and avoiding sudden changes
-        reward = 1.0  + dot_dir - lane_distance + invasion_penalty
+        reward = 1.0  + dot_dir - lane_distance + steer_change_penalty + invasion_penalty
         #print(f"dot dir: {dot_dir}, lane dist: {lane_distance}, invasion: {invasion_penalty}, total: {reward}")
 
         if lane_distance > 3:
