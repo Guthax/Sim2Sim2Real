@@ -12,7 +12,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv, VecFrameStack
 
 from evaluator import Evaluator
 from trainer import Trainer
-from utils import TensorboardCallback, write_json
+from utils import TensorboardCallback, write_json, lr_schedule
 
 
 class Scenario:
@@ -32,7 +32,12 @@ class Scenario:
                                  device='cuda' if torch.cuda.is_available() else 'cpu',
                                  **self.config["algorithm_hyperparams"])
         else:
-            self.algorithm = PPO.load(model_path, device='cuda' if torch.cuda.is_available() else 'cpu')
+            self.algorithm = PPO.load(model_path,
+                                      custom_objects = dict(
+                                          learning_rate = lr_schedule(1e-4, 5e-5, 2),
+                                          clip_range = 0.1
+                                      ),
+                                      device='cuda' if torch.cuda.is_available() else 'cpu')
 
     def _init_environments(self):
 
