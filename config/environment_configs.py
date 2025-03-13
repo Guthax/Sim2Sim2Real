@@ -17,6 +17,29 @@ environment_configs = {
             (TimeLimit, dict(max_episode_steps=2000))
         ]
     },
+    "carla_canny": {
+        "base_env": SelfCarlaEnv,
+        "arguments": dict(
+            render=False
+        ),
+        "wrappers": [
+            (ResizeWrapper, dict(dst_width=160, dst_height=120)),
+            (CropWrapper, dict(crop_height_start=60, crop_height_end=120)),
+            (CannyWrapper, None),
+            (TimeLimit, dict(max_episode_steps=2000))
+        ]
+    },
+    "carla_lane_detect": {
+        "base_env": SelfCarlaEnv,
+        "arguments": dict(
+            render=False
+        ),
+        "wrappers": [
+            (LaneMarkingWrapper, None),
+            (ResizeWrapper, dict(dst_width=120, dst_height=120)),
+            (TimeLimit, dict(max_episode_steps=2000))
+        ]
+    },
     "duckietown": {
         "base_env": DuckietownBaseDynamics,
         "arguments": dict(
