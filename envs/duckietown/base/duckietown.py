@@ -59,6 +59,7 @@ class DuckietownBaseDynamics(Simulator):
         vels = np.array([left_wheel_velocity, right_wheel_velocity])
 
         obs, reward, done, trunc, info = Simulator.step(self, vels)
+        print(reward)
         self.total_reward += reward
         self.mean_reward = self.total_reward / self.step_count
 
@@ -126,10 +127,10 @@ class DuckietownBaseDynamics(Simulator):
         try:
             lp = self.get_lane_pos2(pos, angle)
 
-            steer_change_penalty = -abs(self.current_action - self.previous_steer) * 1.0 if self.previous_steer and self.current_action else 0
+            steer_change_penalty = -abs(self.current_action - self.previous_steer) * 0.5 if self.previous_steer and self.current_action else 0
             self.previous_steer = self.current_action
-
-            reward = 1.0  + lp.dot_dir - np.abs(lp.dist) + steer_change_penalty
+    
+            reward = lp.dot_dir -10 * np.abs(lp.dist) + steer_change_penalty
             return reward
         except NotInLane:
             return -20
