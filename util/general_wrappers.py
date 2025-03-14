@@ -1,3 +1,5 @@
+from typing import Any
+
 import cv2
 import numpy as np
 import gymnasium as gym
@@ -27,24 +29,33 @@ class SegmentationFilterWrapper(gym.ObservationWrapper):
         (157, 234, 50)
     ]
 
-
     def __init__(self, env=None):
         gym.ObservationWrapper.__init__(self, env)
         self.observation_space = spaces.Box(low=0, high=255, shape=(128, 128, 3), dtype=np.uint8)
+        cv2.namedWindow("filtered")
+        self.gray_value = np.random.randint(0, 256, dtype=np.uint8)  # Generate gray value on init
 
-        #window = cv2.namedWindow("filtered")
+    def reset(self, **kwargs):
+        self.gray_value = np.random.randint(0, 256, dtype=np.uint8)  # Generate gray value on reset
+        return super().reset(**kwargs)
+
     def observation(self, observation):
         array = observation
         mask = np.zeros(array.shape[:2], dtype=np.uint8)
         for color in self.colors_to_keep_seg:
             mask |= np.all(array == color, axis=-1)  # Mark pixels that match any of the colors
 
-        # Apply the mask: Keep only selected colors, set others to black
-        filtered_image = np.zeros_like(array)  # Create a black image
+        # Create a gray background using the stored gray value
+        background = np.full_like(array, fill_value=self.gray_value)
+
+        # Apply the mask: Keep only selected colors, set others to the gray background
+        filtered_image = background.copy()
         filtered_image[mask == 1] = array[mask == 1]  # Copy only the kept colors
-        #cv2.imshow("filtered", filtered_image)
-        #cv2.waitKey(1)
+
+        cv2.imshow("filtered", filtered_image)
+        cv2.waitKey(1)
         return filtered_image
+
 
 class LaneMarkingWrapper(gym.ObservationWrapper):
     normalize = transforms.Normalize(
