@@ -36,7 +36,7 @@ class RoutePlanner():
         self._map = self._world.get_map()
 
         self._sampling_radius = 0.5
-        self._min_distance = 2
+        self._min_distance = 1
 
         self._ignore_intersections = ignore_intersections
 

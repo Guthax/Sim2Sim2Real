@@ -125,7 +125,6 @@ def get_pixels_inside_vehicle(pixel_info, pixel_grid):
 def get_closest_waypoint(waypoints, x, y, z):
   if not waypoints:
     return None  # No waypoints available
-
   # Convert lists to numpy arrays for efficient computation
   waypoints_array = np.array([[waypoint.transform.location.x, waypoint.transform.location.y, waypoint.transform.location.z] for waypoint in waypoints])
   car_pos_array = np.array([x,y, z])

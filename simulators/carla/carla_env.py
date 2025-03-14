@@ -21,13 +21,21 @@ class SelfCarlaEnv(gym.Env):
         self.client.set_timeout(20.0)
         self.world = self.client.load_world("Town02_opt")
 
+        fps = 20
         settings = self.world.get_settings()
-        settings.fixed_delta_seconds = 0.05
+        settings.fixed_delta_seconds = 1 / fps
         settings.synchronous_mode = True
+
+        settings.substepping = True
+        settings.max_substep_delta_time = 0.0166666666666667
+        settings.max_substeps = 3
+
+        
         self.world.apply_settings(settings)
         self.world.tick()
         self.client.reload_world(False)  # reload map keeping the world settings
         self.world.tick()
+
         self.world.unload_map_layer(carla.MapLayer.Buildings)
         self.world.unload_map_layer(carla.MapLayer.Decals)
         self.world.unload_map_layer(carla.MapLayer.Foliage)
@@ -56,6 +64,11 @@ class SelfCarlaEnv(gym.Env):
         self.count_until_randomization = 0
         self.randomize_every_steps = 50000
 
+        self.colors_to_keep_seg = [
+            (128, 64, 128),
+            (157, 234, 50)
+        ]
+
         self.world.tick()
 
 
@@ -77,15 +90,17 @@ class SelfCarlaEnv(gym.Env):
         self._setup_lane_invasion_sensor()
 
     def _setup_camera(self):
-        camera_bp = self.blueprint_library.find('sensor.camera.rgb')
-        camera_bp.set_attribute('image_size_x', '400')
-        camera_bp.set_attribute('image_size_y', '200')
+        camera_bp = self.blueprint_library.find('sensor.camera.semantic_segmentation')
+        #camera_bp = self.blueprint_library.find('sensor.camera.rgb')
+        camera_bp.set_attribute('image_size_x', '640')
+        camera_bp.set_attribute('image_size_y', '640')
         camera_bp.set_attribute('fov', '90')
+        camera_bp.set_attribute("sensor_tick", "0.05")  # Match world tick
         spawn_point = carla.Transform(carla.Location(x=1.5, z=2.0))
         self.camera = self.world.spawn_actor(camera_bp, spawn_point, attach_to=self.vehicle)
         self.actor_list.append(self.camera)
         self.image = None
-        self.camera.listen(lambda image: self._process_image(image))
+        self.camera.listen(lambda image: self._process_image_seg(image))
 
     def _setup_collision_sensor(self):
         collision_bp = self.blueprint_library.find('sensor.other.collision')
@@ -125,9 +140,31 @@ class SelfCarlaEnv(gym.Env):
         self.lane_invasion_occured = True
 
     def _process_image(self, image):
+        print("RAW", image)
+        image.convert(carla.ColorConverter.CityScapesPalette)
+        #print("CONVERTED", res)
         array = np.frombuffer(image.raw_data, dtype=np.uint8)
         array = array.reshape((image.height, image.width, 4))[:, :, :3]
         self.image = array
+
+    def _process_image_seg(self, image):
+        colors_to_keep = np.array(self.colors_to_keep_seg)
+        image.convert(carla.ColorConverter.CityScapesPalette)
+        array = np.frombuffer(image.raw_data, dtype=np.uint8)
+        array = array.reshape((image.height, image.width, 4))[:, :, :3]
+        array = cv2.cvtColor(array, cv2.COLOR_BGR2RGB)
+        self.image=array
+        # Create a mask for colors to keep
+        """
+        mask = np.zeros(array.shape[:2], dtype=np.uint8)
+        for color in colors_to_keep:
+            mask |= np.all(array == color, axis=-1)  # Mark pixels that match any of the colors
+
+        # Apply the mask: Keep only selected colors, set others to black
+        filtered_image = np.zeros_like(array)  # Create a black image
+        filtered_image[mask == 1] = array[mask == 1]  # Copy only the kept colors
+        self.image = filtered_image
+        """
 
     def reset(self, *, seed=None, options=None):
         for actor in self.actor_list:
@@ -136,7 +173,7 @@ class SelfCarlaEnv(gym.Env):
         if self.count_until_randomization >= self.randomize_every_steps:
             self._randomize_weather()
             self.count_until_randomization = 0
-        self.image = np.zeros((200, 400, 3), dtype=np.uint8)
+        self.image = np.zeros((640, 640, 3), dtype=np.uint8)
         self.actor_list = []
 
         self.collision_occurred = False
@@ -215,7 +252,7 @@ class SelfCarlaEnv(gym.Env):
         #self.vehicle.apply_control(carla.VehicleControl(throttle=float(0.5), steer=float(steer)))  # Fixed speed of 30 kph
         self.world.tick()
 
-        observation = self.image if self.image is not None else np.zeros((84, 84, 3), dtype=np.uint8)
+        observation = self.image if self.image is not None else np.zeros((640, 640, 3), dtype=np.uint8)
         self.waypoints = self.route_planner.run_step()
 
         # Calculate reward
@@ -273,15 +310,13 @@ class SelfCarlaEnv(gym.Env):
     def _get_reward_new(self):
         # Get the lateral distance from the center of the lane
         ego_loc = self.vehicle.get_transform().location
-        waypt =  get_next_waypoint(self.waypoints, ego_loc.x, ego_loc.y, ego_loc.z)
-        if waypt is None:
-            waypt = get_closest_waypoint(self.waypoints, ego_loc.x, ego_loc.y, ego_loc.z)
-            #print("No wpt")
 
-        #self.world.debug.draw_point(
-        #    carla.Location(waypt.transform.location.x, waypt.transform.location.y, 0.25), 0.1,
-        #    carla.Color(255, 0, 0),
-        #    20, False)
+        waypt =  get_next_waypoint(self.waypoints, ego_loc.x, ego_loc.y, ego_loc.z)
+        waypt = waypt if waypt else get_closest_waypoint(self.waypoints, ego_loc.x, ego_loc.y, ego_loc.z)
+        self.world.debug.draw_point(
+            carla.Location(waypt.transform.location.x, waypt.transform.location.y, 0.25), 0.1,
+            carla.Color(255, 0, 0),
+            20, False)
 
         lane_distance = abs(ego_loc.y - waypt.transform.location.y)
         lane_penalty = max(2.5 - lane_distance, 0)
@@ -290,7 +325,7 @@ class SelfCarlaEnv(gym.Env):
 
         # Get the steering action applied
         steer_value = self.vehicle.get_control().steer
-        steer_change_penalty = -abs(steer_value - self.previous_steer) * 1.0 if self.previous_steer else 0
+        steer_change_penalty = -abs(steer_value - self.previous_steer) * 0.5 if self.previous_steer else 0
         self.previous_steer = steer_value  # Update previous steering value
         invasion_penalty = 0
 
@@ -307,7 +342,7 @@ class SelfCarlaEnv(gym.Env):
             return reward, True
 
         #print(
-        #    f"Lane penalty: {lane_penalty}, Steer change: {steer_change_penalty}, invasion_penalty: {invasion_penalty}, total: {reward}")
+        #    f"Lane penalty: {lane_distance}, Dot dir: {dot_dir}, Steer change: {steer_change_penalty}, invasion_penalty: {invasion_penalty}, total: {reward}")
 
 
         return reward, False
