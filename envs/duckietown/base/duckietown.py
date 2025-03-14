@@ -130,7 +130,7 @@ class DuckietownBaseDynamics(Simulator):
         obs = cv2.cvtColor(obs, cv2.COLOR_BGR2RGB)
         return obs, {}
 
-    def render_obs(self, segment: bool = False):
+    def render_obs(self, segment: bool = True):
         img = Simulator.render_obs(self, segment)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         return img

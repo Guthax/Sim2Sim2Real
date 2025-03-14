@@ -20,7 +20,7 @@ def get_texture(tex_name: str, rng=None, segment: bool = False) -> "Texture":
     paths = get_texture_file(tex_name)
 
     if rng:
-        path_idx = rng.randint(0, len(paths))
+        path_idx = np.random.randint(0, len(paths))
         path = paths[path_idx]
     else:
         path = paths[0]
