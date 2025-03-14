@@ -42,8 +42,8 @@ class SegmentationFilterWrapper(gym.ObservationWrapper):
         # Apply the mask: Keep only selected colors, set others to black
         filtered_image = np.zeros_like(array)  # Create a black image
         filtered_image[mask == 1] = array[mask == 1]  # Copy only the kept colors
-        cv2.imshow("filtered", filtered_image)
-        cv2.waitKey(1)
+        #cv2.imshow("filtered", filtered_image)
+        #cv2.waitKey(1)
         return filtered_image
 
 class LaneMarkingWrapper(gym.ObservationWrapper):
