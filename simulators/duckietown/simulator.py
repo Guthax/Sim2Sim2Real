@@ -1725,6 +1725,7 @@ class Simulator(gym.Env):
         img_array,
         top_down: bool = True,
         segment: bool = False,
+        custom_segmentation_folder = None,
     ) -> np.ndarray:
         """
         Render an image of the environment into a frame buffer
@@ -1888,7 +1889,7 @@ class Simulator(gym.Env):
             # gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
 
             # Bind the appropriate texture
-            texture.bind(segment)
+            texture.bind(segment, custom_segmentation_folder)
 
             self.road_vlist.draw(gl.GL_QUADS)
             # gl.glDisable(gl.GL_BLEND)
