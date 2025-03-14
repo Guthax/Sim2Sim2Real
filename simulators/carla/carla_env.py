@@ -95,6 +95,7 @@ class SelfCarlaEnv(gym.Env):
         camera_bp.set_attribute('image_size_x', '640')
         camera_bp.set_attribute('image_size_y', '640')
         camera_bp.set_attribute('fov', '90')
+        camera_bp.set_attribute("sensor_tick", "0.05")  # Match world tick
         spawn_point = carla.Transform(carla.Location(x=1.5, z=2.0))
         self.camera = self.world.spawn_actor(camera_bp, spawn_point, attach_to=self.vehicle)
         self.actor_list.append(self.camera)
@@ -340,8 +341,8 @@ class SelfCarlaEnv(gym.Env):
             reward = reward - 10.0
             return reward, True
 
-        print(
-            f"Lane penalty: {lane_distance}, Dot dir: {dot_dir}, Steer change: {steer_change_penalty}, invasion_penalty: {invasion_penalty}, total: {reward}")
+        #print(
+        #    f"Lane penalty: {lane_distance}, Dot dir: {dot_dir}, Steer change: {steer_change_penalty}, invasion_penalty: {invasion_penalty}, total: {reward}")
 
 
         return reward, False

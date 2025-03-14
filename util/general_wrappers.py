@@ -32,7 +32,7 @@ class SegmentationFilterWrapper(gym.ObservationWrapper):
         gym.ObservationWrapper.__init__(self, env)
         self.observation_space = spaces.Box(low=0, high=255, shape=(128, 128, 3), dtype=np.uint8)
 
-
+        window = cv2.namedWindow("filtered")
     def observation(self, observation):
         array = observation
         mask = np.zeros(array.shape[:2], dtype=np.uint8)
@@ -42,6 +42,8 @@ class SegmentationFilterWrapper(gym.ObservationWrapper):
         # Apply the mask: Keep only selected colors, set others to black
         filtered_image = np.zeros_like(array)  # Create a black image
         filtered_image[mask == 1] = array[mask == 1]  # Copy only the kept colors
+        cv2.imshow("filtered", filtered_image)
+        cv2.waitKey(1)
         return filtered_image
 
 class LaneMarkingWrapper(gym.ObservationWrapper):
