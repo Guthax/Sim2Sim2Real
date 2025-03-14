@@ -33,7 +33,7 @@ environment_configs = {
     "carla_lane_detect": {
         "base_env": SelfCarlaEnv,
         "arguments": dict(
-            render=False
+            render=True
         ),
         "wrappers": [
             (ResizeWrapper, dict(dst_width=128, dst_height=128)),
