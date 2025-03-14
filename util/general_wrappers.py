@@ -32,7 +32,7 @@ class SegmentationFilterWrapper(gym.ObservationWrapper):
         gym.ObservationWrapper.__init__(self, env)
         self.observation_space = spaces.Box(low=0, high=255, shape=(128, 128, 3), dtype=np.uint8)
 
-        window = cv2.namedWindow("filtered")
+        #window = cv2.namedWindow("filtered")
     def observation(self, observation):
         array = observation
         mask = np.zeros(array.shape[:2], dtype=np.uint8)
