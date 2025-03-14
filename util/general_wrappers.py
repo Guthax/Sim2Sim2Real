@@ -21,6 +21,29 @@ class ResizeWrapper(gym.ObservationWrapper):
         return obs
 
 
+class SegmentationFilterWrapper(gym.ObservationWrapper):
+    colors_to_keep_seg = [
+        (128, 64, 128),
+        (157, 234, 50)
+    ]
+
+
+    def __init__(self, env=None):
+        gym.ObservationWrapper.__init__(self, env)
+        self.observation_space = spaces.Box(low=0, high=255, shape=(128, 128, 3), dtype=np.uint8)
+
+
+    def observation(self, observation):
+        array = observation
+        mask = np.zeros(array.shape[:2], dtype=np.uint8)
+        for color in self.colors_to_keep_seg:
+            mask |= np.all(array == color, axis=-1)  # Mark pixels that match any of the colors
+
+        # Apply the mask: Keep only selected colors, set others to black
+        filtered_image = np.zeros_like(array)  # Create a black image
+        filtered_image[mask == 1] = array[mask == 1]  # Copy only the kept colors
+        return filtered_image
+
 class LaneMarkingWrapper(gym.ObservationWrapper):
     normalize = transforms.Normalize(
         mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]

@@ -3,7 +3,8 @@ from stable_baselines3.common.vec_env import VecFrameStack
 
 from envs.duckietown.base.duckietown import DuckietownBaseDynamics
 from simulators.carla.carla_env import SelfCarlaEnv
-from util.general_wrappers import ResizeWrapper, CropWrapper, CannyWrapper, LaneMarkingWrapper
+from util.general_wrappers import ResizeWrapper, CropWrapper, CannyWrapper, LaneMarkingWrapper, \
+    SegmentationFilterWrapper
 
 environment_configs = {
     "carla": {
@@ -35,8 +36,8 @@ environment_configs = {
             render=False
         ),
         "wrappers": [
-            (LaneMarkingWrapper, None),
-            (ResizeWrapper, dict(dst_width=120, dst_height=120)),
+            (ResizeWrapper, dict(dst_width=128, dst_height=128)),
+            (SegmentationFilterWrapper, None),
             (TimeLimit, dict(max_episode_steps=2000))
         ]
     },
