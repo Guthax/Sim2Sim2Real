@@ -1,5 +1,6 @@
 # coding=utf-8
 import math
+import os.path
 from ctypes import byref
 from functools import lru_cache
 from typing import Tuple
@@ -16,7 +17,7 @@ from duckietown_world import get_texture_file
 from . import logger
 
 
-def get_texture(tex_name: str, rng=None, segment: bool = False) -> "Texture":
+def get_texture(tex_name: str, rng=None, segment: bool = False, custom_seg_folder = None) -> "Texture":
     paths = get_texture_file(tex_name)
 
     if rng:
@@ -26,6 +27,11 @@ def get_texture(tex_name: str, rng=None, segment: bool = False) -> "Texture":
         path = paths[0]
 
     oldpath = path
+
+    if custom_seg_folder:
+        splits = path.split('\\')
+        oldpath = path = os.path.join(custom_seg_folder, splits[-1])
+        
     if segment:
         path += ".SEGMENTED"
 
