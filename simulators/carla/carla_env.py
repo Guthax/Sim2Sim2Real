@@ -92,8 +92,8 @@ class SelfCarlaEnv(gym.Env):
     def _setup_camera(self):
         camera_bp = self.blueprint_library.find('sensor.camera.semantic_segmentation')
         #camera_bp = self.blueprint_library.find('sensor.camera.rgb')
-        camera_bp.set_attribute('image_size_x', '640')
-        camera_bp.set_attribute('image_size_y', '640')
+        camera_bp.set_attribute('image_size_x', '800')
+        camera_bp.set_attribute('image_size_y', '600')
         camera_bp.set_attribute('fov', '90')
         camera_bp.set_attribute("sensor_tick", "0.05")  # Match world tick
         spawn_point = carla.Transform(carla.Location(x=1.5, z=2.0))
