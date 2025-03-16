@@ -338,10 +338,10 @@ class SelfCarlaEnv(gym.Env):
         reward = 1.0  + dot_dir - lane_distance + steer_change_penalty + invasion_penalty
         #print(f"dot dir: {dot_dir}, lane dist: {lane_distance}, invasion: {invasion_penalty}, total: {reward}")
 
-        if self.lane_invasion_occured:
-            return reward - 5, True
+        #if self.lane_invasion_occured:
+        #    return reward - 5, True
 
-        if lane_distance > 3:
+        if lane_distance > 2.5:
             reward = reward - 10.0
             return reward, True
 
