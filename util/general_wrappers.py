@@ -24,6 +24,8 @@ class ResizeWrapper(gym.ObservationWrapper):
 class SegmentationFilterWrapper(gym.ObservationWrapper):
     colors_to_keep_seg = [
         (128, 64, 128),
+        (127,63,128),
+        (128,64,127),
         (157, 234, 50)
     ]
 
@@ -42,8 +44,8 @@ class SegmentationFilterWrapper(gym.ObservationWrapper):
         # Apply the mask: Keep only selected colors, set others to black
         filtered_image = np.zeros_like(array)  # Create a black image
         filtered_image[mask == 1] = array[mask == 1]  # Copy only the kept colors
-        #cv2.imshow("filtered", filtered_image)
-        #cv2.waitKey(1)
+        cv2.imshow("filtered", filtered_image)
+        cv2.waitKey(1)
         return filtered_image
 
 class LaneMarkingWrapper(gym.ObservationWrapper):
@@ -221,7 +223,7 @@ class CannyWrapper(gym.ObservationWrapper):
 
 class CropWrapper(gym.ObservationWrapper):
     def __init__(self, env=None, crop_height_start= 60, crop_height_end=120, crop_width_start=0, crop_width_end=160, channels=3):
-        gym.ObservationWrapper.__init__(self, env)
+        gym.ObservationWrapper._F_init__(self, env)
 
         self.crop_h_start =crop_height_start
         self.crop_h_end = crop_height_end
@@ -233,3 +235,64 @@ class CropWrapper(gym.ObservationWrapper):
     def observation(self, observation):
         cropped = observation[self.crop_h_start:self.crop_h_end, self.crop_w_start:self.crop_w_end, :]
         return cropped
+
+
+class DuckieClipWrapper(gym.ObservationWrapper):
+    def __init__(self, env=None):
+        gym.ObservationWrapper.__init__(self, env)
+
+    def replace_nearby_colors(self, image, target_rgb, new_rgb, threshold=2):
+        """
+        Replaces all pixels in the image that are within a given threshold of the target RGB value.
+
+        Parameters:
+        - image: numpy array of shape (H, W, 3)
+        - target_rgb: tuple of (R, G, B) values to match
+        - new_rgb: tuple of (R, G, B) values to replace with
+        - threshold: maximum difference for each channel to be considered a match
+
+        Returns:
+        - Modified image with replaced colors
+        """
+        # Convert to NumPy arrays
+        #target_rgb = np.array(target_rgb, dtype=np.uint8)
+        new_rgb = np.array(new_rgb, dtype=np.uint8)
+
+        # Find pixels within the threshold
+        mask = np.all(np.abs(image - target_rgb) <= threshold, axis=-1)
+
+        # Replace matching pixels
+        image[mask] = new_rgb
+
+        return image
+
+    def observation(self, observation):
+        # Example usage:
+        image = observation
+        target_rgb = (128, 64, 128)  # RGB value to find
+        new_rgb =(128, 64, 128),  # RGB value to replace with
+
+        modified_image = self.replace_nearby_colors(image, target_rgb, new_rgb, threshold=2)
+        target_rgb = (157,234,50)# RGB value to find
+        new_rgb =(157,234,50) # RGB value to replace with
+
+        modified_image = self.replace_nearby_colors(modified_image, target_rgb, new_rgb, threshold=20)
+        # Create mask where pixels match the target color
+        mask_1 = np.all(modified_image == (128,64,128), axis=-1, keepdims=True)
+        mask_2 = np.all(modified_image == (157,234,50), axis=-1, keepdims=True)
+        mask = mask_1 + mask_2
+        image = modified_image * mask.astype(modified_image.dtype)
+
+        mask = np.zeros(image.shape[:2], dtype=np.uint8)
+        for color in [(128,64,128), (157,234,50)]:
+            mask |= np.all(image == color, axis=-1)  # Mark pixels that match any of the colors
+
+        # Apply the mask: Keep only selected colors, set others to black
+        filtered_image = np.zeros_like(image)  # Create a black image
+        filtered_image[mask == 1] = image[mask == 1]  # Copy only the kept colors
+        #filtered_image = cv2.cvtColor(filtered_image, cv2.COLOR_BGR2RGB)
+        cv2.imshow("modified", filtered_image)
+        cv2.waitKey(1)
+        return modified_image
+
+

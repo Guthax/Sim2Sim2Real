@@ -26,11 +26,14 @@ def get_texture(tex_name: str, rng=None, segment: bool = False, custom_seg_folde
     else:
         path = paths[0]
 
+    if segment:
+        path = paths[3]
     oldpath = path
 
     if custom_seg_folder:
         splits = path.split('\\')
-        oldpath = path = os.path.join(custom_seg_folder, splits[-1])
+        oldpath = os.path.join(custom_seg_folder, splits[-1])
+        path = os.path.join(custom_seg_folder, splits[-1])
         
     if segment:
         path += ".SEGMENTED"
@@ -55,9 +58,9 @@ class Texture:
         self.tex_name = tex_name
         self.rng = rng
 
-    def bind(self, segment=False):
+    def bind(self, segment=False, seg_folder = None):
         if segment:
-            self = get_texture(self.tex_name, self.rng, True)
+            self = get_texture(self.tex_name, self.rng, True, custom_seg_folder = seg_folder)
 
         gl.glBindTexture(self.tex.target, self.tex.id)
 
@@ -106,6 +109,8 @@ def load_texture(tex_path: str, segment: bool = False, segment_into_color=None):
             # https://gist.github.com/nkymut/1cb40ea6ae4de0cf9ded7332f1ca0d55
 
             im = cv2.imread(tex_path, cv2.IMREAD_UNCHANGED)
+            #cv2.imshow("tex", im)
+            #cv2.waitKey(1)
 
             hsv = cv2.cvtColor(im, cv2.COLOR_BGR2HSV)
 
