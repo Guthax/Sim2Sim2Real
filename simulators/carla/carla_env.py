@@ -340,7 +340,7 @@ class SelfCarlaEnv(gym.Env):
 
         if self.lane_invasion_occured:
             return reward - 5, True
-        
+
         if lane_distance > 3:
             reward = reward - 10.0
             return reward, True
