@@ -36,7 +36,8 @@ environment_configs = {
             render=True
         ),
         "wrappers": [
-            (ResizeWrapper, dict(dst_width=128, dst_height=128)),
+            (ResizeWrapper, dict(dst_width=160, dst_height=120)),
+            (CropWrapper, dict(crop_height_start=60, crop_height_end=120)),
             (SegmentationFilterWrapper, None),
             (TimeLimit, dict(max_episode_steps=2000))
         ]
