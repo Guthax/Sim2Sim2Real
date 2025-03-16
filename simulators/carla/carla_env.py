@@ -313,10 +313,10 @@ class SelfCarlaEnv(gym.Env):
 
         waypt =  get_next_waypoint(self.waypoints, ego_loc.x, ego_loc.y, ego_loc.z)
         waypt = waypt if waypt else get_closest_waypoint(self.waypoints, ego_loc.x, ego_loc.y, ego_loc.z)
-        self.world.debug.draw_point(
-            carla.Location(waypt.transform.location.x, waypt.transform.location.y, 0.25), 0.1,
-            carla.Color(255, 0, 0),
-            20, False)
+        #self.world.debug.draw_point(
+        #    carla.Location(waypt.transform.location.x, waypt.transform.location.y, 0.25), 0.1,
+        #    carla.Color(255, 0, 0),
+        #    20, False)
 
         lane_distance = abs(ego_loc.y - waypt.transform.location.y)
         lane_penalty = max(2.5 - lane_distance, 0)
@@ -333,10 +333,14 @@ class SelfCarlaEnv(gym.Env):
         if self.collision_occurred:
             return -20.0, True  # Large negative reward and terminate episode
 
+
         # Reward is a combination of staying in lane, smooth steering, and avoiding sudden changes
         reward = 1.0  + dot_dir - lane_distance + steer_change_penalty + invasion_penalty
         #print(f"dot dir: {dot_dir}, lane dist: {lane_distance}, invasion: {invasion_penalty}, total: {reward}")
 
+        if self.lane_invasion_occured:
+            return reward - 5, True
+        
         if lane_distance > 3:
             reward = reward - 10.0
             return reward, True
