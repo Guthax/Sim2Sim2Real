@@ -12,22 +12,36 @@ from torchvision.transforms import transforms
 
 class ResizeWrapper(gym.ObservationWrapper):
     def __init__(self, env=None, dst_width=160, dst_height=120):
-        gym.ObservationWrapper.__init__(self, env)
+        super().__init__(env)
         self.resize_h = dst_height
         self.resize_w = dst_width
-        self.observation_space = spaces.Box(low=0, high=255, shape=(self.resize_h, self.resize_w, 3), dtype=np.uint8)
+
+        if isinstance(env.observation_space, spaces.Dict):
+            self.observation_space = self._resize_dict_space(env.observation_space)
+        else:
+            self.observation_space = spaces.Box(low=0, high=255, shape=(self.resize_h, self.resize_w, 3),
+                                                dtype=np.uint8)
+
+    def _resize_dict_space(self, obs_space):
+        new_spaces = {}
+        for key, space in obs_space.spaces.items():
+            if isinstance(space, spaces.Box) and len(space.shape) == 3:
+                new_spaces[key] = spaces.Box(low=0, high=255, shape=(self.resize_h, self.resize_w, 3), dtype=np.uint8)
+            else:
+                new_spaces[key] = space  # Keep non-image spaces unchanged
+        return spaces.Dict(new_spaces)
 
     def observation(self, observation):
-        img = observation
-        obs =  cv2.resize(img, dsize=(self.resize_w, self.resize_h), interpolation=cv2.INTER_CUBIC)
-        return obs
-
+        if isinstance(observation, dict):
+            return {key: (cv2.resize(val, (self.resize_w, self.resize_h), interpolation=cv2.INTER_CUBIC)
+                          if isinstance(val, np.ndarray) and len(val.shape) == 3 else val)
+                    for key, val in observation.items()}
+        else:
+            return cv2.resize(observation, (self.resize_w, self.resize_h), interpolation=cv2.INTER_CUBIC)
 
 class SegmentationFilterWrapper(gym.ObservationWrapper):
     colors_to_keep_seg = [
         (128, 64, 128),
-        (127,63,128),
-        (128,64,127),
         (157, 234, 50)
     ]
     reset_every = 10000
@@ -43,12 +57,15 @@ class SegmentationFilterWrapper(gym.ObservationWrapper):
         """Reset environment and randomize gray background."""
         
         if self.counter >= self.reset_every:
-        	self.gray_value = np.random.randint(0, 256, dtype=np.uint8)
-        	self.counter = 0  # Generate gray value on reset
+            self.gray_value = np.random.randint(0, 256, dtype=np.uint8)
+            self.counter = 0  # Generate gray value on reset
         return super().reset(**kwargs)
 
     def observation(self, observation):
         array = observation
+        if isinstance(self.env.observation_space, spaces.Dict):
+            array = observation["camera_seg"]
+
         mask = np.zeros(array.shape[:2], dtype=np.uint8)
         for color in self.colors_to_keep_seg:
             mask |= np.all(array == color, axis=-1)  # Mark pixels that match any of the colors
@@ -56,11 +73,17 @@ class SegmentationFilterWrapper(gym.ObservationWrapper):
         # Apply the mask: Keep only selected colors, set others to black
         filtered_image = np.full_like(array, self.gray_value)  # Create a black image
         filtered_image[mask == 1] = array[mask == 1]  # Copy only the kept colors
-        filtered_image = cv2.cvtColor(filtered_image, cv2.COLOR_BGR2RGB)
         cv2.imshow("filtered", filtered_image)
         cv2.waitKey(1)
         self.counter += 1
-        return filtered_image
+
+        result = observation
+        if isinstance(self.env.observation_space, spaces.Dict):
+            result["camera_seg"] = filtered_image
+        else:
+            result = filtered_image
+
+        return result
 
 
 class CannyWrapper(gym.ObservationWrapper):
