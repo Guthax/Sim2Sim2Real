@@ -4,7 +4,7 @@ import numpy as np
 import torch.cuda
 from contracts.library.extensions import kwarg
 from gymnasium.wrappers import TimeLimit
-from stable_baselines3 import PPO
+from stable_baselines3 import PPO, SAC
 
 import gymnasium as gym
 from stable_baselines3.common.logger import configure
