@@ -60,7 +60,7 @@ environment_configs = {
             randomize_maps_on_reset=True,
         ),
         "wrappers": [
-            (ResizeWrapper, dict(dst_width=128, dst_height=128)),
+            (ResizeWrapper, dict(dst_width=520, dst_height=300)),
             (DuckieClipWrapper, None),
             (TimeLimit, dict(max_episode_steps=2000))
         ]
