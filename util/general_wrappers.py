@@ -30,15 +30,21 @@ class SegmentationFilterWrapper(gym.ObservationWrapper):
         (128,64,127),
         (157, 234, 50)
     ]
+    reset_every = 10000
 
     def __init__(self, env=None):
         gym.ObservationWrapper.__init__(self, env)
-        self.observation_space = spaces.Box(low=0, high=255, shape=(128, 128, 3), dtype=np.uint8)
-        cv2.namedWindow("filtered")
-        self.gray_value = np.random.randint(0, 256, dtype=np.uint8)  # Generate gray value on init
+        #self.observation_space = spaces.Box(low=0, high=255, shape=(128, 128, 3), dtype=np.uint8)
+        self.gray_value = np.random.randint(0, 256, dtype=np.uint8)
+        self.counter = 0
+        #window = cv2.namedWindow("filtered")
 
     def reset(self, **kwargs):
-        self.gray_value = np.random.randint(0, 256, dtype=np.uint8)  # Generate gray value on reset
+        """Reset environment and randomize gray background."""
+        
+        if self.counter >= self.reset_every:
+        	self.gray_value = np.random.randint(0, 256, dtype=np.uint8)
+        	self.counter = 0  # Generate gray value on reset
         return super().reset(**kwargs)
 
     def observation(self, observation):
@@ -47,103 +53,15 @@ class SegmentationFilterWrapper(gym.ObservationWrapper):
         for color in self.colors_to_keep_seg:
             mask |= np.all(array == color, axis=-1)  # Mark pixels that match any of the colors
 
-        # Create a gray background using the stored gray value
-        background = np.full_like(array, fill_value=self.gray_value)
-
-        # Apply the mask: Keep only selected colors, set others to the gray background
-        filtered_image = background.copy()
+        # Apply the mask: Keep only selected colors, set others to black
+        filtered_image = np.full_like(array, self.gray_value)  # Create a black image
         filtered_image[mask == 1] = array[mask == 1]  # Copy only the kept colors
+        filtered_image = cv2.cvtColor(filtered_image, cv2.COLOR_BGR2RGB)
         cv2.imshow("filtered", filtered_image)
         cv2.waitKey(1)
+        self.counter += 1
         return filtered_image
 
-
-class LaneMarkingWrapper(gym.ObservationWrapper):
-    normalize = transforms.Normalize(
-        mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-    )
-
-    transform = transforms.Compose([
-        transforms.ToTensor(),
-        normalize,
-    ])
-
-
-    def __init__(self, env=None):
-        gym.ObservationWrapper.__init__(self, env)
-        self.observation_space = spaces.Box(low=0, high=255, shape=(640, 640, 3), dtype=np.uint8)
-
-        self.model = torch.hub.load('hustvl/yolop', 'yolop', pretrained=True)
-        self.model.to('cuda')
-        self.model.eval()
-
-    def observation(self, observation):
-        img_rgb = observation
-        img = self.transform(img_rgb).to(torch.device("cuda"))
-        if img.ndimension() == 3:
-            img = img.unsqueeze(0)
-
-        det_out, da_seg_out, ll_seg_out = self.model(img)
-        _, _, height, width = img.shape
-        b, h, w, _ = img.shape
-        pad_w, pad_h = 0, 0
-        pad_w = int(pad_w)
-        pad_h = int(pad_h)
-        ratio = 1
-
-        da_predict = da_seg_out[:, :, pad_h:(height - pad_h), pad_w:(width - pad_w)]
-        da_seg_mask = torch.nn.functional.interpolate(da_predict, scale_factor=int(1 / ratio), mode='bilinear')
-        _, da_seg_mask = torch.max(da_seg_mask, 1)
-        da_seg_mask = da_seg_mask.int().squeeze().cpu().numpy()
-        # da_seg_mask = morphological_process(da_seg_mask, kernel_size=7)
-
-        ll_predict = ll_seg_out[:, :, pad_h:(height - pad_h), pad_w:(width - pad_w)]
-        ll_seg_mask = torch.nn.functional.interpolate(ll_predict, scale_factor=int(1 / ratio), mode='bilinear')
-        _, ll_seg_mask = torch.max(ll_seg_mask, 1)
-        ll_seg_mask = ll_seg_mask.int().squeeze().cpu().numpy()
-
-        img_det = self.show_seg_result(img_rgb, (da_seg_mask, ll_seg_mask), _, _, is_demo=True)
-        return img_det
-
-    def show_seg_result(self, img, result, save_dir=None, is_ll=True, palette=None, is_demo=False, is_gt=False):
-        # img = mmcv.imread(img)
-        # img = img.copy()
-        # seg = result[0]
-        image = img.copy()
-        if palette is None:
-            palette = np.random.randint(
-                0, 255, size=(3, 3))
-        palette[0] = [0, 0, 0]
-        palette[1] = [0, 255, 0]
-        palette[2] = [255, 0, 0]
-        palette = np.array(palette)
-        assert palette.shape[0] == 3  # len(classes)
-        assert palette.shape[1] == 3
-        assert len(palette.shape) == 2
-
-        if not is_demo:
-            color_seg = np.zeros((result.shape[0], result.shape[1], 3), dtype=np.uint8)
-            for label, color in enumerate(palette):
-                color_seg[result == label, :] = color
-        else:
-            color_area = np.zeros((result[0].shape[0], result[0].shape[1], 3), dtype=np.uint8)
-
-            # for label, color in enumerate(palette):
-            #     color_area[result[0] == label, :] = color
-
-            #color_area[result[0] == 1] = [0, 255, 0]
-            color_area[result[1] == 1] = [255, 0, 0]
-            color_seg = color_area
-
-        # convert to BGR
-        color_seg = color_seg[..., ::-1]
-        # print(color_seg.shape)
-        color_mask = np.mean(color_seg, 2)
-        image[color_mask != 0] = img[color_mask != 0] * 0.5 + color_seg[color_mask != 0] * 0.5
-        # img = img * 0.5 + color_seg * 0.5
-        image = image.astype(np.uint8)
-        #img = cv2.resize(img, (1280, 720), interpolation=cv2.INTER_LINEAR)
-        return color_seg
 
 class CannyWrapper(gym.ObservationWrapper):
     def __init__(self, env=None):
@@ -304,5 +222,4 @@ class DuckieClipWrapper(gym.ObservationWrapper):
         cv2.imshow("modified", filtered_image)
         cv2.waitKey(1)
         return modified_image
-
 
