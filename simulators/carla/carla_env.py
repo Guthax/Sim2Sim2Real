@@ -92,8 +92,8 @@ class SelfCarlaEnv(gym.Env):
     def _setup_camera(self):
         camera_bp = self.blueprint_library.find('sensor.camera.semantic_segmentation')
         #camera_bp = self.blueprint_library.find('sensor.camera.rgb')
-        camera_bp.set_attribute('image_size_x', '640')
-        camera_bp.set_attribute('image_size_y', '640')
+        camera_bp.set_attribute('image_size_x', '800')
+        camera_bp.set_attribute('image_size_y', '600')
         camera_bp.set_attribute('fov', '90')
         camera_bp.set_attribute("sensor_tick", "0.05")  # Match world tick
         spawn_point = carla.Transform(carla.Location(x=1.5, z=2.0))
@@ -313,10 +313,10 @@ class SelfCarlaEnv(gym.Env):
 
         waypt =  get_next_waypoint(self.waypoints, ego_loc.x, ego_loc.y, ego_loc.z)
         waypt = waypt if waypt else get_closest_waypoint(self.waypoints, ego_loc.x, ego_loc.y, ego_loc.z)
-        self.world.debug.draw_point(
-            carla.Location(waypt.transform.location.x, waypt.transform.location.y, 0.25), 0.1,
-            carla.Color(255, 0, 0),
-            20, False)
+        #self.world.debug.draw_point(
+        #    carla.Location(waypt.transform.location.x, waypt.transform.location.y, 0.25), 0.1,
+        #    carla.Color(255, 0, 0),
+        #    20, False)
 
         lane_distance = abs(ego_loc.y - waypt.transform.location.y)
         lane_penalty = max(2.5 - lane_distance, 0)
@@ -333,11 +333,15 @@ class SelfCarlaEnv(gym.Env):
         if self.collision_occurred:
             return -20.0, True  # Large negative reward and terminate episode
 
+
         # Reward is a combination of staying in lane, smooth steering, and avoiding sudden changes
         reward = 1.0  + dot_dir - lane_distance + steer_change_penalty + invasion_penalty
         #print(f"dot dir: {dot_dir}, lane dist: {lane_distance}, invasion: {invasion_penalty}, total: {reward}")
 
-        if lane_distance > 3:
+        #if self.lane_invasion_occured:
+        #    return reward - 5, True
+
+        if lane_distance > 2.5:
             reward = reward - 10.0
             return reward, True
 

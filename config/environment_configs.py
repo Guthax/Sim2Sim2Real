@@ -33,10 +33,10 @@ environment_configs = {
     "carla_lane_detect": {
         "base_env": SelfCarlaEnv,
         "arguments": dict(
-            render=True
+            render=False
         ),
         "wrappers": [
-            (ResizeWrapper, dict(dst_width=128, dst_height=128)),
+            (ResizeWrapper, dict(dst_width=256, dst_height=256)),
             (SegmentationFilterWrapper, None),
             (TimeLimit, dict(max_episode_steps=2000))
         ]
