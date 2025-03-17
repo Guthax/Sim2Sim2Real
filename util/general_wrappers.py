@@ -26,17 +26,22 @@ class SegmentationFilterWrapper(gym.ObservationWrapper):
         (128, 64, 128),
         (157, 234, 50)
     ]
-
+    
+    reset_every = 10000
 
     def __init__(self, env=None):
         gym.ObservationWrapper.__init__(self, env)
         #self.observation_space = spaces.Box(low=0, high=255, shape=(128, 128, 3), dtype=np.uint8)
         self.gray_value = np.random.randint(0, 256, dtype=np.uint8)
+        self.counter = 0
         #window = cv2.namedWindow("filtered")
 
     def reset(self, **kwargs):
         """Reset environment and randomize gray background."""
-        self.gray_value = np.random.randint(0, 256, dtype=np.uint8)  # Generate gray value on reset
+        
+        if self.counter >= self.reset_every:
+        	self.gray_value = np.random.randint(0, 256, dtype=np.uint8)
+        	self.counter = 0  # Generate gray value on reset
         return super().reset(**kwargs)
 
     def observation(self, observation):
@@ -51,6 +56,7 @@ class SegmentationFilterWrapper(gym.ObservationWrapper):
         filtered_image = cv2.cvtColor(filtered_image, cv2.COLOR_BGR2RGB)
         #cv2.imshow("filtered", filtered_image)
         #cv2.waitKey(1)
+        self.counter += 1
         return filtered_image
 
 class LaneMarkingWrapper(gym.ObservationWrapper):
