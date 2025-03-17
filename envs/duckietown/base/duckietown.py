@@ -83,7 +83,8 @@ class DuckietownBaseDynamics(Simulator):
                 self.final_fbo_human,
                 self.img_array_human,
                 top_down=False,
-                segment=False,
+                segment=True,
+                custom_segmentation_folder="/home/jurriaan/Documents/Programming/Sim2Sim2Real/simulators/duckietown/segmentation"
             )
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             cv2.imshow("top_down_view", img)
@@ -130,7 +131,19 @@ class DuckietownBaseDynamics(Simulator):
         obs = cv2.cvtColor(obs, cv2.COLOR_BGR2RGB)
         return obs, {}
 
-    def render_obs(self, segment: bool = False):
-        img = Simulator.render_obs(self, segment)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    def render_obs(self, segment: bool = True):
+        image = Simulator.render_obs(self, True)
+        #image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+        # Identify black pixels (where all RGB channels are 0)
+        black_pixels = (image[:, :, 0] == 0) & (image[:, :, 1] == 0) & (image[:, :, 2] == 0)
+
+        # Generate a single random grey value
+        random_grey = np.random.randint(50, 200, dtype=np.uint8)
+
+        # Apply the random grey color to black pixels
+        image[black_pixels] = [255, 255, 255]
+        img = image
+        #cv2.imshow("Seg", img)
+        #cv2.waitKey(1)
         return img

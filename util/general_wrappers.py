@@ -1,3 +1,5 @@
+from typing import Any
+
 import cv2
 import numpy as np
 import gymnasium as gym
@@ -24,9 +26,10 @@ class ResizeWrapper(gym.ObservationWrapper):
 class SegmentationFilterWrapper(gym.ObservationWrapper):
     colors_to_keep_seg = [
         (128, 64, 128),
+        (127,63,128),
+        (128,64,127),
         (157, 234, 50)
     ]
-    
     reset_every = 10000
 
     def __init__(self, env=None):
@@ -54,97 +57,11 @@ class SegmentationFilterWrapper(gym.ObservationWrapper):
         filtered_image = np.full_like(array, self.gray_value)  # Create a black image
         filtered_image[mask == 1] = array[mask == 1]  # Copy only the kept colors
         filtered_image = cv2.cvtColor(filtered_image, cv2.COLOR_BGR2RGB)
-        #cv2.imshow("filtered", filtered_image)
-        #cv2.waitKey(1)
+        cv2.imshow("filtered", filtered_image)
+        cv2.waitKey(1)
         self.counter += 1
         return filtered_image
 
-class LaneMarkingWrapper(gym.ObservationWrapper):
-    normalize = transforms.Normalize(
-        mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-    )
-
-    transform = transforms.Compose([
-        transforms.ToTensor(),
-        normalize,
-    ])
-
-
-    def __init__(self, env=None):
-        gym.ObservationWrapper.__init__(self, env)
-        self.observation_space = spaces.Box(low=0, high=255, shape=(640, 640, 3), dtype=np.uint8)
-
-        self.model = torch.hub.load('hustvl/yolop', 'yolop', pretrained=True)
-        self.model.to('cuda')
-        self.model.eval()
-
-    def observation(self, observation):
-        img_rgb = observation
-        img = self.transform(img_rgb).to(torch.device("cuda"))
-        if img.ndimension() == 3:
-            img = img.unsqueeze(0)
-
-        det_out, da_seg_out, ll_seg_out = self.model(img)
-        _, _, height, width = img.shape
-        b, h, w, _ = img.shape
-        pad_w, pad_h = 0, 0
-        pad_w = int(pad_w)
-        pad_h = int(pad_h)
-        ratio = 1
-
-        da_predict = da_seg_out[:, :, pad_h:(height - pad_h), pad_w:(width - pad_w)]
-        da_seg_mask = torch.nn.functional.interpolate(da_predict, scale_factor=int(1 / ratio), mode='bilinear')
-        _, da_seg_mask = torch.max(da_seg_mask, 1)
-        da_seg_mask = da_seg_mask.int().squeeze().cpu().numpy()
-        # da_seg_mask = morphological_process(da_seg_mask, kernel_size=7)
-
-        ll_predict = ll_seg_out[:, :, pad_h:(height - pad_h), pad_w:(width - pad_w)]
-        ll_seg_mask = torch.nn.functional.interpolate(ll_predict, scale_factor=int(1 / ratio), mode='bilinear')
-        _, ll_seg_mask = torch.max(ll_seg_mask, 1)
-        ll_seg_mask = ll_seg_mask.int().squeeze().cpu().numpy()
-
-        img_det = self.show_seg_result(img_rgb, (da_seg_mask, ll_seg_mask), _, _, is_demo=True)
-        return img_det
-
-    def show_seg_result(self, img, result, save_dir=None, is_ll=True, palette=None, is_demo=False, is_gt=False):
-        # img = mmcv.imread(img)
-        # img = img.copy()
-        # seg = result[0]
-        image = img.copy()
-        if palette is None:
-            palette = np.random.randint(
-                0, 255, size=(3, 3))
-        palette[0] = [0, 0, 0]
-        palette[1] = [0, 255, 0]
-        palette[2] = [255, 0, 0]
-        palette = np.array(palette)
-        assert palette.shape[0] == 3  # len(classes)
-        assert palette.shape[1] == 3
-        assert len(palette.shape) == 2
-
-        if not is_demo:
-            color_seg = np.zeros((result.shape[0], result.shape[1], 3), dtype=np.uint8)
-            for label, color in enumerate(palette):
-                color_seg[result == label, :] = color
-        else:
-            color_area = np.zeros((result[0].shape[0], result[0].shape[1], 3), dtype=np.uint8)
-
-            # for label, color in enumerate(palette):
-            #     color_area[result[0] == label, :] = color
-
-            #color_area[result[0] == 1] = [0, 255, 0]
-            color_area[result[1] == 1] = [255, 0, 0]
-            color_seg = color_area
-
-        # convert to BGR
-        color_seg = color_seg[..., ::-1]
-        # print(color_seg.shape)
-        color_mask = np.mean(color_seg, 2)
-        image[color_mask != 0] = img[color_mask != 0] * 0.5 + color_seg[color_mask != 0] * 0.5
-        # img = img * 0.5 + color_seg * 0.5
-        image = image.astype(np.uint8)
-        #img = cv2.resize(img, (1280, 720), interpolation=cv2.INTER_LINEAR)
-        return color_seg
 
 class CannyWrapper(gym.ObservationWrapper):
     def __init__(self, env=None):
@@ -246,3 +163,63 @@ class CropWrapper(gym.ObservationWrapper):
     def observation(self, observation):
         cropped = observation[self.crop_h_start:self.crop_h_end, self.crop_w_start:self.crop_w_end, :]
         return cropped
+
+
+class DuckieClipWrapper(gym.ObservationWrapper):
+    def __init__(self, env=None):
+        gym.ObservationWrapper.__init__(self, env)
+
+    def replace_nearby_colors(self, image, target_rgb, new_rgb, threshold=2):
+        """
+        Replaces all pixels in the image that are within a given threshold of the target RGB value.
+
+        Parameters:
+        - image: numpy array of shape (H, W, 3)
+        - target_rgb: tuple of (R, G, B) values to match
+        - new_rgb: tuple of (R, G, B) values to replace with
+        - threshold: maximum difference for each channel to be considered a match
+
+        Returns:
+        - Modified image with replaced colors
+        """
+        # Convert to NumPy arrays
+        #target_rgb = np.array(target_rgb, dtype=np.uint8)
+        new_rgb = np.array(new_rgb, dtype=np.uint8)
+
+        # Find pixels within the threshold
+        mask = np.all(np.abs(image - target_rgb) <= threshold, axis=-1)
+
+        # Replace matching pixels
+        image[mask] = new_rgb
+
+        return image
+
+    def observation(self, observation):
+        # Example usage:
+        image = observation
+        target_rgb = (128, 64, 128)  # RGB value to find
+        new_rgb =(128, 64, 128),  # RGB value to replace with
+
+        modified_image = self.replace_nearby_colors(image, target_rgb, new_rgb, threshold=2)
+        target_rgb = (157,234,50)# RGB value to find
+        new_rgb =(157,234,50) # RGB value to replace with
+
+        modified_image = self.replace_nearby_colors(modified_image, target_rgb, new_rgb, threshold=20)
+        # Create mask where pixels match the target color
+        mask_1 = np.all(modified_image == (128,64,128), axis=-1, keepdims=True)
+        mask_2 = np.all(modified_image == (157,234,50), axis=-1, keepdims=True)
+        mask = mask_1 + mask_2
+        image = modified_image * mask.astype(modified_image.dtype)
+
+        mask = np.zeros(image.shape[:2], dtype=np.uint8)
+        for color in [(128,64,128), (157,234,50)]:
+            mask |= np.all(image == color, axis=-1)  # Mark pixels that match any of the colors
+
+        # Apply the mask: Keep only selected colors, set others to black
+        filtered_image = np.zeros_like(image)  # Create a black image
+        filtered_image[mask == 1] = image[mask == 1]  # Copy only the kept colors
+        filtered_image = cv2.cvtColor(filtered_image, cv2.COLOR_BGR2RGB)
+        cv2.imshow("modified", filtered_image)
+        cv2.waitKey(1)
+        return modified_image
+

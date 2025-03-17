@@ -1725,6 +1725,7 @@ class Simulator(gym.Env):
         img_array,
         top_down: bool = True,
         segment: bool = False,
+        custom_segmentation_folder = None,
     ) -> np.ndarray:
         """
         Render an image of the environment into a frame buffer
@@ -1762,7 +1763,7 @@ class Simulator(gym.Env):
 
         # Clear the color and depth buffers
 
-        c0, c1, c2 = self.horizon_color if not segment else [255, 0, 255]
+        c0, c1, c2 = self.horizon_color if not segment else [0, 0, 0]
         gl.glClearColor(c0, c1, c2, 1.0)
         gl.glClearDepth(1.0)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
@@ -1817,7 +1818,7 @@ class Simulator(gym.Env):
         # Draw the ground quad
         gl.glDisable(gl.GL_TEXTURE_2D)
         # background is magenta when segmenting for easy isolation of main map image
-        gl.glColor3f(*self.ground_color if not segment else [255, 0, 255])  # XXX
+        gl.glColor3f(*self.ground_color if not segment else [0, 0, 0])  # XXX
         gl.glPushMatrix()
         gl.glScalef(50, 0.01, 50)
         self.ground_vlist.draw(gl.GL_QUADS)
@@ -1888,7 +1889,7 @@ class Simulator(gym.Env):
             # gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
 
             # Bind the appropriate texture
-            texture.bind(segment)
+            texture.bind(segment, custom_segmentation_folder)
 
             self.road_vlist.draw(gl.GL_QUADS)
             # gl.glDisable(gl.GL_BLEND)
