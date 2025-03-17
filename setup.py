@@ -54,7 +54,7 @@ install_requires = [
     f"duckietown-world-daffy",
     "PyGeometry-z6",
     "carnivalmirror==0.6.2",
-    "stable-baselines3==2.0.0",
+    "stable-baselines3[extra]==2.0.0",
     "zuper-commons-z6",
     "typing_extensions",
     "Pillow",
