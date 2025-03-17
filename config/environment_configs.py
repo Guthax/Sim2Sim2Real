@@ -4,7 +4,7 @@ from stable_baselines3.common.vec_env import VecFrameStack
 from envs.duckietown.base.duckietown import DuckietownBaseDynamics
 from simulators.carla.carla_env import SelfCarlaEnv
 from util.general_wrappers import ResizeWrapper, CropWrapper, CannyWrapper, LaneMarkingWrapper, \
-    SegmentationFilterWrapper
+    SegmentationFilterWrapper, DuckieClipWrapper
 
 environment_configs = {
     "carla": {
@@ -52,5 +52,17 @@ environment_configs = {
             (CropWrapper, dict(crop_height_start=60, crop_height_end=120)),
             (TimeLimit, dict(max_episode_steps=2000))
         ]
-    }
+    },
+    "duckietown_lane_detect": {
+        "base_env": DuckietownBaseDynamics,
+        "arguments": dict(
+            render_img=True,
+            randomize_maps_on_reset=True,
+        ),
+        "wrappers": [
+            (ResizeWrapper, dict(dst_width=256, dst_height=256)),
+            (DuckieClipWrapper, None),
+            (TimeLimit, dict(max_episode_steps=2000))
+        ]
+    },
 }

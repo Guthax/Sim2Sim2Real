@@ -1,5 +1,6 @@
 # coding=utf-8
 import math
+import os.path
 from ctypes import byref
 from functools import lru_cache
 from typing import Tuple
@@ -16,16 +17,20 @@ from duckietown_world import get_texture_file
 from . import logger
 
 
-def get_texture(tex_name: str, rng=None, segment: bool = False) -> "Texture":
+def get_texture(tex_name: str, rng=None, segment: bool = False, custom_seg_folder = None) -> "Texture":
     paths = get_texture_file(tex_name)
 
     if rng:
-        path_idx = rng.randint(0, len(paths))
+        path_idx = np.random.randint(0, len(paths))
         path = paths[path_idx]
     else:
         path = paths[0]
 
+    if segment:
+        path = paths[3]
+
     oldpath = path
+
     if segment:
         path += ".SEGMENTED"
 
@@ -49,9 +54,9 @@ class Texture:
         self.tex_name = tex_name
         self.rng = rng
 
-    def bind(self, segment=False):
+    def bind(self, segment=False, seg_folder = None):
         if segment:
-            self = get_texture(self.tex_name, self.rng, True)
+            self = get_texture(self.tex_name, self.rng, True, custom_seg_folder = seg_folder)
 
         gl.glBindTexture(self.tex.target, self.tex.id)
 
@@ -100,6 +105,8 @@ def load_texture(tex_path: str, segment: bool = False, segment_into_color=None):
             # https://gist.github.com/nkymut/1cb40ea6ae4de0cf9ded7332f1ca0d55
 
             im = cv2.imread(tex_path, cv2.IMREAD_UNCHANGED)
+            #cv2.imshow("tex", im)
+            #cv2.waitKey(1)
 
             hsv = cv2.cvtColor(im, cv2.COLOR_BGR2HSV)
 
