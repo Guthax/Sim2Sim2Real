@@ -59,7 +59,7 @@ _CONFIG_DUCKIE = {
     "algorithm": "PPO",
     "algorithm_policy_network": "CnnPolicy",
     "algorithm_hyperparams": algorithm_params["PPO"],
-    "observation_space": gym.spaces.Box(low=0, high=255, shape=(128, 128, 3), dtype=np.uint8),
+    "observation_space": gym.spaces.Box(low=0, high=255, shape=(60, 160, 3), dtype=np.uint8),
     "action_space": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
     "environments": {
         "duckie": environment_configs["duckietown_lane_detect"],

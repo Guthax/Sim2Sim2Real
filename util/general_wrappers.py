@@ -223,7 +223,7 @@ class CannyWrapper(gym.ObservationWrapper):
 
 class CropWrapper(gym.ObservationWrapper):
     def __init__(self, env=None, crop_height_start= 60, crop_height_end=120, crop_width_start=0, crop_width_end=160, channels=3):
-        gym.ObservationWrapper._F_init__(self, env)
+        gym.ObservationWrapper.__init__(self, env)
 
         self.crop_h_start =crop_height_start
         self.crop_h_end = crop_height_end
@@ -290,7 +290,7 @@ class DuckieClipWrapper(gym.ObservationWrapper):
         # Apply the mask: Keep only selected colors, set others to black
         filtered_image = np.zeros_like(image)  # Create a black image
         filtered_image[mask == 1] = image[mask == 1]  # Copy only the kept colors
-        #filtered_image = cv2.cvtColor(filtered_image, cv2.COLOR_BGR2RGB)
+        filtered_image = cv2.cvtColor(filtered_image, cv2.COLOR_BGR2RGB)
         cv2.imshow("modified", filtered_image)
         cv2.waitKey(1)
         return modified_image
