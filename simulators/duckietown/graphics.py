@@ -28,13 +28,9 @@ def get_texture(tex_name: str, rng=None, segment: bool = False, custom_seg_folde
 
     if segment:
         path = paths[3]
+
     oldpath = path
 
-    if custom_seg_folder:
-        splits = path.split('\\')
-        oldpath = os.path.join(custom_seg_folder, splits[-1])
-        path = os.path.join(custom_seg_folder, splits[-1])
-        
     if segment:
         path += ".SEGMENTED"
 
