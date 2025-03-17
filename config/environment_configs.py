@@ -18,6 +18,17 @@ environment_configs = {
             (TimeLimit, dict(max_episode_steps=2000))
         ]
     },
+    "carla_seg": {
+        "base_env": SelfCarlaEnv,
+        "arguments": dict(
+            render=False,
+            rgb_camera=False,
+            seg_camera=True,
+        ),
+        "wrappers": [
+            (SegmentationFilterWrapper, None)
+        ]
+    },
     "carla_rgb_seg": {
         "base_env": SelfCarlaEnv,
         "arguments": dict(
@@ -26,9 +37,7 @@ environment_configs = {
             seg_camera=True,
         ),
         "wrappers": [
-            (ResizeWrapper, dict(dst_width=160, dst_height=120)),
-            (SegmentationFilterWrapper, None),
-            (TimeLimit, dict(max_episode_steps=2000))
+            (SegmentationFilterWrapper, None)
         ]
     },
     "carla_canny": {
