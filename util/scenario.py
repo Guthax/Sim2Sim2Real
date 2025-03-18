@@ -1,10 +1,11 @@
 import os
+from platform import architecture
 
 import numpy as np
 import torch.cuda
 from contracts.library.extensions import kwarg
 from gymnasium.wrappers import TimeLimit
-from stable_baselines3 import PPO, SAC
+from stable_baselines3 import PPO, SAC, TD3
 
 import gymnasium as gym
 from stable_baselines3.common.logger import configure
@@ -26,13 +27,20 @@ class Scenario:
         self._init_algorithm()
 
     def _init_algorithm(self, model_path = None):
+        if self.config["algorithm"] == "PPO":
+            architecture = PPO
+        elif self.config["algorithm"] == "SAC":
+            architecture = SAC
+        else:
+            architecture = TD3
+
         if not model_path:
             first_env = self.environments[next(iter(self.environments))]
-            self.algorithm = PPO(self.config['algorithm_policy_network'], first_env, verbose=2,
+            self.algorithm = architecture(self.config['algorithm_policy_network'], first_env, verbose=2,
                                  device='cuda' if torch.cuda.is_available() else 'cpu',
                                  **self.config["algorithm_hyperparams"])
         else:
-            self.algorithm = PPO.load(model_path,
+            self.algorithm = architecture.load(model_path,
                                       custom_objects = dict(
                                           learning_rate = lr_schedule(1e-4, 5e-5, 2),
                                           clip_range = 0.1
