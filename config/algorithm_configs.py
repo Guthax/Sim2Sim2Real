@@ -90,7 +90,7 @@ algorithm_params = {
             "features_extractor_kwargs": {"features_dim": 256},
         },
         learning_rate= 0.0001,
-        buffer_size= 1000,
+        buffer_size= 300000,
         learning_starts= 10000,
         batch_size= 100,
         tau= 0.01,
