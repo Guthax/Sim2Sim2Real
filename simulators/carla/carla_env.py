@@ -14,8 +14,10 @@ from simulators.carla.misc import get_pos, get_closest_waypoint, get_next_waypoi
 from simulators.carla.route_planner import RoutePlanner
 
 
+CAMERA_WIDTH = 160
+CAMERA_HEIGHT = 120
 class SelfCarlaEnv(gym.Env):
-    def __init__(self, host='localhost', port=2000, render=False):
+    def __init__(self, host='localhost', port=2000, rgb_camera=True, seg_camera=False, render=False):
         super(SelfCarlaEnv, self).__init__()
         self.client = carla.Client(host, port)
         self.client.set_timeout(20.0)
@@ -26,9 +28,9 @@ class SelfCarlaEnv(gym.Env):
         settings.fixed_delta_seconds = 1 / fps
         settings.synchronous_mode = True
 
-        settings.substepping = True
-        settings.max_substep_delta_time = 0.0166666666666667
-        settings.max_substeps = 3
+        #settings.substepping = True
+        #settings.max_substep_delta_time = 0.0166666666666667
+        #settings.max_substeps = 3
 
         
         self.world.apply_settings(settings)
@@ -36,6 +38,7 @@ class SelfCarlaEnv(gym.Env):
         self.client.reload_world(False)  # reload map keeping the world settings
         self.world.tick()
 
+        """
         self.world.unload_map_layer(carla.MapLayer.Buildings)
         self.world.unload_map_layer(carla.MapLayer.Decals)
         self.world.unload_map_layer(carla.MapLayer.Foliage)
@@ -44,7 +47,7 @@ class SelfCarlaEnv(gym.Env):
         self.world.unload_map_layer(carla.MapLayer.Props)
         self.world.unload_map_layer(carla.MapLayer.StreetLights)
         self.world.unload_map_layer(carla.MapLayer.Walls)
-
+        """
 
         self.blueprint_library = self.world.get_blueprint_library()
         self.vehicle_bp = self.blueprint_library.filter('model3')[0]
@@ -55,14 +58,28 @@ class SelfCarlaEnv(gym.Env):
         self.lane_invasion_occured = False
         self.route_planner = None
 
+        self.rgb_buffer = None
+        self.seg_buffer = None
+
         self.action_space = spaces.Box(low=np.float32(-1), high=np.float32(1))
-        self.observation_space = spaces.Box(low=0, high=255, shape=(200, 400, 3),
-                                            dtype=np.uint8)  # Example observation (image input)
+
+        self.camera_rgb_enabled = rgb_camera
+        self.camera_seg_enabled = seg_camera
+
+        if self.camera_rgb_enabled and self.camera_seg_enabled:
+            self.observation_space = spaces.Dict({
+                "camera_rgb": spaces.Box(low=0, high=255, shape=(CAMERA_HEIGHT, CAMERA_WIDTH, 3), dtype=np.uint8),
+                "camera_seg": spaces.Box(low=0, high=255, shape=(CAMERA_HEIGHT, CAMERA_WIDTH, 3), dtype=np.uint8),
+            })
+        else:
+
+            self.observation_space = spaces.Box(low=0, high=255, shape=(CAMERA_HEIGHT, CAMERA_WIDTH, 3),dtype=np.uint8)
+
 
         self._setup_vehicle()
 
         self.count_until_randomization = 0
-        self.randomize_every_steps = 50000
+        self.randomize_every_steps = 20000
 
         self.colors_to_keep_seg = [
             (128, 64, 128),
@@ -85,22 +102,44 @@ class SelfCarlaEnv(gym.Env):
             raise RuntimeError("Failed to spawn vehicle after multiple attempts.")
         self.actor_list.append(self.vehicle)
         self.world.tick()
-        self._setup_camera()
+
+        self._setup_cameras()
+
         self._setup_collision_sensor()
         self._setup_lane_invasion_sensor()
 
-    def _setup_camera(self):
+    def _setup_cameras(self):
+        self.image_rgb = None
+        self.image_seg = None
+
+        if self.camera_seg_enabled:
+            self._setup_camera_seg()
+        if self.camera_rgb_enabled:
+            self._setup_camera_rgb()
+
+    def _setup_camera_rgb(self):
+        camera_bp = self.blueprint_library.find('sensor.camera.rgb')
+        camera_bp.set_attribute('image_size_x', str(CAMERA_WIDTH))
+        camera_bp.set_attribute('image_size_y', str(CAMERA_HEIGHT))
+        camera_bp.set_attribute('fov', '90')
+        #camera_bp.set_attribute("sensor_tick", "0.05")  # Match world tick
+        spawn_point = carla.Transform(carla.Location(x=2.5, z=1.3))
+        self.camera_rgb = self.world.spawn_actor(camera_bp, spawn_point, attach_to=self.vehicle)
+        self.actor_list.append(self.camera_rgb)
+        self.camera_rgb.listen(lambda image: self._process_image_rgb(image))
+
+
+    def _setup_camera_seg(self):
         camera_bp = self.blueprint_library.find('sensor.camera.semantic_segmentation')
         #camera_bp = self.blueprint_library.find('sensor.camera.rgb')
-        camera_bp.set_attribute('image_size_x', '800')
-        camera_bp.set_attribute('image_size_y', '600')
+        camera_bp.set_attribute('image_size_x', str(CAMERA_WIDTH))
+        camera_bp.set_attribute('image_size_y', str(CAMERA_HEIGHT))
         camera_bp.set_attribute('fov', '90')
-        camera_bp.set_attribute("sensor_tick", "0.05")  # Match world tick
-        spawn_point = carla.Transform(carla.Location(x=1.5, z=2.0))
-        self.camera = self.world.spawn_actor(camera_bp, spawn_point, attach_to=self.vehicle)
-        self.actor_list.append(self.camera)
-        self.image = None
-        self.camera.listen(lambda image: self._process_image_seg(image))
+        #camera_bp.set_attribute("sensor_tick", "0.05")  # Match world tick
+        spawn_point = carla.Transform(carla.Location(x=2.5, z=1.3))
+        self.camera_seg = self.world.spawn_actor(camera_bp, spawn_point, attach_to=self.vehicle)
+        self.actor_list.append(self.camera_seg)
+        self.camera_seg.listen(lambda image: self._process_image_seg(image))
 
     def _setup_collision_sensor(self):
         collision_bp = self.blueprint_library.find('sensor.other.collision')
@@ -139,40 +178,42 @@ class SelfCarlaEnv(gym.Env):
         #print(types_crossed)
         self.lane_invasion_occured = True
 
-    def _process_image(self, image):
-        print("RAW", image)
-        image.convert(carla.ColorConverter.CityScapesPalette)
-        #print("CONVERTED", res)
+    def _process_image_rgb(self, image):
+        #print("RGB image received")
         array = np.frombuffer(image.raw_data, dtype=np.uint8)
         array = array.reshape((image.height, image.width, 4))[:, :, :3]
-        self.image = array
+        self.rgb_buffer = array
+        self.image_rgb = array
 
     def _process_image_seg(self, image):
-        colors_to_keep = np.array(self.colors_to_keep_seg)
+        #print("Segmentation image received")
         image.convert(carla.ColorConverter.CityScapesPalette)
         array = np.frombuffer(image.raw_data, dtype=np.uint8)
         array = array.reshape((image.height, image.width, 4))[:, :, :3]
         array = cv2.cvtColor(array, cv2.COLOR_BGR2RGB)
-        self.image=array
-        # Create a mask for colors to keep
-        """
-        mask = np.zeros(array.shape[:2], dtype=np.uint8)
-        for color in colors_to_keep:
-            mask |= np.all(array == color, axis=-1)  # Mark pixels that match any of the colors
+        self.seg_buffer = array
 
-        # Apply the mask: Keep only selected colors, set others to black
-        filtered_image = np.zeros_like(array)  # Create a black image
-        filtered_image[mask == 1] = array[mask == 1]  # Copy only the kept colors
-        self.image = filtered_image
-        """
+    def _get_observation_rgb(self):
+        while self.rgb_buffer is None:
+            pass
+        obs = self.rgb_buffer.copy()
+        self.observation_buffer = None
+        return obs
+
+    def _get_observation_seg(self):
+        while self.seg_buffer is None:
+            pass
+        obs = self.seg_buffer.copy()
+        self.seg_buffer = None
+        return obs
 
     def reset(self, *, seed=None, options=None):
         for actor in self.actor_list:
             actor.destroy()
 
-        if self.count_until_randomization >= self.randomize_every_steps:
-            self._randomize_weather()
-            self.count_until_randomization = 0
+        #if self.count_until_randomization >= self.randomize_every_steps:
+        #    self._randomize_weather()
+        #    self.count_until_randomization = 0
         self.image = np.zeros((640, 640, 3), dtype=np.uint8)
         self.actor_list = []
 
@@ -195,12 +236,26 @@ class SelfCarlaEnv(gym.Env):
             if time.time() - start_time > 2.0:  # Timeout after 2 seconds
                 print("Warning: No image received from camera sensor.")
                 break
-        self.world.tick()
-        obs = self.image if self.image is not None else np.zeros((200, 400, 3), dtype=np.uint8)
+
         if self.render_mode:
             self.render()
 
-        return obs, {}
+
+
+        if self.camera_rgb_enabled and self.camera_seg_enabled:
+            observation = {
+                "camera_rgb": self._get_observation_rgb(),
+                "camera_seg": self._get_observation_seg()
+            }
+        elif self.camera_rgb_enabled:
+            observation =  self.image_rgb if self.image_rgb is not None else np.zeros((CAMERA_HEIGHT, CAMERA_WIDTH, 3), dtype=np.uint8)
+
+        elif self.camera_seg_enabled:
+            observation =  self.image_seg if self.image_seg is not None else np.zeros((CAMERA_HEIGHT, CAMERA_WIDTH, 3), dtype=np.uint8)
+        else:
+            observation = np.zeros((CAMERA_HEIGHT, CAMERA_WIDTH, 3),dtype=np.uint8)
+
+        return observation, {}
 
     def _draw_points(self):
         life_time = 30
@@ -251,12 +306,24 @@ class SelfCarlaEnv(gym.Env):
 
         #self.vehicle.apply_control(carla.VehicleControl(throttle=float(0.5), steer=float(steer)))  # Fixed speed of 30 kph
         self.world.tick()
+        if self.camera_rgb_enabled and self.camera_seg_enabled:
+            observation = {
+                "camera_rgb": self._get_observation_rgb(),
+                "camera_seg": self._get_observation_seg()
+            }
+        elif self.camera_rgb_enabled:
+            observation =  self.image_rgb if self.image_rgb is not None else np.zeros((CAMERA_HEIGHT, CAMERA_WIDTH, 3), dtype=np.uint8)
 
-        observation = self.image if self.image is not None else np.zeros((640, 640, 3), dtype=np.uint8)
+        elif self.camera_seg_enabled:
+            observation =  self.image_seg if self.image_seg is not None else np.zeros((CAMERA_HEIGHT, CAMERA_WIDTH, 3), dtype=np.uint8)
+        else:
+            observation = np.zeros((CAMERA_HEIGHT, CAMERA_WIDTH, 3), dtype=np.uint8)
+
         self.waypoints = self.route_planner.run_step()
 
         # Calculate reward
         reward, done = self._get_reward_new()
+        print(reward)
         info = {}
 
         if self.render_mode:
@@ -265,50 +332,14 @@ class SelfCarlaEnv(gym.Env):
         self.count_until_randomization += 1
 
         return observation, reward, done, False, info
-    """
-    def _get_reward(self):
+
+    def _get_reward_new(self):
         # Get the lateral distance from the center of the lane
-        ego_loc = self.vehicle.get_transform().location
-        wpt = get_closest_waypoint(self.waypoints, ego_loc.x, ego_loc.y)
-        lane_distance, w = get_lane_dis(self.waypoints, ego_loc.x, ego_loc.y)  # Distance from lane center
-        lane_distance = abs(lane_distance)
-        #print(lane_distance)
-
-        if lane_distance > 3:
-            return -10.0, True  # Large negative reward and terminate episode
-
-        # Reward for staying close to the lane center
-        lane_penalty = max(2.5 - lane_distance, 0)
-
-        # Get the steering action applied
-        steer_value = self.vehicle.get_control().steer
-
-
-        steer_change_penalty = -abs(steer_value - self.previous_steer) * 1.0 if self.previous_steer else 0
-        self.previous_steer = steer_value  # Update previous steering value
-
-        angle = (self.vehicle.get_transform().rotation.yaw - wpt[2]) % 360
-
-        print("HEADING ALIGNMENT: ", angle)
-        # Additional penalties for lane invasion
-        invasion_penalty = -3.0  if self.lane_invasion_occured else 0
 
         # Collision is heavily penalized
         if self.collision_occurred:
             return -20.0, True  # Large negative reward and terminate episode
 
-        # Reward is a combination of staying in lane, smooth steering, and avoiding sudden changes
-        reward = 1 + lane_penalty + (0.1 * steer_change_penalty) + invasion_penalty
-        #print(
-        #    f"Lane penalty: {lane_penalty}, Steer change: {steer_change_penalty}, invasion_penalty: {invasion_penalty}, total: {reward}")
-
-        done = False  # The episode continues unless a collision occurs
-
-        return reward, done
-
-    """
-    def _get_reward_new(self):
-        # Get the lateral distance from the center of the lane
         ego_loc = self.vehicle.get_transform().location
 
         waypt =  get_next_waypoint(self.waypoints, ego_loc.x, ego_loc.y, ego_loc.z)
@@ -329,18 +360,17 @@ class SelfCarlaEnv(gym.Env):
         self.previous_steer = steer_value  # Update previous steering value
         invasion_penalty = 0
 
-        # Collision is heavily penalized
-        if self.collision_occurred:
-            return -20.0, True  # Large negative reward and terminate episode
-
 
         # Reward is a combination of staying in lane, smooth steering, and avoiding sudden changes
         reward = 1.0  + dot_dir - lane_distance + steer_change_penalty + invasion_penalty
-        #print(f"dot dir: {dot_dir}, lane dist: {lane_distance}, invasion: {invasion_penalty}, total: {reward}")
 
+        is_off_road = self.world.get_map().get_waypoint(self.camera_rgb.get_transform().location, project_to_road=False) is None
+
+        if is_off_road:
+            reward = reward - 10.0
+            return reward, True
         #if self.lane_invasion_occured:
         #    return reward - 5, True
-
         if lane_distance > 2.5:
             reward = reward - 10.0
             return reward, True
@@ -351,31 +381,12 @@ class SelfCarlaEnv(gym.Env):
 
         return reward, False
 
-    def _get_reward_live(self):
-
-        if self.collision_occurred:
-            done = True
-            reward = -100
-            return reward, done
-        if self.lane_invasion_occured:
-            done = True
-            reward = -20
-            return reward, done
-
-        reward = 1
-        if self.steps_alive > 100:
-            reward = 2
-
-        if self.steps_alive > 300:
-            reward = 3
-
-        self.steps_alive += 1
-
-        return reward, False
-
     def render(self, mode='human'):
-        if self.image is not None:
-            cv2.imshow("CARLA Camera", self.image)
+        if self.image_rgb is not None:
+            cv2.imshow("CARLA Camera RGB", self.image_rgb)
+            cv2.waitKey(1)
+        if self.image_seg is not None:
+            cv2.imshow("CARLA Camera SEG", self.image_seg)
             cv2.waitKey(1)
 
     def close(self):

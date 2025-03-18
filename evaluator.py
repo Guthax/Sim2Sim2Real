@@ -37,11 +37,12 @@ class Evaluator:
         while timesteps < self.evaluation_timesteps or self.evaluation_timesteps == -1:
             while not done and current_episode_length < self.episode_length:
                 action, _states = self.algorithm.predict(state, deterministic=True)
-                #print(f"Action: {action}")
+                print(f"Action: {action}")
                 state, reward, done, info = self.evaluation_environment.step(action)
                 #print(reward)
                 if self.apply_grad_cam:
-                    self.grad_cam(state)
+                    self.grad_cam(state, key="camera_rgb")
+                    self.grad_cam(state, key="camera_seg")
                 total_reward += reward
                 timesteps += 1
                 current_episode_length += 1
@@ -52,10 +53,14 @@ class Evaluator:
         avg_reward = total_reward / timesteps
         print(f"AVERAGE REWARD: {avg_reward}")
 
-    def grad_cam(self, obs):
-        print(obs.shape)
+    def grad_cam(self, obs, key=None):
+        #print(obs.shape)
         policy_net = self.algorithm.policy
-        last_cnn_layer = policy_net.features_extractor.cnn[0]
+
+        if key:
+            last_cnn_layer= policy_net.features_extractor.extractors[key].cnn[1]
+        else:
+            last_cnn_layer = policy_net.features_extractor.cnn[1]
 
         activations = {}
         gradients = {}
@@ -95,7 +100,8 @@ class Evaluator:
         gradcam = (gradcam - gradcam.min()) / (gradcam.max() - gradcam.min())
 
         # Resize heatmap to match original image
-        #obs = obs["camera_rgb"]
+        if key:
+            obs = obs[key]
         obs = obs.squeeze(0)
         obs = np.transpose(obs, (2,1,0))
         heatmap = cv2.resize(gradcam, (obs.shape[0], obs.shape[1]))
@@ -113,8 +119,10 @@ class Evaluator:
 
         #plt.subplot(1, 2, 2)
         #plt.title("Grad-CAM Visualization")
-        cv2.imshow("gradients", heatmap)
-
+        if key:
+            cv2.imshow(f"gradients - {key}", heatmap)
+        else:
+            cv2.imshow(f"gradients", heatmap)
         cv2.waitKey(1)
         # Remove hooks after use
         forward_handle.remove()
