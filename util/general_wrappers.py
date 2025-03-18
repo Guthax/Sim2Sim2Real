@@ -219,30 +219,34 @@ class DuckieClipWrapper(gym.ObservationWrapper):
 
     def observation(self, observation):
         # Example usage:
-        image = observation
+        image = observation["camera_seg"]
+
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
         target_rgb = (128, 64, 128)  # RGB value to find
         new_rgb =(128, 64, 128),  # RGB value to replace with
 
         modified_image = self.replace_nearby_colors(image, target_rgb, new_rgb, threshold=2)
-        target_rgb = (157,234,50)# RGB value to find
-        new_rgb =(157,234,50) # RGB value to replace with
+        target_rgb = (50,234, 157)# RGB value to find
+        new_rgb =(50,234, 157) # RGB value to replace with
 
         modified_image = self.replace_nearby_colors(modified_image, target_rgb, new_rgb, threshold=20)
         # Create mask where pixels match the target color
         mask_1 = np.all(modified_image == (128,64,128), axis=-1, keepdims=True)
-        mask_2 = np.all(modified_image == (157,234,50), axis=-1, keepdims=True)
+        mask_2 = np.all(modified_image == (50,234,157), axis=-1, keepdims=True)
         mask = mask_1 + mask_2
         image = modified_image * mask.astype(modified_image.dtype)
 
         mask = np.zeros(image.shape[:2], dtype=np.uint8)
-        for color in [(128,64,128), (157,234,50)]:
+        for color in [(128,64,128), (50,234,157)]:
             mask |= np.all(image == color, axis=-1)  # Mark pixels that match any of the colors
 
         # Apply the mask: Keep only selected colors, set others to black
         filtered_image = np.zeros_like(image)  # Create a black image
         filtered_image[mask == 1] = image[mask == 1]  # Copy only the kept colors
-        filtered_image = cv2.cvtColor(filtered_image, cv2.COLOR_BGR2RGB)
-        cv2.imshow("modified", filtered_image)
-        cv2.waitKey(1)
-        return modified_image
+        result = observation
+        result["camera_seg"] = filtered_image
+        #cv2.imshow("modified", result["camera_seg"])
+        #cv2.waitKey(1)
+        return result
 

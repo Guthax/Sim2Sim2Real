@@ -13,13 +13,24 @@ class DuckietownBaseDynamics(Simulator):
     instead of differential drive motor velocities. Uses RGB camera as observation space and no domain randomization.
     """
 
-    def __init__(self, gain=1.0, trim=0.0, radius=0.0318, k=27.0, limit=1.0, render_img=False, **kwargs):
+    def __init__(self, gain=1.0, trim=0.0, radius=0.0318, k=27.0, limit=1.0, rgb_camera=True, seg_camera=False, render_img=False, **kwargs):
         self.obs_rgb_name = "camera_rgb"
+        self.camera_rgb_enabled = rgb_camera
+        self.camera_seg_enabled = seg_camera
         Simulator.__init__(self, **kwargs)
 
         self.action_space = spaces.Box(low=np.float32(-1), high=np.float32(1))
 
-        self.observation_space = spaces.Box(low=0, high=255, shape=(self.camera_height, self.camera_width, 3), dtype=np.uint8)
+
+        if self.camera_rgb_enabled and self.camera_seg_enabled:
+            self.observation_space = spaces.Dict({
+                "camera_rgb": spaces.Box(low=0, high=255, shape=(self.camera_height, self.camera_width, 3), dtype=np.uint8),
+                "camera_seg": spaces.Box(low=0, high=255, shape=(self.camera_height, self.camera_width, 3), dtype=np.uint8),
+            })
+        else:
+
+            self.observation_space = spaces.Box(low=0, high=255, shape=(self.camera_height, self.camera_width, 3),dtype=np.uint8)
+
         # Should be adjusted so that the effective speed of the robot is 0.2 m/s
         self.gain = gain
 
@@ -52,8 +63,24 @@ class DuckietownBaseDynamics(Simulator):
         right_wheel_velocity = 0.25 * (2 - steering_angle)
 
         vels = np.array([left_wheel_velocity, right_wheel_velocity])
+        obs_rgb, reward, done, trunc, info = Simulator.step(self, vels)
 
-        obs, reward, done, trunc, info = Simulator.step(self, vels)
+        if self.camera_rgb_enabled and self.camera_seg_enabled:
+            obs_seg = self.render_obs(True)
+            obs = {
+                "camera_rgb": obs_rgb,
+                "camera_seg": obs_seg
+            }
+        elif self.camera_rgb_enabled:
+            obs = obs_rgb
+        elif self.camera_seg_enabled:
+            obs_seg = self.render_obs(segment=True)
+            obs = {
+                "camera_rgb": obs_rgb,
+                "camera_seg": obs_seg
+            }
+
+
         self.total_reward += reward
         self.mean_reward = self.total_reward / self.step_count
 
@@ -76,19 +103,35 @@ class DuckietownBaseDynamics(Simulator):
         info["completed_steps"] = self.step_count
 
         if self.render_img:
-            img = self._render_img(
-                800,
-                600,
-                self.multi_fbo_human,
-                self.final_fbo_human,
-                self.img_array_human,
-                top_down=False,
-                segment=True,
-                custom_segmentation_folder="/home/jurriaan/Documents/Programming/Sim2Sim2Real/simulators/duckietown/segmentation"
-            )
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            cv2.imshow("top_down_view", img)
-            cv2.waitKey(1)
+
+            if self.camera_rgb_enabled:
+                img = self._render_img(
+                    160,
+                    120,
+                    self.multi_fbo_human,
+                    self.final_fbo_human,
+                    self.img_array_human,
+                    top_down=False,
+                    segment=False,
+                    custom_segmentation_folder="/home/jurriaan/Documents/Programming/Sim2Sim2Real/simulators/duckietown/segmentation"
+                )
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                cv2.imshow("rgb", img)
+                cv2.waitKey(1)
+            if self.camera_seg_enabled:
+                img = self._render_img(
+                    160,
+                    120,
+                    self.multi_fbo_human,
+                    self.final_fbo_human,
+                    self.img_array_human,
+                    top_down=False,
+                    segment=True,
+                    custom_segmentation_folder="/home/jurriaan/Documents/Programming/Sim2Sim2Real/simulators/duckietown/segmentation"
+                )
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                cv2.imshow("seg", img)
+                cv2.waitKey(1)
 
             # Add a small delay for frame rate control
         return obs, reward, done, trunc, info
@@ -127,23 +170,39 @@ class DuckietownBaseDynamics(Simulator):
             return -40
 
     def reset(self, seed = None, options = None, segment: bool = False):
-        obs, _ = super().reset(seed, options, segment)
-        obs = cv2.cvtColor(obs, cv2.COLOR_BGR2RGB)
+        obs_rgb, _ = super().reset(seed, options, segment)
+        obs_rgb = cv2.cvtColor(obs_rgb, cv2.COLOR_BGR2RGB)
+        if self.camera_rgb_enabled and self.camera_seg_enabled:
+            obs_seg = self.render_obs(True)
+            obs_seg = cv2.cvtColor(obs_seg, cv2.COLOR_BGR2RGB)
+            obs = {
+                "camera_rgb": obs_rgb,
+                "camera_seg": obs_seg
+            }
+        elif self.camera_rgb_enabled:
+            obs = obs_rgb
+        elif self.camera_seg_enabled:
+            obs_seg = self.render_obs(True)
+            obs = {
+                "camera_rgb": obs_rgb,
+                "camera_seg": obs_seg
+            }
+
         return obs, {}
 
-    def render_obs(self, segment: bool = True):
-        image = Simulator.render_obs(self, True)
+    def render_obs(self, segment: bool = False):
+        image = Simulator.render_obs(self, segment)
         #image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
         # Identify black pixels (where all RGB channels are 0)
-        black_pixels = (image[:, :, 0] == 0) & (image[:, :, 1] == 0) & (image[:, :, 2] == 0)
+        #black_pixels = (image[:, :, 0] == 0) & (image[:, :, 1] == 0) & (image[:, :, 2] == 0)
 
         # Generate a single random grey value
         random_grey = np.random.randint(50, 200, dtype=np.uint8)
 
         # Apply the random grey color to black pixels
-        image[black_pixels] = [255, 255, 255]
-        img = image
+        #image[black_pixels] = [255, 255, 255]
+        #img = image
         #cv2.imshow("Seg", img)
         #cv2.waitKey(1)
-        return img
+        return image
