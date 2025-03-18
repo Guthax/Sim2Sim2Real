@@ -21,7 +21,7 @@ environment_configs = {
     "carla_seg": {
         "base_env": SelfCarlaEnv,
         "arguments": dict(
-            render=True,
+            render=False,
             rgb_camera=False,
             seg_camera=True,
         ),

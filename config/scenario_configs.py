@@ -31,9 +31,9 @@ _CONFIG_CARLA_CANNY = {
 
 _CONFIG_CARLA_SEG = {
     "name": "carla_seg",
-    "algorithm": "TD3",
+    "algorithm": "PPO",
     "algorithm_policy_network": "CnnPolicy",
-    "algorithm_hyperparams": algorithm_params["TD3"],
+    "algorithm_hyperparams": algorithm_params["PPO"],
     "observation_space": gym.spaces.Box(low=0, high=255, shape=(120, 160, 3), dtype=np.uint8),
     "action_space": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
     "environments": {
