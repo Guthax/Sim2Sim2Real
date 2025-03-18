@@ -75,7 +75,7 @@ environment_configs = {
     "duckie_rgb_seg": {
         "base_env": DuckietownBaseDynamics,
         "arguments": dict(
-            render_img=False,
+            render_img=True,
 
             rgb_camera=True,
             seg_camera=True,
