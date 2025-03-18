@@ -70,21 +70,19 @@ environment_configs = {
             randomize_maps_on_reset=False,
         ),
         "wrappers": [
-            (ResizeWrapper, dict(dst_width=160, dst_height=120)),
-            (CropWrapper, dict(crop_height_start=60, crop_height_end=120)),
-            (TimeLimit, dict(max_episode_steps=2000))
         ]
     },
-    "duckietown_lane_detect": {
+    "duckie_rgb_seg": {
         "base_env": DuckietownBaseDynamics,
         "arguments": dict(
-            render_img=True,
-            randomize_maps_on_reset=True,
+            render_img=False,
+
+            rgb_camera=True,
+            seg_camera=True,
+            randomize_maps_on_reset=False,
         ),
         "wrappers": [
-            (ResizeWrapper, dict(dst_width=256, dst_height=256)),
-            (DuckieClipWrapper, None),
-            (TimeLimit, dict(max_episode_steps=2000))
+            (DuckieClipWrapper, None)
         ]
     },
 }
