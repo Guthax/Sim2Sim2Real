@@ -23,5 +23,5 @@ class Trainer:
         if additional_callbacks:
             cp = additional_callbacks + cp
 
-        model = self.algorithm.learn(total_timesteps=num_timesteps, callback=cp)
+        model = self.algorithm.learn(total_timesteps=num_timesteps, callback=cp, progress_bar=True)
         model.save(os.path.join(save_path, f"{name}_model_trained_{num_timesteps}"))
