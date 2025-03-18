@@ -2,6 +2,7 @@ import numpy as np
 import torch
 from stable_baselines3.common.noise import NormalActionNoise
 
+from util.feature_extractors import PaperCNN
 from utils import lr_schedule
 import torch as th
 
@@ -83,4 +84,23 @@ algorithm_params = {
         use_sde=True,
         policy_kwargs=dict(log_std_init=-3, net_arch=[500, 300]),
     ),
+    "TD3": dict(
+        policy_kwargs= {
+            "features_extractor_class": PaperCNN,
+            "features_extractor_kwargs": {"features_dim": 256},
+        },
+        learning_rate= 0.0001,
+        buffer_size= 1000,
+        learning_starts= 10000,
+        batch_size= 100,
+        tau= 0.01,
+        gamma= 0.99,
+        train_freq= 1000,
+        gradient_steps= 1000,
+        policy_delay= 2,
+        target_policy_noise= 0.2,
+        target_noise_clip= 0.5,
+        action_noise= NormalActionNoise(mean=np.zeros(1), sigma=0.1 * np.ones(1)),  # Encourages exploration
+    )
+
 }
