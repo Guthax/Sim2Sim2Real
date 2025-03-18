@@ -38,6 +38,7 @@ class SelfCarlaEnv(gym.Env):
         self.client.reload_world(False)  # reload map keeping the world settings
         self.world.tick()
 
+        """
         self.world.unload_map_layer(carla.MapLayer.Buildings)
         self.world.unload_map_layer(carla.MapLayer.Decals)
         self.world.unload_map_layer(carla.MapLayer.Foliage)
@@ -46,7 +47,7 @@ class SelfCarlaEnv(gym.Env):
         self.world.unload_map_layer(carla.MapLayer.Props)
         self.world.unload_map_layer(carla.MapLayer.StreetLights)
         self.world.unload_map_layer(carla.MapLayer.Walls)
-
+        """
 
         self.blueprint_library = self.world.get_blueprint_library()
         self.vehicle_bp = self.blueprint_library.filter('model3')[0]
@@ -182,6 +183,7 @@ class SelfCarlaEnv(gym.Env):
         array = np.frombuffer(image.raw_data, dtype=np.uint8)
         array = array.reshape((image.height, image.width, 4))[:, :, :3]
         self.rgb_buffer = array
+        self.image_rgb = array
 
     def _process_image_seg(self, image):
         #print("Segmentation image received")
@@ -362,7 +364,7 @@ class SelfCarlaEnv(gym.Env):
         # Reward is a combination of staying in lane, smooth steering, and avoiding sudden changes
         reward = 1.0  + dot_dir - lane_distance + steer_change_penalty + invasion_penalty
 
-        is_off_road = self.world.get_map().get_waypoint(self.camera_seg.get_transform().location, project_to_road=False) is None
+        is_off_road = self.world.get_map().get_waypoint(self.camera_rgb.get_transform().location, project_to_road=False) is None
 
         if is_off_road:
             reward = reward - 10.0
