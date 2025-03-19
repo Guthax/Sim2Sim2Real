@@ -53,10 +53,25 @@ class DuckietownBaseDynamics(Simulator):
         self.avg_center_dev = 0
         self.avg_speed = 0
 
+    def convert_steering(self,carla_steering, k=2.5, p=3):
+        """Convert CARLA steering values to Duckietown with nonlinear scaling.
+
+        Args:
+            carla_steering (float): Steering value from CARLA in range [-1, 1].
+            k (float): Scaling factor for amplification.
+            p (float): Power factor for nonlinear scaling.
+
+        Returns:
+            float: Adjusted steering value for Duckietown in range [-1, 1].
+        """
+        duckie_steering = np.sign(carla_steering) * k * (abs(carla_steering) ** p)
+        return np.clip(duckie_steering, -1, 1)  # Ensure within [-1, 1]
 
     def step(self, action):
         # Ensure the steering angle is within the valid range
-        steering_angle = max(-1, min(1, action))
+        #steering_angle = max(-1, min(1, action))
+        steering_angle = self.convert_steering(action)
+        print("ANGLE:" , steering_angle)
 
         # Map the steering angle to wheel velocities
         left_wheel_velocity = 0.25 * (2 + steering_angle)
@@ -75,11 +90,7 @@ class DuckietownBaseDynamics(Simulator):
             obs = obs_rgb
         elif self.camera_seg_enabled:
             obs_seg = self.render_obs(segment=True)
-            obs = {
-                "camera_rgb": obs_rgb,
-                "camera_seg": obs_seg
-            }
-
+            obs = obs_seg
 
         self.total_reward += reward
         self.mean_reward = self.total_reward / self.step_count
@@ -183,10 +194,7 @@ class DuckietownBaseDynamics(Simulator):
             obs = obs_rgb
         elif self.camera_seg_enabled:
             obs_seg = self.render_obs(True)
-            obs = {
-                "camera_rgb": obs_rgb,
-                "camera_seg": obs_seg
-            }
+            return obs_seg, {}
 
         return obs, {}
 
