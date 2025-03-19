@@ -219,9 +219,11 @@ class DuckieClipWrapper(gym.ObservationWrapper):
 
     def observation(self, observation):
         # Example usage:
-        image = observation["camera_seg"]
+        image = observation
+        if isinstance(self.env.observation_space, spaces.Dict):
+            image = observation["camera_seg"]
 
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        #image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         target_rgb = (128, 64, 128)  # RGB value to find
         new_rgb =(128, 64, 128),  # RGB value to replace with
@@ -244,9 +246,9 @@ class DuckieClipWrapper(gym.ObservationWrapper):
         # Apply the mask: Keep only selected colors, set others to black
         filtered_image = np.zeros_like(image)  # Create a black image
         filtered_image[mask == 1] = image[mask == 1]  # Copy only the kept colors
-        result = observation
-        result["camera_seg"] = filtered_image
-        #cv2.imshow("modified", result["camera_seg"])
-        #cv2.waitKey(1)
-        return result
+        if isinstance(self.env.observation_space, spaces.Dict):
+            result = observation
+            result["camera_seg"] = filtered_image
+            return result
 
+        return filtered_image

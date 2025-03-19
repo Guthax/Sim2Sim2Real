@@ -72,6 +72,19 @@ environment_configs = {
         "wrappers": [
         ]
     },
+
+    "duckie_seg": {
+        "base_env": DuckietownBaseDynamics,
+        "arguments": dict(
+            render_img=True,
+            rgb_camera=False,
+            seg_camera=True,
+            randomize_maps_on_reset=False,
+        ),
+        "wrappers": [
+            (DuckieClipWrapper, None)
+        ]
+    },
     "duckie_rgb_seg": {
         "base_env": DuckietownBaseDynamics,
         "arguments": dict(
