@@ -69,13 +69,13 @@ class DuckietownBaseDynamics(Simulator):
 
     def step(self, action):
         # Ensure the steering angle is within the valid range
-        #steering_angle = max(-1, min(1, action))
-        steering_angle = self.convert_steering(action)
+        steering_angle = max(-1, min(1, action))
+        #steering_angle = self.convert_steering(action)
         print("ANGLE:" , steering_angle)
 
         # Map the steering angle to wheel velocities
-        left_wheel_velocity = 0.25 * (2 + steering_angle)
-        right_wheel_velocity = 0.25 * (2 - steering_angle)
+        left_wheel_velocity = 0.25 * (1 + steering_angle)
+        right_wheel_velocity = 0.25 * (1 - steering_angle)
 
         vels = np.array([left_wheel_velocity, right_wheel_velocity])
         obs_rgb, reward, done, trunc, info = Simulator.step(self, vels)

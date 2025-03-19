@@ -103,6 +103,7 @@ class OneHotEncodeSegWrapper(gym.ObservationWrapper):
 
     def observation(self, observation):
         array = observation
+        #array = cv2.cvtColor(array, cv2.COLOR_BGR2RGB)
         if isinstance(self.env.observation_space, spaces.Dict):
             array = observation["camera_seg"]
 
@@ -331,14 +332,16 @@ class DuckieClipWrapper(gym.ObservationWrapper):
         target_rgb = (128, 64, 128)  # RGB value to find
         new_rgb =(128, 64, 128),  # RGB value to replace with
 
-        modified_image = self.replace_nearby_colors(image, target_rgb, new_rgb, threshold=2)
-        target_rgb = (50,234, 157)# RGB value to find
-        new_rgb =(50,234, 157) # RGB value to replace with
+        modified_image = self.replace_nearby_colors(image, target_rgb, new_rgb, threshold=8)
+        target_rgb = (157,234, 50)# RGB value to find
+        new_rgb =(157,234, 50)# RGB value to replace with
 
         modified_image = self.replace_nearby_colors(modified_image, target_rgb, new_rgb, threshold=20)
+        return modified_image
         # Create mask where pixels match the target color
-        mask_1 = np.all(modified_image == (128,64,128), axis=-1, keepdims=True)
-        mask_2 = np.all(modified_image == (50,234,157), axis=-1, keepdims=True)
+        #mask_1 = np.all(modified_image == (128,64,128), axis=-1, keepdims=True)
+        #mask_2 = np.all(modified_image == (50,234,157), axis=-1, keepdims=True)
+        """
         mask = mask_1 + mask_2
         image = modified_image * mask.astype(modified_image.dtype)
 
@@ -355,3 +358,4 @@ class DuckieClipWrapper(gym.ObservationWrapper):
             return result
 
         return filtered_image
+        """
