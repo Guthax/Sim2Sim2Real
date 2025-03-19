@@ -85,6 +85,109 @@ class SegmentationFilterWrapper(gym.ObservationWrapper):
 
         return result
 
+class OneHotEncodeSegWrapper(gym.ObservationWrapper):
+    color_map = {
+        (0, 0, 0): 0,  # Background
+        (128, 64, 128): 1,  # Class 1 (Road)
+        (157, 234, 50): 2,  # Class 2 (Markigns)
+    }
+
+    reset_every = 10000
+
+    def __init__(self, env=None):
+        gym.ObservationWrapper.__init__(self, env)
+        h,w = self.observation_space.shape[0], self.observation_space.shape[1]
+        self.observation_space = spaces.Box(low=0, high=255, shape=( len(self.color_map), h, w), dtype=np.uint8)
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+
+    def observation(self, observation):
+        array = observation
+        if isinstance(self.env.observation_space, spaces.Dict):
+            array = observation["camera_seg"]
+
+        one_hot_mask = self.one_hot_encode_segmentation_torch(torch.from_numpy(array).to(torch.uint8))
+        return one_hot_mask
+
+
+    def one_hot_encode_segmentation_torch(self,mask, background_class=0):
+        """
+        Convert an HxWx3 RGB segmentation mask to a CxHxW one-hot encoded representation using PyTorch.
+        Unrecognized colors are assigned to the background class.
+
+        Args:
+            mask (torch.Tensor): HxWx3 segmentation mask (RGB format, dtype=torch.uint8).
+            color_map (dict): Dictionary mapping RGB tuples to class indices.
+            background_class (int): Class index for background.
+            device (str): Device to run on ("cpu" or "cuda").
+
+        Returns:
+            torch.Tensor: One-hot encoded mask of shape (C, H, W) on the specified device.
+        """
+        color_map = self.color_map
+        device = self.device
+
+        mask = mask.to(device)  # Move the mask to the desired device (CPU or GPU)
+        H, W, _ = mask.shape
+        C = len(color_map)  # Number of classes to map (excluding background)
+
+        # Convert color_map to tensor for efficient processing
+        colors = torch.tensor(list(color_map.keys()), dtype=torch.uint8, device=device)  # (num_classes, 3)
+        class_indices = torch.tensor(list(color_map.values()), dtype=torch.long, device=device)  # (num_classes,)
+
+        # Flatten the mask for faster processing
+        mask_flat = mask.reshape(-1, 3)  # (H*W, 3)
+
+        # Find matching colors using broadcasting (vectorized comparison)
+        matches = (mask_flat[:, None, :] == colors).all(dim=2)  # (H*W, num_classes), True where match found
+
+        # Convert matches to int (to use argmax), and then find the class index
+        matches_int = matches.to(torch.long)
+        mapped_indices = torch.where(
+            matches_int.any(dim=1),
+            class_indices[matches_int.argmax(dim=1)],  # Get the class index of the first match
+            torch.tensor(background_class, device=device)  # Default to background class
+        )
+
+        # Reshape to (H, W)
+        class_mask = mapped_indices.view(H, W)
+
+        # One-hot encode the class indices
+        one_hot_mask = torch.nn.functional.one_hot(class_mask, num_classes=C).permute(2, 0, 1).to(
+            torch.float32).cpu().numpy()  # (C, H, W)
+
+        return one_hot_mask
+
+    def one_hot_encode_segmentation(self, mask, background_class=0):
+        """
+        Convert an HxWx3 RGB segmentation mask to a CxHxW one-hot encoded representation.
+        Unrecognized colors are assigned to the background class.
+
+        Args:
+            mask (numpy.ndarray): HxWx3 segmentation mask (RGB format).
+            color_map (dict): Dictionary mapping RGB tuples to class indices.
+            background_class (int): Class index for background.
+
+        Returns:
+            numpy.ndarray: One-hot encoded mask of shape (C, H, W).
+        """
+        color_map = self.color_map
+        H, W, _ = mask.shape
+        C = len(set(color_map.values()))  # Number of valid classes
+
+        # Flatten mask for fast processing
+        mask_reshaped = mask.reshape(-1, 3)
+
+        # Map RGB values to class indices, defaulting to background if not found
+        class_indices = np.array([
+            color_map.get(tuple(rgb), background_class) for rgb in map(tuple, mask_reshaped)
+        ]).reshape(H, W)
+
+        # One-hot encode and transpose to (C, H, W)
+        one_hot_mask = np.eye(C)[class_indices].transpose(2, 0, 1)
+
+        return one_hot_mask
+
 
 class CannyWrapper(gym.ObservationWrapper):
     def __init__(self, env=None):
