@@ -23,8 +23,8 @@ algorithm_params = {
             net_arch=dict(pi=[512, 256], vf=[512, 256]),
             activation_fn=torch.nn.ReLU,  # ReLU activation for stable gradients
             log_std_init=-1,  # Lower initial std to encourage smaller actions
-            features_extractor_class=PaperCNN,
-            features_extractor_kwargs={"features_dim": 256}
+            #features_extractor_class=PaperCNN,
+            #features_extractor_kwargs={"features_dim": 256}
         )
         #policy_kwargs=dict(activation_fn=th.nn.ReLU,
         #                   net_arch=[dict(pi=[500, 300], vf=[500, 300])])

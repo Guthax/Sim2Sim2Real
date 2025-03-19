@@ -3,7 +3,8 @@ from stable_baselines3.common.vec_env import VecFrameStack
 
 from envs.duckietown.base.duckietown import DuckietownBaseDynamics
 from simulators.carla.carla_env import SelfCarlaEnv
-from util.general_wrappers import ResizeWrapper, CropWrapper, CannyWrapper,SegmentationFilterWrapper, DuckieClipWrapper
+from util.general_wrappers import ResizeWrapper, CropWrapper, CannyWrapper, SegmentationFilterWrapper, \
+    DuckieClipWrapper, OneHotEncodeSegWrapper
 
 environment_configs = {
     "carla": {
@@ -26,7 +27,7 @@ environment_configs = {
             seg_camera=True,
         ),
         "wrappers": [
-            (SegmentationFilterWrapper, None)
+            (OneHotEncodeSegWrapper, None)
         ]
     },
     "carla_rgb_seg": {
