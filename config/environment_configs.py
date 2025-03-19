@@ -80,10 +80,11 @@ environment_configs = {
             render_img=True,
             rgb_camera=False,
             seg_camera=True,
-            randomize_maps_on_reset=False,
+            randomize_maps_on_reset=True,
         ),
         "wrappers": [
-            (DuckieClipWrapper, None)
+            (DuckieClipWrapper, None),
+            (OneHotEncodeSegWrapper, None)
         ]
     },
     "duckie_rgb_seg": {
