@@ -1,7 +1,6 @@
 from gymnasium.wrappers import TimeLimit
-from stable_baselines3.common.vec_env import VecFrameStack
 
-from envs.duckietown.base.duckietown import DuckietownBaseDynamics
+from envs.duckietown.duckietown import DuckietownBaseDynamics
 from simulators.carla.carla_env import SelfCarlaEnv
 from util.general_wrappers import ResizeWrapper, CropWrapper, CannyWrapper, SegmentationFilterWrapper, \
     DuckieClipWrapper, OneHotEncodeSegWrapper
@@ -78,7 +77,7 @@ environment_configs = {
             render_img=True,
             rgb_camera=False,
             seg_camera=True,
-            randomize_maps_on_reset=True,
+            randomize_maps_on_reset=False,
         ),
         "wrappers": [
             (DuckieClipWrapper, None),

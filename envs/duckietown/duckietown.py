@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import math
 from gymnasium import spaces
 
 from simulators.duckietown import logger
@@ -17,6 +18,14 @@ class DuckietownBaseDynamics(Simulator):
         self.obs_rgb_name = "camera_rgb"
         self.camera_rgb_enabled = rgb_camera
         self.camera_seg_enabled = seg_camera
+
+        self.laps_completed = 0
+        self.laps_done = 0
+
+        self.distance_until_lap_complete = 0.15
+        self.min_steps_for_lap = 200
+        self.current_steps = 0
+
         Simulator.__init__(self, **kwargs)
 
         self.action_space = spaces.Box(low=np.float32(-1), high=np.float32(1))
@@ -53,6 +62,11 @@ class DuckietownBaseDynamics(Simulator):
         self.avg_center_dev = 0
         self.avg_speed = 0
 
+        self.first_pos = None
+
+
+
+
     def convert_steering(self,carla_steering, k=2.5, p=3):
         """Convert CARLA steering values to Duckietown with nonlinear scaling.
 
@@ -71,7 +85,6 @@ class DuckietownBaseDynamics(Simulator):
         # Ensure the steering angle is within the valid range
         steering_angle = max(-1, min(1, action))
         #steering_angle = self.convert_steering(action)
-        print("ANGLE:" , steering_angle)
 
         # Map the steering angle to wheel velocities
         left_wheel_velocity = 0.25 * (1 + steering_angle)
@@ -79,6 +92,9 @@ class DuckietownBaseDynamics(Simulator):
 
         vels = np.array([left_wheel_velocity, right_wheel_velocity])
         obs_rgb, reward, done, trunc, info = Simulator.step(self, vels)
+
+        if done:
+            self.laps_done += 1
 
         if self.camera_rgb_enabled and self.camera_seg_enabled:
             obs_seg = self.render_obs(True)
@@ -114,36 +130,15 @@ class DuckietownBaseDynamics(Simulator):
         info["completed_steps"] = self.step_count
 
         if self.render_img:
+            self.render_images()
 
-            if self.camera_rgb_enabled:
-                img = self._render_img(
-                    160,
-                    120,
-                    self.multi_fbo_human,
-                    self.final_fbo_human,
-                    self.img_array_human,
-                    top_down=False,
-                    segment=False,
-                    custom_segmentation_folder="/home/jurriaan/Documents/Programming/Sim2Sim2Real/simulators/duckietown/segmentation"
-                )
-                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                cv2.imshow("rgb", img)
-                cv2.waitKey(1)
-            if self.camera_seg_enabled:
-                img = self._render_img(
-                    160,
-                    120,
-                    self.multi_fbo_human,
-                    self.final_fbo_human,
-                    self.img_array_human,
-                    top_down=False,
-                    segment=True,
-                    custom_segmentation_folder="/home/jurriaan/Documents/Programming/Sim2Sim2Real/simulators/duckietown/segmentation"
-                )
-                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                cv2.imshow("seg", img)
-                cv2.waitKey(1)
+        self.current_steps += 1
 
+        distance_to_spawn = abs(np.linalg.norm(self.cur_pos - self.first_pos))
+        if distance_to_spawn < self.distance_until_lap_complete and self.current_steps >= self.min_steps_for_lap:
+            done = True
+            self.laps_completed += 1
+            self.laps_done += 1
             # Add a small delay for frame rate control
         return obs, reward, done, trunc, info
 
@@ -182,6 +177,12 @@ class DuckietownBaseDynamics(Simulator):
 
     def reset(self, seed = None, options = None, segment: bool = False):
         obs_rgb, _ = super().reset(seed, options, segment)
+        self.first_pos = self.cur_pos
+        self.current_steps = 0
+
+        print(f"Laps completed: {self.laps_completed}. Laps done: {self.laps_done}")
+
+
         obs_rgb = cv2.cvtColor(obs_rgb, cv2.COLOR_BGR2RGB)
         if self.camera_rgb_enabled and self.camera_seg_enabled:
             obs_seg = self.render_obs(True)
@@ -196,7 +197,8 @@ class DuckietownBaseDynamics(Simulator):
             obs_seg = self.render_obs(True)
             return obs_seg, {}
 
-        return obs, {}
+
+        return obs_rgb, {}
 
     def render_obs(self, segment: bool = False):
         image = Simulator.render_obs(self, segment)
@@ -214,3 +216,52 @@ class DuckietownBaseDynamics(Simulator):
         #cv2.imshow("Seg", img)
         #cv2.waitKey(1)
         return image
+
+    def render_images(self):
+
+        if self.camera_rgb_enabled:
+            img = self._render_img(
+                160,
+                120,
+                self.multi_fbo_human,
+                self.final_fbo_human,
+                self.img_array_human,
+                top_down=False,
+                segment=False,
+                custom_segmentation_folder="/home/jurriaan/Documents/Programming/Sim2Sim2Real/simulators/duckietown/segmentation"
+            )
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            cv2.imshow("rgb", img)
+            cv2.waitKey(1)
+        if self.camera_seg_enabled:
+            img = self._render_img(
+                160,
+                120,
+                self.multi_fbo_human,
+                self.final_fbo_human,
+                self.img_array_human,
+                top_down=False,
+                segment=True,
+                custom_segmentation_folder="/home/jurriaan/Documents/Programming/Sim2Sim2Real/simulators/duckietown/segmentation"
+            )
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            cv2.imshow("seg", img)
+            cv2.waitKey(1)
+
+
+def get_angle(x, y, center_x, center_y):
+    return math.atan2(y - center_y, x - center_x)
+
+
+def has_crossed_spawn(car_x, car_y, spawn_x, spawn_y, center_x, center_y, prev_angle):
+    car_angle = get_angle(car_x, car_y, center_x, center_y)
+    spawn_angle = get_angle(spawn_x, spawn_y, center_x, center_y)
+
+    # Normalize angles to the range (-pi, pi)
+    diff = car_angle - spawn_angle
+
+    # Detect crossing by checking if the angle difference changes sign
+    crossed = (prev_angle < spawn_angle and car_angle > spawn_angle) or \
+              (prev_angle > spawn_angle and car_angle < spawn_angle)
+
+    return crossed, car_angle
