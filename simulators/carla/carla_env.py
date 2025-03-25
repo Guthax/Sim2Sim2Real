@@ -77,7 +77,7 @@ class SelfCarlaEnv(gym.Env):
         self._setup_vehicle()
 
         self.count_until_randomization = 0
-        self.randomize_every_steps = 20000
+        self.randomize_every_steps = 50000
 
         self.colors_to_keep_seg = [
             (128, 64, 128),
@@ -165,10 +165,10 @@ class SelfCarlaEnv(gym.Env):
 
     def _randomize_weather(self):
         weather = carla.WeatherParameters(
-            cloudiness=random.uniform(0, 50),
+            cloudiness=random.uniform(60, 85),
             precipitation=0,
-            sun_altitude_angle=random.uniform(-90, 90),
-            fog_density=0
+            sun_altitude_angle=10.0,  # Low sun angle for dim lighting
+            fog_density=random.uniform(0, 10)  # Light fog for depth
         )
         self.world.set_weather(weather)
 
@@ -220,9 +220,9 @@ class SelfCarlaEnv(gym.Env):
         for actor in self.actor_list:
             actor.destroy()
 
-        #if self.count_until_randomization >= self.randomize_every_steps:
-        #    self._randomize_weather()
-        #    self.count_until_randomization = 0
+        if self.count_until_randomization >= self.randomize_every_steps:
+            self._randomize_weather()
+            self.count_until_randomization = 0
         self.image = np.zeros((640, 640, 3), dtype=np.uint8)
         self.actor_list = []
 
