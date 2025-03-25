@@ -45,10 +45,7 @@ environment_configs = {
             render=False
         ),
         "wrappers": [
-            (ResizeWrapper, dict(dst_width=160, dst_height=120)),
-            (CropWrapper, dict(crop_height_start=60, crop_height_end=120)),
             (CannyWrapper, None),
-            (TimeLimit, dict(max_episode_steps=2000))
         ]
     },
     "carla_lane_detect": {
