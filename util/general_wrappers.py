@@ -193,22 +193,49 @@ class OneHotEncodeSegWrapper(gym.ObservationWrapper):
 class CannyWrapper(gym.ObservationWrapper):
     def __init__(self, env=None):
         super().__init__(env)
-        self.observation_space = spaces.Box(low=0, high=255, shape=(60, 160, 1), dtype=np.uint8)
+        self.observation_space = spaces.Box(low=0, high=255, shape=(120, 160, 3), dtype=np.uint8)
 
     def observation(self, observation):
         processed_image = self.detect_lanes(observation)
         processed_image = np.expand_dims(processed_image, axis=2)  # Expand dimensions for compatibility
+        cv2.imshow("processed", processed_image)
+        cv2.waitKey(1)
         return processed_image
 
     def detect_lanes(self, image):
         gray = self.grayscale(image)
-        blur_gray = self.gaussian_blur(gray, 5)
-        edges = self.canny(blur_gray, 50, 150)
-        imshape = image.shape
-        vertices = np.array([[(0, imshape[0]), (2.4*imshape[1]/5, 1.22*imshape[0]/2),
-                              (2.6*imshape[1]/5, 1.22*imshape[0]/2), (imshape[1], imshape[0])]], dtype=np.int32)
-        masked_edges = self.region_of_interest(edges, vertices)
-        return  edges
+
+        # Convert to grayscale
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+        # Apply GaussianBlur to reduce noise
+        blurred = cv2.GaussianBlur(gray, (3, 3), 0)
+
+        # Use Canny edge detection for general edges
+        edges = cv2.Canny(gray, 50, 150)
+
+        # Convert image to HSV color space
+        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
+        # Define the yellow color range in HSV
+        lower_yellow = np.array([20, 100, 100])
+        upper_yellow = np.array([40, 255, 255])
+
+        # Create a mask to extract yellow regions
+        yellow_mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
+
+        # Use bitwise AND to extract yellow regions from the original image
+        yellow_extracted = cv2.bitwise_and(image, image, mask=yellow_mask)
+
+        # Convert extracted yellow regions to grayscale
+        yellow_gray = cv2.cvtColor(yellow_extracted, cv2.COLOR_BGR2GRAY)
+
+        # Apply Canny edge detection on yellow regions
+        yellow_edges = cv2.Canny(yellow_gray, 50, 150)
+
+        # Combine edges from road boundaries and yellow markings
+        combined_edges = cv2.bitwise_or(edges, yellow_edges)
+        return  combined_edges
         #rho, theta, threshold, min_line_len, max_line_gap = 2, np.pi/180, 15, 40, 200
         #line_image = self.hough_lines(masked_edges, rho, theta, threshold, min_line_len, max_line_gap)
         #result = self.weighted_img(line_image, image)
