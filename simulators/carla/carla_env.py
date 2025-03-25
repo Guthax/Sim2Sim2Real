@@ -321,10 +321,10 @@ class SelfCarlaEnv(gym.Env):
                 "camera_seg": self._get_observation_seg()
             }
         elif self.camera_rgb_enabled:
-            observation =  self.image_rgb if self.image_rgb is not None else np.zeros((CAMERA_HEIGHT, CAMERA_WIDTH, 3), dtype=np.uint8)
+            observation = self._get_observation_rgb()
 
         elif self.camera_seg_enabled:
-            observation =  self.image_seg if self.image_seg is not None else np.zeros((CAMERA_HEIGHT, CAMERA_WIDTH, 3), dtype=np.uint8)
+            observation = self._get_observation_seg()
         else:
             observation = np.zeros((CAMERA_HEIGHT, CAMERA_WIDTH, 3), dtype=np.uint8)
 
