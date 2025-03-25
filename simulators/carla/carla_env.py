@@ -31,14 +31,12 @@ class SelfCarlaEnv(gym.Env):
         #settings.substepping = True
         #settings.max_substep_delta_time = 0.0166666666666667
         #settings.max_substeps = 3
-
-        
         self.world.apply_settings(settings)
         self.world.tick()
         self.client.reload_world(False)  # reload map keeping the world settings
         self.world.tick()
 
-        """
+
         self.world.unload_map_layer(carla.MapLayer.Buildings)
         self.world.unload_map_layer(carla.MapLayer.Decals)
         self.world.unload_map_layer(carla.MapLayer.Foliage)
@@ -47,7 +45,7 @@ class SelfCarlaEnv(gym.Env):
         self.world.unload_map_layer(carla.MapLayer.Props)
         self.world.unload_map_layer(carla.MapLayer.StreetLights)
         self.world.unload_map_layer(carla.MapLayer.Walls)
-        """
+
 
         self.blueprint_library = self.world.get_blueprint_library()
         self.vehicle_bp = self.blueprint_library.filter('model3')[0]
@@ -91,10 +89,11 @@ class SelfCarlaEnv(gym.Env):
 
     def _setup_vehicle(self):
         spawn_points = self.world.get_map().get_spawn_points()
-        valid_spawn_point_indexes = [4,10, 15,17, 28, 35,36, 41, 43, 45, 89, 95, 97 ]
+        valid_spawn_point_indexes = [1, 4, 9,12, 15,17, 22,28, 30,35,36, 41, 43, 56, 78, 88, 95,97]
         for _ in range(10):  # Try up to 10 times to find a valid spawn point
             spawn_point_index = random.choice(valid_spawn_point_indexes)
             spawn_point = spawn_points[spawn_point_index]
+            print(f"Spawn point: {spawn_point_index}")
             self.vehicle = self.world.try_spawn_actor(self.vehicle_bp, spawn_point)
             if self.vehicle is not None:
                 break
@@ -107,6 +106,15 @@ class SelfCarlaEnv(gym.Env):
 
         self._setup_collision_sensor()
         self._setup_lane_invasion_sensor()
+
+        weather = carla.WeatherParameters(
+            cloudiness=80.0,  # Darker skies
+            precipitation=0.0,  # No rain
+            sun_altitude_angle=10.0,  # Low sun angle for dim lighting
+            fog_density=10.0,  # Light fog for depth
+        )
+
+        self.world.set_weather(weather)
 
     def _setup_cameras(self):
         self.image_rgb = None
@@ -192,6 +200,7 @@ class SelfCarlaEnv(gym.Env):
         array = array.reshape((image.height, image.width, 4))[:, :, :3]
         array = cv2.cvtColor(array, cv2.COLOR_BGR2RGB)
         self.seg_buffer = array
+        self.image_seg = array
 
     def _get_observation_rgb(self):
         while self.rgb_buffer is None:
@@ -323,7 +332,7 @@ class SelfCarlaEnv(gym.Env):
 
         # Calculate reward
         reward, done = self._get_reward_new()
-        print(reward)
+        #print(reward)
         info = {}
 
         if self.render_mode:
@@ -364,16 +373,17 @@ class SelfCarlaEnv(gym.Env):
         # Reward is a combination of staying in lane, smooth steering, and avoiding sudden changes
         reward = 1.0  + dot_dir - lane_distance + steer_change_penalty + invasion_penalty
 
-        is_off_road = self.world.get_map().get_waypoint(self.camera_rgb.get_transform().location, project_to_road=False) is None
+        project_camera = self.camera_rgb if self.camera_rgb_enabled else self.camera_seg
+        is_off_road = self.world.get_map().get_waypoint(project_camera.get_transform().location, project_to_road=False) is None
 
         if is_off_road:
             reward = reward - 10.0
             return reward, True
         #if self.lane_invasion_occured:
         #    return reward - 5, True
-        if lane_distance > 2.5:
-            reward = reward - 10.0
-            return reward, True
+        #if lane_distance > 8:
+        #    reward = reward - 10
+        #    return reward, True
 
         #print(
         #    f"Lane penalty: {lane_distance}, Dot dir: {dot_dir}, Steer change: {steer_change_penalty}, invasion_penalty: {invasion_penalty}, total: {reward}")

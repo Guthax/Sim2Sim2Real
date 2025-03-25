@@ -705,8 +705,8 @@ class Simulator(gym.Env):
                 i, j = tile["coords"]
 
                 # Choose a random position on this tile
-                x = self.np_random.uniform(i, i + 1) * self.road_tile_size
-                z = self.np_random.uniform(j, j + 1) * self.road_tile_size
+                x = self.np_random.uniform(i+ 0.5, i + 1) * self.road_tile_size
+                z = self.np_random.uniform(j + 0.5, j + 1) * self.road_tile_size
                 propose_pos = np.array([x, 0, z])
 
                 # Choose a random direction

@@ -2,6 +2,7 @@ import numpy as np
 import torch
 from stable_baselines3.common.noise import NormalActionNoise
 
+from util.feature_extractors import PaperCNN
 from utils import lr_schedule
 import torch as th
 
@@ -22,6 +23,8 @@ algorithm_params = {
             net_arch=dict(pi=[512, 256], vf=[512, 256]),
             activation_fn=torch.nn.ReLU,  # ReLU activation for stable gradients
             log_std_init=-1,  # Lower initial std to encourage smaller actions
+            #features_extractor_class=PaperCNN,
+            #features_extractor_kwargs={"features_dim": 256}
         )
         #policy_kwargs=dict(activation_fn=th.nn.ReLU,
         #                   net_arch=[dict(pi=[500, 300], vf=[500, 300])])
@@ -81,6 +84,30 @@ algorithm_params = {
         gradient_steps=64,
         learning_starts=10000,
         use_sde=True,
-        policy_kwargs=dict(log_std_init=-3, net_arch=[500, 300]),
+        policy_kwargs=dict(
+            log_std_init=-3,
+            net_arch=[500, 300],
+            features_extractor_class= PaperCNN,
+            features_extractor_kwargs= {"features_dim": 256},
+        ),
     ),
+    "TD3": dict(
+        policy_kwargs= {
+            "features_extractor_class": PaperCNN,
+            "features_extractor_kwargs": {"features_dim": 256},
+        },
+        learning_rate= 0.0001,
+        buffer_size= 300000,
+        learning_starts= 10000,
+        batch_size= 100,
+        tau= 0.01,
+        gamma= 0.99,
+        train_freq= 1000,
+        gradient_steps= 1000,
+        policy_delay= 2,
+        target_policy_noise= 0.2,
+        target_noise_clip= 0.5,
+        action_noise= NormalActionNoise(mean=np.zeros(1), sigma=0.1 * np.ones(1)),  # Encourages exploration
+    )
+
 }
