@@ -15,8 +15,6 @@ environment_configs = {
             seg_camera=False,
         ),
         "wrappers": [
-            (ResizeWrapper, dict(dst_width=160, dst_height=120)),
-            (TimeLimit, dict(max_episode_steps=2000))
         ]
     },
     "carla_seg": {

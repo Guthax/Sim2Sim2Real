@@ -6,7 +6,7 @@ import gymnasium as gym
 from config.environment_configs import environment_configs
 
 _CONFIG_CARLA_RGB = {
-    "name": "carla",
+    "name": "carla_rgb",
     "algorithm": "PPO",
     "algorithm_policy_network": "CnnPolicy",
     "algorithm_hyperparams": algorithm_params["PPO"],

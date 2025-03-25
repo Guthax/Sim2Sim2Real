@@ -31,8 +31,6 @@ class SelfCarlaEnv(gym.Env):
         #settings.substepping = True
         #settings.max_substep_delta_time = 0.0166666666666667
         #settings.max_substeps = 3
-
-        
         self.world.apply_settings(settings)
         self.world.tick()
         self.client.reload_world(False)  # reload map keeping the world settings
@@ -108,6 +106,15 @@ class SelfCarlaEnv(gym.Env):
 
         self._setup_collision_sensor()
         self._setup_lane_invasion_sensor()
+
+        weather = carla.WeatherParameters(
+            cloudiness=80.0,  # Darker skies
+            precipitation=0.0,  # No rain
+            sun_altitude_angle=10.0,  # Low sun angle for dim lighting
+            fog_density=10.0,  # Light fog for depth
+        )
+
+        self.world.set_weather(weather)
 
     def _setup_cameras(self):
         self.image_rgb = None
@@ -374,9 +381,9 @@ class SelfCarlaEnv(gym.Env):
             return reward, True
         #if self.lane_invasion_occured:
         #    return reward - 5, True
-        if lane_distance > 2.5:
-            reward = reward - 10.0
-            return reward, True
+        #if lane_distance > 8:
+        #    reward = reward - 10
+        #    return reward, True
 
         #print(
         #    f"Lane penalty: {lane_distance}, Dot dir: {dot_dir}, Steer change: {steer_change_penalty}, invasion_penalty: {invasion_penalty}, total: {reward}")
