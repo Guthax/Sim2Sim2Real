@@ -37,7 +37,7 @@ class Evaluator:
         while timesteps < self.evaluation_timesteps or self.evaluation_timesteps == -1:
             while not done and current_episode_length < self.episode_length:
                 action, _states = self.algorithm.predict(state, deterministic=True)
-                print(f"Action: {action}")
+                #print(f"Action: {action}")
                 state, reward, done, info = self.evaluation_environment.step(action)
                 #print(reward)
                 if self.apply_grad_cam:

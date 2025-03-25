@@ -3,7 +3,8 @@ from stable_baselines3.common.vec_env import VecFrameStack
 
 from envs.duckietown.base.duckietown import DuckietownBaseDynamics
 from simulators.carla.carla_env import SelfCarlaEnv
-from util.general_wrappers import ResizeWrapper, CropWrapper, CannyWrapper,SegmentationFilterWrapper, DuckieClipWrapper
+from util.general_wrappers import ResizeWrapper, CropWrapper, CannyWrapper, SegmentationFilterWrapper, \
+    DuckieClipWrapper, OneHotEncodeSegWrapper
 
 environment_configs = {
     "carla": {
@@ -14,8 +15,6 @@ environment_configs = {
             seg_camera=False,
         ),
         "wrappers": [
-            (ResizeWrapper, dict(dst_width=160, dst_height=120)),
-            (TimeLimit, dict(max_episode_steps=2000))
         ]
     },
     "carla_seg": {
@@ -26,7 +25,7 @@ environment_configs = {
             seg_camera=True,
         ),
         "wrappers": [
-            (SegmentationFilterWrapper, None)
+            (OneHotEncodeSegWrapper, None)
         ]
     },
     "carla_rgb_seg": {
@@ -70,6 +69,20 @@ environment_configs = {
             randomize_maps_on_reset=False,
         ),
         "wrappers": [
+        ]
+    },
+
+    "duckie_seg": {
+        "base_env": DuckietownBaseDynamics,
+        "arguments": dict(
+            render_img=True,
+            rgb_camera=False,
+            seg_camera=True,
+            randomize_maps_on_reset=True,
+        ),
+        "wrappers": [
+            (DuckieClipWrapper, None),
+            (OneHotEncodeSegWrapper, None)
         ]
     },
     "duckie_rgb_seg": {
