@@ -206,7 +206,7 @@ class SelfCarlaEnv(gym.Env):
         while self.rgb_buffer is None:
             pass
         obs = self.rgb_buffer.copy()
-        self.observation_buffer = None
+        self.rgb_buffer = None
         return obs
 
     def _get_observation_seg(self):
