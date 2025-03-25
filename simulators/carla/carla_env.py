@@ -28,9 +28,9 @@ class SelfCarlaEnv(gym.Env):
         settings.fixed_delta_seconds = 1 / fps
         settings.synchronous_mode = True
 
-        #settings.substepping = True
-        #settings.max_substep_delta_time = 0.0166666666666667
-        #settings.max_substeps = 3
+        settings.substepping = True
+        settings.max_substep_delta_time = 0.0166666666666667
+        settings.max_substeps = 3
         self.world.apply_settings(settings)
         self.world.tick()
         self.client.reload_world(False)  # reload map keeping the world settings
@@ -70,7 +70,6 @@ class SelfCarlaEnv(gym.Env):
                 "camera_seg": spaces.Box(low=0, high=255, shape=(CAMERA_HEIGHT, CAMERA_WIDTH, 3), dtype=np.uint8),
             })
         else:
-
             self.observation_space = spaces.Box(low=0, high=255, shape=(CAMERA_HEIGHT, CAMERA_WIDTH, 3),dtype=np.uint8)
 
 
@@ -326,6 +325,7 @@ class SelfCarlaEnv(gym.Env):
         elif self.camera_seg_enabled:
             observation = self._get_observation_seg()
         else:
+            print("black")
             observation = np.zeros((CAMERA_HEIGHT, CAMERA_WIDTH, 3), dtype=np.uint8)
 
         self.waypoints = self.route_planner.run_step()
@@ -381,9 +381,9 @@ class SelfCarlaEnv(gym.Env):
             return reward, True
         #if self.lane_invasion_occured:
         #    return reward - 5, True
-        #if lane_distance > 8:
-        #    reward = reward - 10
-        #    return reward, True
+        if lane_distance > 2.5:
+            reward = reward - 10
+            return reward, True
 
         #print(
         #    f"Lane penalty: {lane_distance}, Dot dir: {dot_dir}, Steer change: {steer_change_penalty}, invasion_penalty: {invasion_penalty}, total: {reward}")
