@@ -1,5 +1,6 @@
 import itertools
 import os
+import random
 from collections import namedtuple
 from ctypes import POINTER
 from dataclasses import dataclass
@@ -169,6 +170,33 @@ DEFAULT_FRAMERATE = 30
 DEFAULT_MAX_STEPS = 15000
 
 DEFAULT_MAP_NAME = "ETH_small_loop_1"
+#[(0,0),[0.4, 0, 1.5], 0], [(1,0),[0.4, 0, 1.5], 0],
+
+#[(1,0),[0.3, 0, 0.4], 0]
+#[(0,1),[0.3, 0, 0.4], np.pi / 2]
+
+# [(0,1),[0.4, 0, 0.5], np.pi / 2] BOTTOM INNER
+# [(0,1),[0.175, 0, 0.4], -np.pi / 2] BOTTOM OUTER
+
+# [(2,1),[0.4, 0, 0.5], np.pi / 2] TOP INNER
+# [(2,1),[0.175, 0, 0.4], -np.pi / 2] TOP OUTER
+
+# [(1,0),[0.4, 0, 0.5], 0] LEFT INNER
+# [(1,0),[0.4, 0, 0.175], np.pi]  LEFT OUTER
+
+# [(1,2),[0.4, 0, 0.5], np.pi] RIGHT INNER
+# [(1,2),[0.4, 0, 0.5], 0] RIGHT OUTER
+# Layout is from bottomleft to topright
+
+DEFAULT_START_POSES = [[(0,1),[0.4, 0, 0.5], np.pi / 2],
+                       [(0,1),[0.175, 0, 0.5], -np.pi / 2],
+                       [(2,1),[0.4, 0, 0.5], np.pi / 2],
+                       [(2,1),[0.175, 0, 0.5], -np.pi / 2],
+                       [(1,0),[0.4, 0, 0.5], 0],
+                       [(1,0),[0.4, 0, 0.175], np.pi],
+                       [(1,2),[0.4, 0, 0.175], np.pi],
+                       [(1,2),[0.4, 0, 0.5], 0]]
+
 
 DEFAULT_FRAME_SKIP = 1
 
@@ -374,19 +402,18 @@ class Simulator(gym.Env):
         self.randomize_maps_on_reset = randomize_maps_on_reset
 
         if self.randomize_maps_on_reset:
-            self.map_names = [
-                "Caltech_loop01",
-                "ETHZ_autolab_fast_track",
+            self.map_names_poses = {
+                "Caltech_loop01": None,
+                "ETHZ_autolab_fast_track": None,
                 #"ETHZ_autolab_technical_track",
                 #"ETH_intersection_map",
-                "ETH_large_loop",
-                "ETH_small_loop_1",
-                "ETH_small_loop_2",
-                "ETH_small_loop_3",
-                "TTIC_large_loop",
+                "ETH_large_loop": ([0.3, 0, 1.58], 0),
+                "ETH_small_loop_1": None,
+                "ETH_small_loop_2": None,
+                "ETH_small_loop_3": None,
+                "TTIC_large_loop": None,
                 #"TTIC_ripltown"
-            ]
-
+            }
         # Initialize the state
         self.reset()
 
@@ -549,7 +576,7 @@ class Simulator(gym.Env):
         self.speed = 0.0
 
         if self.randomize_maps_on_reset:
-            map_name = self.np_random.choice(self.map_names)
+            map_name = random.choice(self.map_names_poses.keys())
             logger.info(f"Random map chosen: {map_name}")
             self._load_map(map_name)
 
@@ -666,6 +693,13 @@ class Simulator(gym.Env):
                 obj.visible = True
 
         # If the map specifies a starting tile
+
+        start_pos = random.choice(DEFAULT_START_POSES) if not self.randomize_maps_on_reset else None
+        self.user_tile_start = start_pos[0] if start_pos else None
+        self.start_pose = [start_pos[1], start_pos[2]] if start_pos else None
+
+        print(self.user_tile_start, self.start_pose)
+
         if self.user_tile_start:
             logger.info(f"using user tile start: {self.user_tile_start}")
             i, j = self.user_tile_start
@@ -695,7 +729,9 @@ class Simulator(gym.Env):
             x = i * self.road_tile_size + self.start_pose[0][0]
             z = j * self.road_tile_size + self.start_pose[0][2]
             propose_pos = np.array([x, 0, z])
-            propose_angle = self.start_pose[1]
+
+            random_angle_diff = np.random.uniform(-np.pi / 8, np.pi / 8)
+            propose_angle = self.start_pose[1] + random_angle_diff
 
             logger.info(f"Using map pose start. \n Pose: {propose_pos}, Angle: {propose_angle}")
 
