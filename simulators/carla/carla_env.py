@@ -95,10 +95,14 @@ class SelfCarlaEnv(gym.Env):
         ]
 
         weather = carla.WeatherParameters(
-            cloudiness=10,
-            precipitation=0,
-            sun_altitude_angle=90,  # Low sun angle for dim lighting
-            fog_density=0
+            cloudiness=30,  # Slightly increase clouds for varied lighting
+            precipitation=0,  # Keep it dry for clear visibility
+            sun_altitude_angle=45,  # Moderate sun angle for contrast
+            fog_density=10,  # Light fog for domain randomization
+            wetness=0,  # Ensure road markings remain crisp
+            fog_distance=200,  # Adjust fog distance for visibility
+            sun_azimuth_angle=random.uniform(0, 360),  # Randomize sun direction
+            wind_intensity=random.uniform(0, 20)  # Introduce slight variability
         )
         self.world.set_weather(weather)
 
@@ -177,10 +181,14 @@ class SelfCarlaEnv(gym.Env):
 
     def _randomize_weather(self):
         weather = carla.WeatherParameters(
-            cloudiness=50,
-            precipitation=0,
-            sun_altitude_angle=np.random.choice([-90,90,10]),  # Low sun angle for dim lighting
-            fog_density=random.uniform(0, 10)  # Light fog for depth
+            cloudiness=30,  # Slightly increase clouds for varied lighting
+            precipitation=0,  # Keep it dry for clear visibility
+            sun_altitude_angle=45,  # Moderate sun angle for contrast
+            fog_density=10,  # Light fog for domain randomization
+            wetness=0,  # Ensure road markings remain crisp
+            fog_distance=200,  # Adjust fog distance for visibility
+            sun_azimuth_angle=random.uniform(0, 360),  # Randomize sun direction
+            wind_intensity=random.uniform(0, 20)  # Introduce slight variability
         )
         self.world.set_weather(weather)
 
@@ -232,9 +240,9 @@ class SelfCarlaEnv(gym.Env):
         for actor in self.actor_list:
             actor.destroy()
 
-        #if self.count_until_randomization >= self.randomize_every_steps:
-        #    self._randomize_weather()
-        #    self.count_until_randomization = 0
+        if self.count_until_randomization >= self.randomize_every_steps:
+            self._randomize_weather()
+            self.count_until_randomization = 0
         self.image = np.zeros((640, 640, 3), dtype=np.uint8)
         self.actor_list = []
 
