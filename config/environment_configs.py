@@ -19,7 +19,7 @@ environment_configs = {
     "carla_crop": {
         "base_env": SelfCarlaEnv,
         "arguments": dict(
-            render=True,
+            render=False,
             rgb_camera=True,
             seg_camera=False,
         ),
