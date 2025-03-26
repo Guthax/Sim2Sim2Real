@@ -86,7 +86,7 @@ class RoutePlanner():
 
                     preferred_options_list = [option for option in road_options_list if option.name in preferred_options]
                     if len(preferred_options_list) > 0:
-                        road_option = road_options_list[0]
+                        road_option = preferred_options_list[0]
 
 
 
