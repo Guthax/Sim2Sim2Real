@@ -316,8 +316,8 @@ class CropWrapper(gym.ObservationWrapper):
 
     def observation(self, observation):
         cropped = observation[self.crop_h_start:self.crop_h_end, self.crop_w_start:self.crop_w_end, :]
-        cv2.imshow("cropped", cropped)
-        cv2.waitKey(1)
+        #cv2.imshow("cropped", cropped)
+        #cv2.waitKey(1)
         return cropped
 
 
