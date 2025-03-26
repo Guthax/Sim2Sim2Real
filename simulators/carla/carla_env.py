@@ -95,11 +95,11 @@ class SelfCarlaEnv(gym.Env):
         ]
 
         weather = carla.WeatherParameters(
-            cloudiness=30,  # Slightly increase clouds for varied lighting
-            precipitation=0,  # Keep it dry for clear visibility
-            sun_altitude_angle=45,  # Moderate sun angle for contrast
+            cloudiness=50,  # Increase cloud cover to reduce direct sunlight
+            precipitation=0,  # Keep it dry for visibility
+            sun_altitude_angle=30,  # Lower sun angle to create longer shadows
             fog_density=10,  # Light fog for domain randomization
-            wetness=0,  # Ensure road markings remain crisp
+            wetness=70,  # Increases road reflectivity, making it appear darker
             fog_distance=200,  # Adjust fog distance for visibility
             sun_azimuth_angle=random.uniform(0, 360),  # Randomize sun direction
             wind_intensity=random.uniform(0, 20)  # Introduce slight variability
@@ -181,11 +181,11 @@ class SelfCarlaEnv(gym.Env):
 
     def _randomize_weather(self):
         weather = carla.WeatherParameters(
-            cloudiness=30,  # Slightly increase clouds for varied lighting
-            precipitation=0,  # Keep it dry for clear visibility
-            sun_altitude_angle=45,  # Moderate sun angle for contrast
+            cloudiness=50,  # Increase cloud cover to reduce direct sunlight
+            precipitation=0,  # Keep it dry for visibility
+            sun_altitude_angle=30,  # Lower sun angle to create longer shadows
             fog_density=10,  # Light fog for domain randomization
-            wetness=0,  # Ensure road markings remain crisp
+            wetness=70,  # Increases road reflectivity, making it appear darker
             fog_distance=200,  # Adjust fog distance for visibility
             sun_azimuth_angle=random.uniform(0, 360),  # Randomize sun direction
             wind_intensity=random.uniform(0, 20)  # Introduce slight variability
