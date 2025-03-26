@@ -304,7 +304,7 @@ class CannyWrapper(gym.ObservationWrapper):
 
 
 class CropWrapper(gym.ObservationWrapper):
-    def __init__(self, env=None, crop_height_start= 60, crop_height_end=120, crop_width_start=0, crop_width_end=160, channels=3):
+    def __init__(self, env=None, crop_height_start= 40, crop_height_end=120, crop_width_start=0, crop_width_end=160, channels=3):
         gym.ObservationWrapper.__init__(self, env)
 
         self.crop_h_start =crop_height_start

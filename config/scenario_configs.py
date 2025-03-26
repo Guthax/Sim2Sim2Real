@@ -22,7 +22,7 @@ _CONFIG_CARLA_RGB_crop = {
     "algorithm": "PPO",
     "algorithm_policy_network": "CnnPolicy",
     "algorithm_hyperparams": algorithm_params["PPO"],
-    "observation_space": gym.spaces.Box(low=0, high=255, shape=(60, 160, 3), dtype=np.uint8),
+    "observation_space": gym.spaces.Box(low=0, high=255, shape=(80, 160, 3), dtype=np.uint8),
     "action_space": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
     "environments": {
         "carla": environment_configs["carla_crop"],
