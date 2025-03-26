@@ -87,8 +87,8 @@ class DuckietownBaseDynamics(Simulator):
         #steering_angle = self.convert_steering(action)
 
         # Map the steering angle to wheel velocities
-        left_wheel_velocity = 0.25 * (2 + steering_angle)
-        right_wheel_velocity = 0.25 * (2 - steering_angle)
+        left_wheel_velocity = 0.25 * (1 + steering_angle)
+        right_wheel_velocity = 0.25 * (1 - steering_angle)
 
         vels = np.array([left_wheel_velocity, right_wheel_velocity])
         obs_rgb, reward, done, trunc, info = Simulator.step(self, vels)

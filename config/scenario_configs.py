@@ -17,6 +17,18 @@ _CONFIG_CARLA_RGB = {
     }
 }
 
+_CONFIG_CARLA_RGB_crop = {
+    "name": "carla_rgb_crop",
+    "algorithm": "PPO",
+    "algorithm_policy_network": "CnnPolicy",
+    "algorithm_hyperparams": algorithm_params["PPO"],
+    "observation_space": gym.spaces.Box(low=0, high=255, shape=(60, 160, 3), dtype=np.uint8),
+    "action_space": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
+    "environments": {
+        "carla": environment_configs["carla_crop"],
+    }
+}
+
 _CONFIG_CARLA_CANNY = {
     "name": "carla_canny",
     "algorithm": "PPO",
