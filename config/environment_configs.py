@@ -24,7 +24,7 @@ environment_configs = {
             seg_camera=False,
         ),
         "wrappers": [
-            (CropWrapper, None)
+            (CropWrapper, None),
             (TimeLimit, dict(max_episode_steps=1000))
         ]
     },
