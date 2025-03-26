@@ -16,6 +16,17 @@ environment_configs = {
         "wrappers": [
         ]
     },
+    "carla_crop": {
+        "base_env": SelfCarlaEnv,
+        "arguments": dict(
+            render=True,
+            rgb_camera=True,
+            seg_camera=False,
+        ),
+        "wrappers": [
+            (CropWrapper, None)
+        ]
+    },
     "carla_seg": {
         "base_env": SelfCarlaEnv,
         "arguments": dict(
