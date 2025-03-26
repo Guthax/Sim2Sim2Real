@@ -385,10 +385,10 @@ class SelfCarlaEnv(gym.Env):
 
         waypt =  get_next_waypoint(self.waypoints, ego_loc.x, ego_loc.y, ego_loc.z)
         waypt = waypt if waypt else get_closest_waypoint(self.waypoints, ego_loc.x, ego_loc.y, ego_loc.z)
-        self.world.debug.draw_point(
-            carla.Location(waypt.transform.location.x, waypt.transform.location.y, 0.25), 0.1,
-            carla.Color(255, 0, 0),
-            20, False)
+        #self.world.debug.draw_point(
+        #    carla.Location(waypt.transform.location.x, waypt.transform.location.y, 0.25), 0.1,
+        #    carla.Color(255, 0, 0),
+         #   20, False)
 
         lane_distance = abs(ego_loc.y - waypt.transform.location.y)
         lane_penalty = max(2.5 - lane_distance, 0)
