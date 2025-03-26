@@ -25,6 +25,7 @@ environment_configs = {
         ),
         "wrappers": [
             (CropWrapper, None)
+            (TimeLimit, dict(max_episode_steps=1000))
         ]
     },
     "carla_seg": {
