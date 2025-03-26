@@ -284,6 +284,8 @@ class SelfCarlaEnv(gym.Env):
             observation = np.zeros((CAMERA_HEIGHT, CAMERA_WIDTH, 3),dtype=np.uint8)
 
         self.current_steps = 0
+        print(f"Completed laps: {self.laps_completed}, Laps done: {self.laps_done}")
+        self.laps_done += 1
         return observation, {}
 
     def _draw_points(self):
@@ -365,7 +367,6 @@ class SelfCarlaEnv(gym.Env):
         if distance_to_spawn < self.distance_until_lap_complete and self.current_steps >= self.min_steps_for_lap:
             done = True
             self.laps_completed += 1
-            self.laps_done += 1
             # Add a small delay for frame rate control
 
         self.current_steps += 1
