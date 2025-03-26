@@ -249,8 +249,8 @@ class SelfCarlaEnv(gym.Env):
         self.waypoints = self.route_planner.run_step()
 
         self.steps_alive = 0
-        if self.turn_on_render:
-            self._draw_points()
+        #if self.turn_on_render:
+        #     self._draw_points()
 
         start_time = time.time()
         while self.image is None:
