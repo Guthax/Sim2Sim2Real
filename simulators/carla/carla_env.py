@@ -111,7 +111,8 @@ class SelfCarlaEnv(gym.Env):
 
     def _setup_vehicle(self):
         spawn_points = self.world.get_map().get_spawn_points()
-        valid_spawn_point_indexes = [1, 4, 9,12, 15,17, 22,28, 30,35,36, 41, 43, 56, 78, 88, 95,97]
+
+        valid_spawn_point_indexes = [10, 15, 97, 95, 33, 41, 1, 86, 87, 89]
         for _ in range(10):  # Try up to 10 times to find a valid spawn point
             spawn_point_index = random.choice(valid_spawn_point_indexes)
             spawn_point = spawn_points[spawn_point_index]
@@ -384,10 +385,10 @@ class SelfCarlaEnv(gym.Env):
 
         waypt =  get_next_waypoint(self.waypoints, ego_loc.x, ego_loc.y, ego_loc.z)
         waypt = waypt if waypt else get_closest_waypoint(self.waypoints, ego_loc.x, ego_loc.y, ego_loc.z)
-        #self.world.debug.draw_point(
-        #    carla.Location(waypt.transform.location.x, waypt.transform.location.y, 0.25), 0.1,
-        #    carla.Color(255, 0, 0),
-        #    20, False)
+        self.world.debug.draw_point(
+            carla.Location(waypt.transform.location.x, waypt.transform.location.y, 0.25), 0.1,
+            carla.Color(255, 0, 0),
+            20, False)
 
         lane_distance = abs(ego_loc.y - waypt.transform.location.y)
         lane_penalty = max(2.5 - lane_distance, 0)
