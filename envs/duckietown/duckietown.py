@@ -140,7 +140,7 @@ class DuckietownBaseDynamics(Simulator):
         self.current_steps += 1
 
         distance_to_spawn = abs(np.linalg.norm(self.cur_pos - self.first_pos))
-        print(distance_to_spawn, self.current_steps)
+        #print(distance_to_spawn, self.current_steps)
         if distance_to_spawn < self.distance_until_lap_complete and self.current_steps >= self.min_steps_for_lap:
             done = True
             self.laps_completed += 1
