@@ -94,6 +94,14 @@ class SelfCarlaEnv(gym.Env):
             (157, 234, 50)
         ]
 
+        weather = carla.WeatherParameters(
+            cloudiness=10,
+            precipitation=0,
+            sun_altitude_angle=90,  # Low sun angle for dim lighting
+            fog_density=0
+        )
+        self.world.set_weather(weather)
+
         self.world.tick()
 
 
@@ -119,14 +127,6 @@ class SelfCarlaEnv(gym.Env):
         self._setup_collision_sensor()
         self._setup_lane_invasion_sensor()
 
-        weather = carla.WeatherParameters(
-            cloudiness=0.0,  # Darker skies
-            precipitation=0.0,  # No rain
-            sun_altitude_angle=10.0,  # Low sun angle for dim lighting
-            fog_density=10.0,  # Light fog for depth
-        )
-
-        self.world.set_weather(weather)
 
     def _setup_cameras(self):
         self.image_rgb = None
@@ -177,9 +177,9 @@ class SelfCarlaEnv(gym.Env):
 
     def _randomize_weather(self):
         weather = carla.WeatherParameters(
-            cloudiness=random.uniform(0, 10),
+            cloudiness=50,
             precipitation=0,
-            sun_altitude_angle=10.0,  # Low sun angle for dim lighting
+            sun_altitude_angle=np.random.choice([-90,90,10]),  # Low sun angle for dim lighting
             fog_density=random.uniform(0, 10)  # Light fog for depth
         )
         self.world.set_weather(weather)
@@ -232,9 +232,9 @@ class SelfCarlaEnv(gym.Env):
         for actor in self.actor_list:
             actor.destroy()
 
-        if self.count_until_randomization >= self.randomize_every_steps:
-            self._randomize_weather()
-            self.count_until_randomization = 0
+        #if self.count_until_randomization >= self.randomize_every_steps:
+        #    self._randomize_weather()
+        #    self.count_until_randomization = 0
         self.image = np.zeros((640, 640, 3), dtype=np.uint8)
         self.actor_list = []
 
@@ -312,7 +312,7 @@ class SelfCarlaEnv(gym.Env):
         # Set the target velocity (in the vehicle's local frame)
         #self.vehicle.set_target_velocity(target_velocity)
 
-        target_speed = 5.5
+        target_speed = 7
         velocity = self.vehicle.get_velocity()
         current_speed = (velocity.x ** 2 + velocity.y ** 2 + velocity.z ** 2) ** 0.5  # Convert to m/s
 
