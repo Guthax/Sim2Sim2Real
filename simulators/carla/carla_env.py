@@ -265,7 +265,6 @@ class SelfCarlaEnv(gym.Env):
             if time.time() - start_time > 2.0:  # Timeout after 2 seconds
                 print("Warning: No image received from camera sensor.")
                 break
-        print(self.turn_on_render)
         if self.turn_on_render:
             self.render()
 
@@ -357,14 +356,12 @@ class SelfCarlaEnv(gym.Env):
         #print(reward)
         info = {}
 
-        print(self.turn_on_render)
         if self.turn_on_render:
             self.render()
 
 
         self.count_until_randomization += 1
         distance_to_spawn = self.vehicle.get_transform().location.distance(self.spawn_position.location)
-        print(distance_to_spawn, self.current_steps)
         if distance_to_spawn < self.distance_until_lap_complete and self.current_steps >= self.min_steps_for_lap:
             done = True
             self.laps_completed += 1
