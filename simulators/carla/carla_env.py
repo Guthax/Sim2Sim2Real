@@ -50,7 +50,7 @@ class SelfCarlaEnv(gym.Env):
         self.blueprint_library = self.world.get_blueprint_library()
         self.vehicle_bp = self.blueprint_library.filter('model3')[0]
         self.actor_list = []
-        self.render_mode = render
+        self.turn_on_render = render
         self.collision_occurred = False
         self.offroad_occurred = False
         self.lane_invasion_occured = False
@@ -59,6 +59,7 @@ class SelfCarlaEnv(gym.Env):
         self.rgb_buffer = None
         self.seg_buffer = None
 
+        self.spawn_position = None
         self.action_space = spaces.Box(low=np.float32(-1), high=np.float32(1))
 
         self.camera_rgb_enabled = rgb_camera
@@ -78,6 +79,16 @@ class SelfCarlaEnv(gym.Env):
         self.count_until_randomization = 0
         self.randomize_every_steps = 50000
 
+        self.distance_until_lap_complete = 5
+        self.min_steps_for_lap = 600
+        self.current_steps = 0
+
+
+        self.laps_completed = 0
+        self.laps_done = 0
+
+
+
         self.colors_to_keep_seg = [
             (128, 64, 128),
             (157, 234, 50)
@@ -94,10 +105,12 @@ class SelfCarlaEnv(gym.Env):
             spawn_point = spawn_points[spawn_point_index]
             print(f"Spawn point: {spawn_point_index}")
             self.vehicle = self.world.try_spawn_actor(self.vehicle_bp, spawn_point)
+            self.spawn_position = spawn_point
             if self.vehicle is not None:
                 break
         if self.vehicle is None:
             raise RuntimeError("Failed to spawn vehicle after multiple attempts.")
+
         self.actor_list.append(self.vehicle)
         self.world.tick()
 
@@ -107,7 +120,7 @@ class SelfCarlaEnv(gym.Env):
         self._setup_lane_invasion_sensor()
 
         weather = carla.WeatherParameters(
-            cloudiness=80.0,  # Darker skies
+            cloudiness=0.0,  # Darker skies
             precipitation=0.0,  # No rain
             sun_altitude_angle=10.0,  # Low sun angle for dim lighting
             fog_density=10.0,  # Light fog for depth
@@ -164,7 +177,7 @@ class SelfCarlaEnv(gym.Env):
 
     def _randomize_weather(self):
         weather = carla.WeatherParameters(
-            cloudiness=random.uniform(60, 85),
+            cloudiness=random.uniform(0, 10),
             precipitation=0,
             sun_altitude_angle=10.0,  # Low sun angle for dim lighting
             fog_density=random.uniform(0, 10)  # Light fog for depth
@@ -236,16 +249,16 @@ class SelfCarlaEnv(gym.Env):
         self.waypoints = self.route_planner.run_step()
 
         self.steps_alive = 0
-        #if self.render_mode:
-        #    self._draw_points()
+        #if self.turn_on_render:
+        #     self._draw_points()
 
         start_time = time.time()
         while self.image is None:
             if time.time() - start_time > 2.0:  # Timeout after 2 seconds
                 print("Warning: No image received from camera sensor.")
                 break
-
-        if self.render_mode:
+        print(self.turn_on_render)
+        if self.turn_on_render:
             self.render()
 
 
@@ -263,13 +276,14 @@ class SelfCarlaEnv(gym.Env):
         else:
             observation = np.zeros((CAMERA_HEIGHT, CAMERA_WIDTH, 3),dtype=np.uint8)
 
+        self.current_steps = 0
         return observation, {}
 
     def _draw_points(self):
         life_time = 30
         for i in range(0, len(self.waypoints)-1):
-            w0 = self.waypoints[i]
-            w1 = self.waypoints[i+1]
+            w0 = self.waypoints[i].transform
+            w1 = self.waypoints[i+1].transform
 
             w0 = carla.Location(w0.location.x, w0.location.y, 0.25)
             w1 = carla.Location(w1.location.x, w1.location.y, 0.25)
@@ -335,10 +349,21 @@ class SelfCarlaEnv(gym.Env):
         #print(reward)
         info = {}
 
-        if self.render_mode:
+        print(self.turn_on_render)
+        if self.turn_on_render:
             self.render()
 
+
         self.count_until_randomization += 1
+        distance_to_spawn = self.vehicle.get_transform().location.distance(self.spawn_position.location)
+        print(distance_to_spawn, self.current_steps)
+        if distance_to_spawn < self.distance_until_lap_complete and self.current_steps >= self.min_steps_for_lap:
+            done = True
+            self.laps_completed += 1
+            self.laps_done += 1
+            # Add a small delay for frame rate control
+
+        self.current_steps += 1
 
         return observation, reward, done, False, info
 
@@ -392,6 +417,7 @@ class SelfCarlaEnv(gym.Env):
         return reward, False
 
     def render(self, mode='human'):
+        print("Render")
         if self.image_rgb is not None:
             cv2.imshow("CARLA Camera RGB", self.image_rgb)
             cv2.waitKey(1)
