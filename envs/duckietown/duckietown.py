@@ -22,8 +22,8 @@ class DuckietownBaseDynamics(Simulator):
         self.laps_completed = 0
         self.laps_done = 0
 
-        self.distance_until_lap_complete = 0.15
-        self.min_steps_for_lap = 200
+        self.distance_until_lap_complete = 0.1
+        self.min_steps_for_lap = 600
         self.current_steps = 0
 
         Simulator.__init__(self, **kwargs)
@@ -87,8 +87,8 @@ class DuckietownBaseDynamics(Simulator):
         #steering_angle = self.convert_steering(action)
 
         # Map the steering angle to wheel velocities
-        left_wheel_velocity = 0.25 * (1 + steering_angle)
-        right_wheel_velocity = 0.25 * (1 - steering_angle)
+        left_wheel_velocity = 0.25 * (2 + steering_angle)
+        right_wheel_velocity = 0.25 * (2 - steering_angle)
 
         vels = np.array([left_wheel_velocity, right_wheel_velocity])
         obs_rgb, reward, done, trunc, info = Simulator.step(self, vels)
@@ -135,6 +135,7 @@ class DuckietownBaseDynamics(Simulator):
         self.current_steps += 1
 
         distance_to_spawn = abs(np.linalg.norm(self.cur_pos - self.first_pos))
+        print(distance_to_spawn, self.current_steps)
         if distance_to_spawn < self.distance_until_lap_complete and self.current_steps >= self.min_steps_for_lap:
             done = True
             self.laps_completed += 1
