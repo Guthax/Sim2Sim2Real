@@ -49,6 +49,8 @@ class Evaluator:
             done = False
             state = self.evaluation_environment.reset()
             current_episode_length = 0
+            avg_reward = total_reward / timesteps
+            print(f"AVERAGE REWARD: {avg_reward}")
 
         avg_reward = total_reward / timesteps
         print(f"AVERAGE REWARD: {avg_reward}")

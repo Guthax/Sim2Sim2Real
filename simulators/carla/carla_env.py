@@ -112,7 +112,8 @@ class SelfCarlaEnv(gym.Env):
     def _setup_vehicle(self):
         spawn_points = self.world.get_map().get_spawn_points()
 
-        valid_spawn_point_indexes = [10, 15, 97, 95, 33, 41, 1, 86, 87, 89]
+        #valid_spawn_point_indexes = [10, 15, 97, 95, 33, 41, 1, 86, 87, 89]
+        valid_spawn_point_indexes = [15,95]
         for _ in range(10):  # Try up to 10 times to find a valid spawn point
             spawn_point_index = random.choice(valid_spawn_point_indexes)
             spawn_point = spawn_points[spawn_point_index]
@@ -286,7 +287,7 @@ class SelfCarlaEnv(gym.Env):
 
         self.current_steps = 0
         print(f"Completed laps: {self.laps_completed}, Laps done: {self.laps_done}")
-        self.laps_done += 1
+        #self.laps_done += 1
         return observation, {}
 
     def _draw_points(self):
@@ -369,7 +370,8 @@ class SelfCarlaEnv(gym.Env):
             done = True
             self.laps_completed += 1
             # Add a small delay for frame rate control
-
+        if done:
+            self.laps_done += 1
         self.current_steps += 1
 
         return observation, reward, done, False, info
@@ -415,6 +417,7 @@ class SelfCarlaEnv(gym.Env):
         #    return reward - 5, True
         if lane_distance > 2.5:
             reward = reward - 10
+        if lane_distance > 5:
             return reward, True
 
         #print(
