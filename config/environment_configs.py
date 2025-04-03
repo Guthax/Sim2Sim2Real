@@ -9,7 +9,7 @@ environment_configs = {
     "carla": {
         "base_env": SelfCarlaEnv,
         "arguments": dict(
-            render=True,
+            render=False,
             rgb_camera=True,
             seg_camera=False,
         ),
@@ -25,19 +25,19 @@ environment_configs = {
         ),
         "wrappers": [
             (CropWrapper, None),
-            (TimeLimit, dict(max_episode_steps=1000))
+            #(TimeLimit, dict(max_episode_steps=1000))
         ]
     },
     "carla_seg": {
         "base_env": SelfCarlaEnv,
         "arguments": dict(
-            render=False,
+            render=True,
             rgb_camera=False,
             seg_camera=True,
         ),
         "wrappers": [
             (OneHotEncodeSegWrapper, None),
-            (TimeLimit, dict(max_episode_steps=1000))
+            #(TimeLimit, dict(max_episode_steps=1000))
         ]
     },
     "carla_rgb_seg": {
