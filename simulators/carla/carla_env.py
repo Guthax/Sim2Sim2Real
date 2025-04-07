@@ -425,7 +425,6 @@ class SelfCarlaEnv(gym.Env):
         return reward, False
 
     def render(self, mode='human'):
-        print("Render")
         if self.image_rgb is not None:
             cv2.imshow("CARLA Camera RGB", self.image_rgb)
             cv2.waitKey(1)
