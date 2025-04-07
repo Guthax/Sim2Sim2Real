@@ -9,13 +9,14 @@ import torch as th
 algorithm_params = {
     "PPO": dict(
         #learning_rate=lr_schedule(1e-4, 1e-6, 2),
-        learning_rate=lr_schedule(2.5e-4, 1e-6, 2),
-        gamma=0.99,
-        gae_lambda=0.95,
-        clip_range=0.1,
-        ent_coef=0.02,
-        n_epochs=10,
-        n_steps=2048,
+        learning_rate=1e-3,  # 0.001
+        n_steps=2000,
+        # Approximate replay buffer size (SB3 PPO does not use replay buffers, but n_steps determines batch size)
+        batch_size=128,  # Same batch size
+        gamma=0.99,  # Same gamma
+        n_epochs=10,  # Optimization epochs
+        max_grad_norm=0.5,  # Max gradient norm
+        clip_range=0.1,  # Value function clip parameter
         #use_sde=True,
         #sde_sample_freq=4,
         policy_kwargs=dict(
