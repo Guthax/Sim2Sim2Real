@@ -8,21 +8,23 @@ import torch as th
 
 algorithm_params = {
     "PPO": dict(
-        learning_rate=lr_schedule(1e-4, 1e-6, 2),
-        #learning_rate=1e-3,  # 0.001
-        n_steps=2048,
-        # Approximate replay buffer size (SB3 PPO does not use replay buffers, but n_steps determines batch size)
-        batch_size=128,  # Same batch size
-        gamma=0.99,  # Same gamma
-        n_epochs=10,  # Optimization epochs
-        max_grad_norm=0.5,  # Max gradient normdd
-        clip_range=0.1,  # Value function clip parameter
-        #use_sde=True,
-        #sde_sample_freq=4,
-        #policy_kwargs=dict(activation_fn=th.nn.ReLU,
-        #                   net_arch=[dict(pi=[500, 300], vf=[500, 300])])
-        policy_kwargs=dict(activation_fn=th.nn.ReLU,
-                           net_arch=[dict(pi=[64, 64], vf=[64, 64])])
+    learning_rate=3e-4,             # Tunable; schedules can help too
+    n_steps=8192,                   # Larger buffer for image-based learning
+    batch_size=1024,                # Larger mini-batch for stable gradients
+    n_epochs=4,                     # Fewer epochs for large batch/step sizes
+    gamma=0.99,                     # Discount factor
+    gae_lambda=0.95,                # GAE lambda
+    clip_range=0.2,                 # Policy clip range
+    ent_coef=0.001,                 # Entropy regularization (beta)
+    vf_coef=0.5,                    # Value loss weight
+    max_grad_norm=0.5,              # Gradient clipping
+    policy_kwargs=dict(
+        # You can customize CNNs here too; default works fine for most
+        features_extractor_kwargs=dict(
+            features_dim=512        # Final output of CNN to the policy head
+        )
+    ),
+    verbose=1
     ),
     """
         "PPO": dict(
