@@ -20,7 +20,8 @@ def get_version(filename):
     return version
 
 
-CUDA = False
+CUDA = True
+
 
 
 torch_install_urls = {
@@ -43,13 +44,13 @@ else:
     torchvis_url = torch_install_urls["TORCHVIS_LINUX_CUDA"] if CUDA else torch_install_urls["TORCHVIS_LINUX_CPU"]
 print(torch_url, torchvis_url)
 install_requires = [
-    "gymnasium==0.28.1"
+    "gymnasium==0.28.1",
     "numpy>=1.10.0",
     "grad-cam",
     "pyglet<=1.5.0",
     "pygame==2.1.2",
     "pyzmq>=16.0.0",
-    "opencv-python-4.11.0.86",
+    "opencv-python",
     "PyYAML>=3.11",
     f"duckietown-world-daffy",
     "PyGeometry-z6",
@@ -57,7 +58,7 @@ install_requires = [
     "stable-baselines3[extra]==2.0.0",
     "zuper-commons-z6",
     "typing_extensions",
-    "Pillow",
+    "Pillow<7",
     "scikit-image",
     "pipdeptree",
     "typing-extensions",

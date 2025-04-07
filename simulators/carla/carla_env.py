@@ -14,8 +14,8 @@ from simulators.carla.misc import get_pos, get_closest_waypoint, get_next_waypoi
 from simulators.carla.route_planner import RoutePlanner
 
 
-CAMERA_WIDTH = 160
-CAMERA_HEIGHT = 120
+CAMERA_WIDTH = 128
+CAMERA_HEIGHT = 128
 class SelfCarlaEnv(gym.Env):
     def __init__(self, host='localhost', port=2000, rgb_camera=True, seg_camera=False, render=False):
         super(SelfCarlaEnv, self).__init__()
@@ -94,17 +94,8 @@ class SelfCarlaEnv(gym.Env):
             (157, 234, 50)
         ]
 
-        weather = carla.WeatherParameters(
-            cloudiness=50,  # Increase cloud cover to reduce direct sunlight
-            precipitation=0,  # Keep it dry for visibility
-            sun_altitude_angle=30,  # Lower sun angle to create longer shadows
-            fog_density=10,  # Light fog for domain randomization
-            wetness=70,  # Increases road reflectivity, making it appear darker
-            fog_distance=200,  # Adjust fog distance for visibility
-            sun_azimuth_angle=random.uniform(0, 360),  # Randomize sun direction
-            wind_intensity=random.uniform(0, 20)  # Introduce slight variability
-        )
-        self.world.set_weather(weather)
+
+        #self.world.set_weather(weather)
 
         self.world.tick()
 
@@ -242,9 +233,9 @@ class SelfCarlaEnv(gym.Env):
         for actor in self.actor_list:
             actor.destroy()
 
-        if self.count_until_randomization >= self.randomize_every_steps:
-            self._randomize_weather()
-            self.count_until_randomization = 0
+        #if self.count_until_randomization >= self.randomize_every_steps:
+        #    self._randomize_weather()
+        #    self.count_until_randomization = 0
         self.image = np.zeros((640, 640, 3), dtype=np.uint8)
         self.actor_list = []
 
