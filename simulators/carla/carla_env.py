@@ -271,7 +271,7 @@ class SelfCarlaEnv(gym.Env):
                 "camera_seg": self.image_seg,
             }
         elif self.camera_rgb_enabled:
-            self.img_rgb = self.rgb_queue.get()
+            self.image_rgb = self.rgb_queue.get()
             observation = self.img_rgb
 
         elif self.camera_seg_enabled:
@@ -415,9 +415,7 @@ class SelfCarlaEnv(gym.Env):
             reward = reward - 10.0
             return reward, True
         #if self.lane_invasion_occured:
-        #    return reward - 5, True
-        if lane_distance > 2.5:
-            reward = reward - 10
+        #    return reward - 5, Tru
         if lane_distance > 5:
             return reward, True
 
