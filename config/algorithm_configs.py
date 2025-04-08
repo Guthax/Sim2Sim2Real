@@ -8,21 +8,21 @@ import torch as th
 
 algorithm_params = {
     "PPO": dict(
-        learning_rate=lr_schedule(3e-4, 1e-5, 2),  # Tunable; schedules can help too
-        n_steps=4096,  # Larger buffer for image-based learning
-        batch_size=512,  # Larger mini-batch for stable gradients
-        n_epochs=10,  # Fewer epochs for large batch/step sizes
-        gamma=0.99,  # Discount factor
-        gae_lambda=0.95,  # GAE lambda
-        clip_range=0.2,  # Policy clip range
-        ent_coef=0.02,  # Entropy regularization (beta)
-        vf_coef=0.5,  # Value loss weight
-        max_grad_norm=0.5,  # Gradient clipping
-        policy_kwargs=dict(
+    learning_rate=lr_schedule(3e-4, 1e-5, 2),             # Tunable; schedules can help too
+    n_steps=1024,                   # Larger buffer for image-based learning
+    batch_size=128,                # Larger mini-batch for stable gradients
+    n_epochs=10,                     # Fewer epochs for large batch/step sizes
+    gamma=0.99,                     # Discount factor
+    gae_lambda=0.95,                # GAE lambda
+    clip_range=0.2,                 # Policy clip range
+    ent_coef=0.02,                 # Entropy regularization (beta)
+    vf_coef=0.5,                    # Value loss weight
+    max_grad_norm=0.5,              # Gradient clipping
+    policy_kwargs=dict(
             net_arch=[512, 256],  # 2 layers of 256 units (Unity: 32–512)
             activation_fn=torch.nn.ReLU,
-            log_std_init=-1,
-        ),
+            log_std_init = -1,
+    ),
     ),
     """
         "PPO": dict(

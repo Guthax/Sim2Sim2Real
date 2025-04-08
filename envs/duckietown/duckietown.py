@@ -93,10 +93,10 @@ class DuckietownBaseDynamics(Simulator):
         vels = np.array([left_wheel_velocity, right_wheel_velocity])
         obs_rgb, reward, done, trunc, info = Simulator.step(self, vels)
 
-        steer_value = action
-        steer_change_penalty = -abs(steer_value - self.previous_steer) if self.previous_steer else 0
-        self.previous_steer = steer_value  # Update previous steering value
-        reward += steer_change_penalty
+        #steer_value = action
+        #steer_change_penalty = -abs(steer_value - self.previous_steer) if self.previous_steer else 0
+        #self.previous_steer = steer_value  # Update previous steering value
+        #reward += steer_change_penalty
 
         if done:
             self.laps_done += 1
@@ -178,7 +178,7 @@ class DuckietownBaseDynamics(Simulator):
             lp = self.get_lane_pos2(pos, angle)
 
 
-            reward = +1.0  * lp.dot_dir + -10 * np.abs(lp.dist)
+            reward = +1.0  * lp.dot_dir  -10 * np.abs(lp.dist)
             return reward
         except NotInLane:
             return -40
