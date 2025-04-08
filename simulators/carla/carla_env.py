@@ -112,7 +112,7 @@ class SelfCarlaEnv(gym.Env):
 
 
     def _setup_vehicle(self):
-        #spawn_points = self.world.get_map().get_spawn_points()
+        spawn_points = self.world.get_map().get_spawn_points()
 
         #valid_spawn_point_indexes = [10, 15, 97, 95, 33, 41, 1, 86, 87, 89]
         valid_spawn_point_indexes = [4,11, 33, 95, 97,15,28, 45]
