@@ -1,4 +1,5 @@
 import math
+import queue
 
 import gymnasium as gym
 import carla
@@ -56,8 +57,11 @@ class SelfCarlaEnv(gym.Env):
         self.lane_invasion_occured = False
         self.route_planner = None
 
-        self.rgb_buffer = None
-        self.seg_buffer = None
+        self.rgb_queue = queue.Queue()
+        self.seg_queue = queue.Queue()
+
+        self.image_rgb = None
+        self.image_seg = None
 
         self.spawn_position = None
         self.action_space = spaces.Box(low=np.float32(-1), high=np.float32(1))
@@ -133,8 +137,6 @@ class SelfCarlaEnv(gym.Env):
 
 
     def _setup_cameras(self):
-        self.image_rgb = None
-        self.image_seg = None
 
         if self.camera_seg_enabled:
             self._setup_camera_seg()
@@ -210,8 +212,7 @@ class SelfCarlaEnv(gym.Env):
         #print("RGB image received")
         array = np.frombuffer(image.raw_data, dtype=np.uint8)
         array = array.reshape((image.height, image.width, 4))[:, :, :3]
-        self.rgb_buffer = array
-        self.image_rgb = array
+        self.rgb_queue.put(array)
 
     def _process_image_seg(self, image):
         #print("Segmentation image received")
@@ -219,8 +220,7 @@ class SelfCarlaEnv(gym.Env):
         array = np.frombuffer(image.raw_data, dtype=np.uint8)
         array = array.reshape((image.height, image.width, 4))[:, :, :3]
         array = cv2.cvtColor(array, cv2.COLOR_BGR2RGB)
-        self.seg_buffer = array
-        self.image_seg = array
+        self.seg_queue.put(array)
 
     def _get_observation_rgb(self):
         while self.rgb_buffer is None:
@@ -243,7 +243,6 @@ class SelfCarlaEnv(gym.Env):
         #if self.count_until_randomization >= self.randomize_every_steps:
         #    self._randomize_weather()
         #    self.count_until_randomization = 0
-        self.image = np.zeros((640, 640, 3), dtype=np.uint8)
         self.actor_list = []
 
         self.collision_occurred = False
@@ -261,27 +260,26 @@ class SelfCarlaEnv(gym.Env):
         #     self._draw_points()
 
         start_time = time.time()
-        while self.image is None:
-            if time.time() - start_time > 2.0:  # Timeout after 2 seconds
-                print("Warning: No image received from camera sensor.")
-                break
-        if self.turn_on_render:
-            self.render()
 
 
 
         if self.camera_rgb_enabled and self.camera_seg_enabled:
+            self.image_rgb = self.rgb_queue.get()
+            self.image_seg = self.seg_queue.get()
             observation = {
-                "camera_rgb": self._get_observation_rgb(),
-                "camera_seg": self._get_observation_seg()
+                "camera_rgb": self.image_rgb,
+                "camera_seg": self.image_seg,
             }
         elif self.camera_rgb_enabled:
-            observation =  self._get_observation_rgb()
+            self.img_rgb = self.rgb_queue.get()
+            observation = self.img_rgb
 
         elif self.camera_seg_enabled:
-            observation =  self._get_observation_seg()
+            self.image_seg = self.seg_queue.get()
+            observation =  self.image_seg
         else:
-            observation = np.zeros((CAMERA_HEIGHT, CAMERA_WIDTH, 3),dtype=np.uint8)
+            print("black")
+            observation = np.zeros((CAMERA_HEIGHT, CAMERA_WIDTH, 3), dtype=np.uint8)
 
         self.current_steps = 0
         print(f"Completed laps: {self.laps_completed}, Laps done: {self.laps_done}")
@@ -337,16 +335,21 @@ class SelfCarlaEnv(gym.Env):
 
         #self.vehicle.apply_control(carla.VehicleControl(throttle=float(0.5), steer=float(steer)))  # Fixed speed of 30 kph
         self.world.tick()
+
         if self.camera_rgb_enabled and self.camera_seg_enabled:
+            self.image_rgb = self.rgb_queue.get()
+            self.image_seg = self.seg_queue.get()
             observation = {
-                "camera_rgb": self._get_observation_rgb(),
-                "camera_seg": self._get_observation_seg()
+                "camera_rgb": self.image_rgb,
+                "camera_seg": self.image_seg,
             }
         elif self.camera_rgb_enabled:
-            observation = self._get_observation_rgb()
+            self.img_rgb = self.rgb_queue.get()
+            observation = self.img_rgb
 
         elif self.camera_seg_enabled:
-            observation = self._get_observation_seg()
+            self.image_seg = self.seg_queue.get()
+            observation =  self.image_seg
         else:
             print("black")
             observation = np.zeros((CAMERA_HEIGHT, CAMERA_WIDTH, 3), dtype=np.uint8)
