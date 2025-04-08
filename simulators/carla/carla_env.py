@@ -272,7 +272,7 @@ class SelfCarlaEnv(gym.Env):
             }
         elif self.camera_rgb_enabled:
             self.image_rgb = self.rgb_queue.get()
-            observation = self.img_rgb
+            observation = self.image_rgb
 
         elif self.camera_seg_enabled:
             self.image_seg = self.seg_queue.get()
@@ -344,8 +344,8 @@ class SelfCarlaEnv(gym.Env):
                 "camera_seg": self.image_seg,
             }
         elif self.camera_rgb_enabled:
-            self.img_rgb = self.rgb_queue.get()
-            observation = self.img_rgb
+            self.image_rgb = self.rgb_queue.get()
+            observation = self.image_rgb
 
         elif self.camera_seg_enabled:
             self.image_seg = self.seg_queue.get()
