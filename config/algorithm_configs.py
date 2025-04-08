@@ -10,7 +10,7 @@ algorithm_params = {
     "PPO": dict(
     learning_rate=lr_schedule(3e-4, 1e-5, 2),             # Tunable; schedules can help too
     n_steps=1024,                   # Larger buffer for image-based learning
-    batch_size=1024,                # Larger mini-batch for stable gradients
+    batch_size=128,                # Larger mini-batch for stable gradients
     n_epochs=10,                     # Fewer epochs for large batch/step sizes
     gamma=0.99,                     # Discount factor
     gae_lambda=0.95,                # GAE lambda
