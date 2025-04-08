@@ -8,23 +8,21 @@ import torch as th
 
 algorithm_params = {
     "PPO": dict(
-    learning_rate=3e-4,             # Tunable; schedules can help too
-    n_steps=8192,                   # Larger buffer for image-based learning
-    batch_size=1024,                # Larger mini-batch for stable gradients
-    n_epochs=4,                     # Fewer epochs for large batch/step sizes
+    learning_rate=lr_schedule(3e-4, 1e-5, 2),             # Tunable; schedules can help too
+    n_steps=4096,                   # Larger buffer for image-based learning
+    batch_size=64,                # Larger mini-batch for stable gradients
+    n_epochs=10,                     # Fewer epochs for large batch/step sizes
     gamma=0.99,                     # Discount factor
     gae_lambda=0.95,                # GAE lambda
     clip_range=0.2,                 # Policy clip range
-    ent_coef=0.001,                 # Entropy regularization (beta)
+    ent_coef=0.02,                 # Entropy regularization (beta)
     vf_coef=0.5,                    # Value loss weight
     max_grad_norm=0.5,              # Gradient clipping
     policy_kwargs=dict(
-        # You can customize CNNs here too; default works fine for most
-        features_extractor_kwargs=dict(
-            features_dim=512        # Final output of CNN to the policy head
-        )
+            net_arch=[512, 256],  # 2 layers of 256 units (Unity: 32–512)
+            activation_fn=torch.nn.ReLU,
+            log_std_init = -1,
     ),
-    verbose=1
     ),
     """
         "PPO": dict(
