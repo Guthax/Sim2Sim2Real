@@ -14,6 +14,7 @@ environment_configs = {
             seg_camera=False,
         ),
         "wrappers": [
+            (TimeLimit, dict(max_episode_steps=300))
         ]
     },
     "carla_crop": {
