@@ -26,7 +26,7 @@ environment_configs = {
         ),
         "wrappers": [
             (GrayscaleWrapper, None),
-            # (TimeLimit, dict(max_episode_steps=1000))
+            (TimeLimit, dict(max_episode_steps=300))
         ]
     },
     "carla_crop": {
@@ -106,6 +106,18 @@ environment_configs = {
         "wrappers": [
             (DuckieClipWrapper, None),
             (OneHotEncodeSegWrapper, None)
+        ]
+    },
+    "duckie_gray": {
+        "base_env": DuckietownBaseDynamics,
+        "arguments": dict(
+            render_img=True,
+            rgb_camera=True,
+            seg_camera=False,
+            randomize_maps_on_reset=False,
+        ),
+        "wrappers": [
+            (GrayscaleWrapper, None),
         ]
     },
     "duckie_rgb_seg": {
