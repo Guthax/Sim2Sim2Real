@@ -84,7 +84,7 @@ class SelfCarlaEnv(gym.Env):
         self._setup_vehicle()
 
         self.count_until_randomization = 0
-        self.randomize_every_steps = 50000
+        self.randomize_every_steps = 150000
 
         self.distance_until_lap_complete = 5
         self.min_steps_for_lap = 600
