@@ -41,8 +41,9 @@ class Evaluator:
                 state, reward, done, info = self.evaluation_environment.step(action)
                 #print(reward)
                 if self.apply_grad_cam:
-                    self.grad_cam(state, key="camera_rgb")
-                    self.grad_cam(state, key="camera_seg")
+                    self.grad_cam(state)
+                    #self.grad_cam(state, key="camera_rgb")
+                    #self.grad_cam(state, key="camera_seg")
                 total_reward += reward
                 timesteps += 1
                 current_episode_length += 1

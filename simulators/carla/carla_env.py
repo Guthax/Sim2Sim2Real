@@ -40,7 +40,7 @@ class SelfCarlaEnv(gym.Env):
         self.client.reload_world(False)  # reload map keeping the world settings
         self.world.tick()
 
-
+        """
         self.world.unload_map_layer(carla.MapLayer.Buildings)
         self.world.unload_map_layer(carla.MapLayer.Decals)
         self.world.unload_map_layer(carla.MapLayer.Foliage)
@@ -49,7 +49,7 @@ class SelfCarlaEnv(gym.Env):
         self.world.unload_map_layer(carla.MapLayer.Props)
         self.world.unload_map_layer(carla.MapLayer.StreetLights)
         self.world.unload_map_layer(carla.MapLayer.Walls)
-
+        """
 
         self.blueprint_library = self.world.get_blueprint_library()
         self.vehicle_bp = self.blueprint_library.filter('model3')[0]
@@ -119,7 +119,7 @@ class SelfCarlaEnv(gym.Env):
 
         #valid_spawn_point_indexes = [10, 15, 97, 95, 33, 41, 1, 86, 87, 89]
         #valid_spawn_point_indexes = [15,95]
-        valid_spawn_point_indexes = [10,20, 23, 95,33, 39]
+        valid_spawn_point_indexes = [10,15, 28,89, 35,43,97, 20, 23, 95,33, 39]
         for _ in range(10):  # Try up to 10 times to find a valid spawn point
             spawn_point_index = random.choice(valid_spawn_point_indexes)
             spawn_point = spawn_points[spawn_point_index]
