@@ -17,6 +17,9 @@ from simulators.carla.route_planner import RoutePlanner
 
 CAMERA_WIDTH = 128
 CAMERA_HEIGHT = 128
+
+def slight_variation(base, delta):
+    return base + random.uniform(-delta, delta)
 class SelfCarlaEnv(gym.Env):
     def __init__(self, host='localhost', port=2000, rgb_camera=True, seg_camera=False, render=False):
         super(SelfCarlaEnv, self).__init__()
@@ -99,12 +102,12 @@ class SelfCarlaEnv(gym.Env):
         ]
 
         weather = carla.WeatherParameters(
-            cloudiness=50,  # Increase cloud cover to reduce direct sunlight
-            precipitation=0,  # Keep it dry for visibility
-            sun_altitude_angle=30,  # Lower sun angle to create longer shadows
-            fog_density=10,  # Light fog for domain randomization
-            wetness=70,  # Increases road reflectivity, making it appear darker
-            fog_distance=200,  # Adjust fog distance for visibility
+            cloudiness=slight_variation(50, 10),  # 40-60
+            precipitation=slight_variation(0, 2),  # 0-2 (mostly dry)
+            sun_altitude_angle=slight_variation(30, 5),  # 25-35
+            fog_density=slight_variation(10, 2),  # 8-12
+            wetness=slight_variation(70, 10),  # 60-80
+            fog_distance=slight_variation(200, 20),  # 180-220
         )
         self.world.set_weather(weather)
 
@@ -184,14 +187,12 @@ class SelfCarlaEnv(gym.Env):
 
     def _randomize_weather(self):
         weather = carla.WeatherParameters(
-            cloudiness=50,  # Increase cloud cover to reduce direct sunlight
-            precipitation=0,  # Keep it dry for visibility
-            sun_altitude_angle=30,  # Lower sun angle to create longer shadows
-            fog_density=10,  # Light fog for domain randomization
-            wetness=70,  # Increases road reflectivity, making it appear darker
-            fog_distance=200,  # Adjust fog distance for visibility
-            sun_azimuth_angle=random.uniform(0, 360),  # Randomize sun direction
-            wind_intensity=random.uniform(0, 20)  # Introduce slight variability
+            cloudiness=slight_variation(50, 10),  # 40-60
+            precipitation=slight_variation(0, 2),  # 0-2 (mostly dry)
+            sun_altitude_angle=slight_variation(30, 5),  # 25-35
+            fog_density=slight_variation(10, 2),  # 8-12
+            wetness=slight_variation(70, 10),  # 60-80
+            fog_distance=slight_variation(200, 20),  # 180-220
         )
         self.world.set_weather(weather)
 
@@ -241,9 +242,9 @@ class SelfCarlaEnv(gym.Env):
         for actor in self.actor_list:
             actor.destroy()
 
-        #if self.count_until_randomization >= self.randomize_every_steps:
-        #    self._randomize_weather()
-        #    self.count_until_randomization = 0
+        if self.count_until_randomization >= self.randomize_every_steps:
+            self._randomize_weather()
+            self.count_until_randomization = 0
         self.actor_list = []
 
         self.collision_occurred = False
