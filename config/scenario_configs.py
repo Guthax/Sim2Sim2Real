@@ -10,22 +10,22 @@ _CONFIG_CARLA_RGB = {
     "algorithm": "PPO",
     "algorithm_policy_network": "CnnPolicy",
     "algorithm_hyperparams": algorithm_params["PPO"],
-    "observation_space": gym.spaces.Box(low=0, high=255, shape=(128, 128, 3), dtype=np.uint8),
+    "observation_space": gym.spaces.Box(low=0, high=255, shape=(160, 120, 3), dtype=np.uint8),
     "action_space": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
     "environments": {
         "carla": environment_configs["carla"],
     }
 }
 
-_CONFIG_CARLA_RGB_crop = {
-    "name": "carla_rgb_crop",
+_CONFIG_CARLA_GRAY = {
+    "name": "carla_gray",
     "algorithm": "PPO",
     "algorithm_policy_network": "CnnPolicy",
     "algorithm_hyperparams": algorithm_params["PPO"],
-    "observation_space": gym.spaces.Box(low=0, high=255, shape=(80, 160, 3), dtype=np.uint8),
+    "observation_space": gym.spaces.Box(low=0, high=255, shape=(120, 160, 1), dtype=np.uint8),
     "action_space": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
     "environments": {
-        "carla": environment_configs["carla_crop"],
+        "carla": environment_configs["carla_gray"],
     }
 }
 
@@ -93,22 +93,9 @@ _CONFIG_DUCKIE_SEG = {
     }
 }
 
-_CONFIG_DUCKIE_RGB_SEG = {
-    "name": "duckie_rgb_seg",
-    "algorithm": "PPO",
-    "algorithm_policy_network": "MultiInputPolicy",
-    "algorithm_hyperparams": algorithm_params["PPO"],
-    "observation_space": gym.spaces.Dict({
-                "camera_rgb": gym.spaces.Box(low=0, high=255, shape=(120, 160, 3), dtype=np.uint8),
-                "camera_seg": gym.spaces.Box(low=0, high=255, shape=(120, 160, 3), dtype=np.uint8),
-            }),
-    "action_space": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
-    "environments": {
-        "duckie": environment_configs["duckie_rgb_seg"],
-    }
-}
 
-configs = [_CONFIG_CARLA_RGB,_CONFIG_DUCKIE_RGB_SEG, _CONFIG_CARLA_RGB_SEG, _CONFIG_CARLA_SEG, _CONFIG_CARLA_CANNY,_CONFIG_DUCKIE_RGB, _CONFIG_DUCKIE_SEG, _CONFIG_CARLA_RGB_crop]
+configs = [_CONFIG_CARLA_RGB, _CONFIG_CARLA_RGB_SEG,_CONFIG_CARLA_GRAY, _CONFIG_CARLA_SEG, _CONFIG_CARLA_CANNY,
+           _CONFIG_DUCKIE_RGB, _CONFIG_DUCKIE_SEG]
 
 def get_config_by_name(name: str):
     return next((item for item in configs if item['name'] == name), None)

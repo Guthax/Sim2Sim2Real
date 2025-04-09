@@ -320,6 +320,18 @@ class CropWrapper(gym.ObservationWrapper):
         #cv2.waitKey(1)
         return cropped
 
+class GrayscaleWrapper(gym.ObservationWrapper):
+    def __init__(self, env=None):
+        gym.ObservationWrapper.__init__(self, env)
+        self.observation_space = spaces.Box(low=0, high=255, shape=(self.observation_space.shape[0], self.observation_space.shape[1], 1), dtype=np.uint8)
+
+    def observation(self, observation):
+        gray = cv2.cvtColor(observation, cv2.COLOR_RGB2GRAY)
+        gray = np.expand_dims(gray, axis=2)  # Expand dimensions for compatibility
+        cv2.imshow("gray", gray)
+        cv2.waitKey(1)
+        return gray
+
 
 class DuckieClipWrapper(gym.ObservationWrapper):
     def __init__(self, env=None):

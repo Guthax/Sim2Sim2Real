@@ -3,7 +3,7 @@ from gymnasium.wrappers import TimeLimit
 from envs.duckietown.duckietown import DuckietownBaseDynamics
 from simulators.carla.carla_env import SelfCarlaEnv
 from util.general_wrappers import ResizeWrapper, CropWrapper, CannyWrapper, SegmentationFilterWrapper, \
-    DuckieClipWrapper, OneHotEncodeSegWrapper
+    DuckieClipWrapper, OneHotEncodeSegWrapper, GrayscaleWrapper
 
 environment_configs = {
     "carla": {
@@ -15,6 +15,18 @@ environment_configs = {
         ),
         "wrappers": [
             (TimeLimit, dict(max_episode_steps=300))
+        ]
+    },
+    "carla_gray": {
+        "base_env": SelfCarlaEnv,
+        "arguments": dict(
+            render=False,
+            rgb_camera=True,
+            seg_camera=False,
+        ),
+        "wrappers": [
+            (GrayscaleWrapper, None),
+            # (TimeLimit, dict(max_episode_steps=1000))
         ]
     },
     "carla_crop": {

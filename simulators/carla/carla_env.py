@@ -15,8 +15,8 @@ from simulators.carla.misc import get_pos, get_closest_waypoint, get_next_waypoi
 from simulators.carla.route_planner import RoutePlanner
 
 
-CAMERA_WIDTH = 128
-CAMERA_HEIGHT = 128
+CAMERA_WIDTH = 160
+CAMERA_HEIGHT = 120
 
 def slight_variation(base, delta):
     return base + random.uniform(-delta, delta)
