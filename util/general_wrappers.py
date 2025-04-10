@@ -97,7 +97,7 @@ class OneHotEncodeSegWrapper(gym.ObservationWrapper):
     def __init__(self, env=None):
         gym.ObservationWrapper.__init__(self, env)
         h,w = self.observation_space.shape[0], self.observation_space.shape[1]
-        self.observation_space = spaces.Box(low=0, high=255, shape=( len(self.color_map), h, w), dtype=np.uint8)
+        self.observation_space = spaces.Box(low=0, high=255, shape=(len(self.color_map), h, w), dtype=np.uint8)
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
