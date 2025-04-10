@@ -50,7 +50,7 @@ environment_configs = {
         ),
         "wrappers": [
             (OneHotEncodeSegWrapper, None),
-            #(TimeLimit, dict(max_episode_steps=1000))
+            (TimeLimit, dict(max_episode_steps=1000))
         ]
     },
     "carla_rgb_seg": {
