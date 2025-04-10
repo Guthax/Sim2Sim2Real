@@ -193,7 +193,7 @@ class OneHotEncodeSegWrapper(gym.ObservationWrapper):
 class CannyWrapper(gym.ObservationWrapper):
     def __init__(self, env=None):
         super().__init__(env)
-        self.observation_space = spaces.Box(low=0, high=255, shape=(120, 160, 3), dtype=np.uint8)
+        self.observation_space = spaces.Box(low=0, high=255, shape=(self.observation_space.hape[0], self.observation_space.shape[1], 1), dtype=np.uint8)
 
     def observation(self, observation):
         processed_image = self.detect_lanes(observation)
@@ -203,10 +203,9 @@ class CannyWrapper(gym.ObservationWrapper):
         return processed_image
 
     def detect_lanes(self, image):
-        gray = self.grayscale(image)
 
         # Convert to grayscale
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 
         # Apply GaussianBlur to reduce noise
         blurred = cv2.GaussianBlur(gray, (3, 3), 0)
