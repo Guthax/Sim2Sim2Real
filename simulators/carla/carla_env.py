@@ -25,7 +25,7 @@ class SelfCarlaEnv(gym.Env):
         super(SelfCarlaEnv, self).__init__()
         self.client = carla.Client(host, port)
         self.client.set_timeout(20.0)
-        self.world = self.client.load_world("Town10")
+        self.world = self.client.load_world("Town02_opt")
 
         fps = 20
         settings = self.world.get_settings()
@@ -40,7 +40,7 @@ class SelfCarlaEnv(gym.Env):
         self.client.reload_world(False)  # reload map keeping the world settings
         self.world.tick()
 
-        """
+
         self.world.unload_map_layer(carla.MapLayer.Buildings)
         self.world.unload_map_layer(carla.MapLayer.Decals)
         self.world.unload_map_layer(carla.MapLayer.Foliage)
@@ -49,7 +49,7 @@ class SelfCarlaEnv(gym.Env):
         self.world.unload_map_layer(carla.MapLayer.Props)
         self.world.unload_map_layer(carla.MapLayer.StreetLights)
         self.world.unload_map_layer(carla.MapLayer.Walls)
-        """
+        
 
         self.blueprint_library = self.world.get_blueprint_library()
         self.vehicle_bp = self.blueprint_library.filter('model3')[0]
