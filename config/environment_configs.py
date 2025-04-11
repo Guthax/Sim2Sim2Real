@@ -49,8 +49,7 @@ environment_configs = {
             seg_camera=True,
         ),
         "wrappers": [
-            (OneHotEncodeSegWrapper, None),
-            (TimeLimit, dict(max_episode_steps=1000))
+            (OneHotEncodeSegWrapper, None)
         ]
     },
     "carla_rgb_seg": {

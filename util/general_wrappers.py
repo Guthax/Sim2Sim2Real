@@ -190,55 +190,21 @@ class OneHotEncodeSegWrapper(gym.ObservationWrapper):
         return one_hot_mask
 
 
+
 class CannyWrapper(gym.ObservationWrapper):
     def __init__(self, env=None):
         super().__init__(env)
-        self.observation_space = spaces.Box(low=0, high=255, shape=(self.observation_space.hape[0], self.observation_space.shape[1], 1), dtype=np.uint8)
+        obs_shape = self.observation_space.shape
+        self.observation_space = spaces.Box(
+            low=0, high=255, shape=(obs_shape[0], obs_shape[1], 1), dtype=np.uint8
+        )
 
     def observation(self, observation):
-        processed_image = self.detect_lanes(observation)
-        processed_image = np.expand_dims(processed_image, axis=2)  # Expand dimensions for compatibility
+        processed_image = self.Lane_Mask_Pipeline(observation)
+        #processed_image = np.expand_dims(processed_image, axis=2)
         cv2.imshow("processed", processed_image)
         cv2.waitKey(1)
         return processed_image
-
-    def detect_lanes(self, image):
-
-        # Convert to grayscale
-        gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-
-        # Apply GaussianBlur to reduce noise
-        blurred = cv2.GaussianBlur(gray, (3, 3), 0)
-
-        # Use Canny edge detection for general edges
-        edges = cv2.Canny(gray, 50, 150)
-
-        # Convert image to HSV color space
-        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-
-        # Define the yellow color range in HSV
-        lower_yellow = np.array([20, 100, 100])
-        upper_yellow = np.array([40, 255, 255])
-
-        # Create a mask to extract yellow regions
-        yellow_mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
-
-        # Use bitwise AND to extract yellow regions from the original image
-        yellow_extracted = cv2.bitwise_and(image, image, mask=yellow_mask)
-
-        # Convert extracted yellow regions to grayscale
-        yellow_gray = cv2.cvtColor(yellow_extracted, cv2.COLOR_BGR2GRAY)
-
-        # Apply Canny edge detection on yellow regions
-        yellow_edges = cv2.Canny(yellow_gray, 50, 150)
-
-        # Combine edges from road boundaries and yellow markings
-        combined_edges = cv2.bitwise_or(edges, yellow_edges)
-        return  combined_edges
-        #rho, theta, threshold, min_line_len, max_line_gap = 2, np.pi/180, 15, 40, 200
-        #line_image = self.hough_lines(masked_edges, rho, theta, threshold, min_line_len, max_line_gap)
-        #result = self.weighted_img(line_image, image)
-        #return result
 
     @staticmethod
     def grayscale(img):
@@ -255,51 +221,94 @@ class CannyWrapper(gym.ObservationWrapper):
     @staticmethod
     def region_of_interest(img, vertices):
         mask = np.zeros_like(img)
-        ignore_mask_color = 255 if len(img.shape) == 2 else (255,) * img.shape[2]
+        if len(img.shape) > 2:
+            ignore_mask_color = (255,) * img.shape[2]
+        else:
+            ignore_mask_color = 255
         cv2.fillPoly(mask, vertices, ignore_mask_color)
         return cv2.bitwise_and(img, mask)
 
     @staticmethod
-    def hough_lines(img, rho, theta, threshold, min_line_len, max_line_gap):
-        lines = cv2.HoughLinesP(img, rho, theta, threshold, np.array([]), minLineLength=min_line_len, maxLineGap=max_line_gap)
-        line_img = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.uint8)
-        CannyWrapper.draw_lines(line_img, lines)
-        return line_img
-
-    @staticmethod
-    def weighted_img(img, initial_img, α=0.8, β=1., γ=0.):
-        return cv2.addWeighted(initial_img, α, img, β, γ)
-
-    @staticmethod
     def extrapolate(x, y):
+        if len(x) == 0 or len(y) == 0:
+            return None
         z = np.polyfit(x, y, 1)
         f = np.poly1d(z)
         x_new = np.linspace(min(x), max(x), 10).astype(int)
         y_new = f(x_new).astype(int)
         return x_new[0], y_new[0], x_new[-1], y_new[-1]
 
-    @staticmethod
-    def draw_lines(img, lines, color=[255, 0, 0], thickness=2):
+    @classmethod
+    def draw_lines(cls, img, lines, color=[255, 255, 255], thickness=2):
+        xp, yp, xn, yn = [], [], [], []
+
         if lines is None:
             return
-        xp, yp, xn, yn = [], [], [], []
+
         for line in lines:
             for x1, y1, x2, y2 in line:
-                m = (y2 - y1) / (x2 - x1) if x2 != x1 else 0
-                if m > 0.5:
-                    xp += [x1, x2]
-                    yp += [y1, y2]
-                elif m < -0.5:
-                    xn += [x1, x2]
-                    yn += [y1, y2]
-        if xp:
-            pxp, pyp, cxp, cyp = CannyWrapper.extrapolate(xp, yp)
-            if abs((cyp - pyp) / (cxp - pxp)) > 0.5:
-                cv2.line(img, (pxp, pyp), (cxp, cyp), color, thickness)
-        if xn:
-            pxn, pyn, cxn, cyn = CannyWrapper.extrapolate(xn, yn)
-            if abs((cyn - pyn) / (cxn - pxn)) > 0.5:
-                cv2.line(img, (pxn, pyn), (cxn, cyn), color, thickness)
+                if x2 - x1 == 0:
+                    continue
+                slope = (y2 - y1) / (x2 - x1)
+                if slope > 0.5:
+                    xp.extend([x1, x2])
+                    yp.extend([y1, y2])
+                elif slope < -0.5:
+                    xn.extend([x1, x2])
+                    yn.extend([y1, y2])
+
+        if xp and yp:
+            result = cls.extrapolate(xp, yp)
+            if result:
+                x1, y1, x2, y2 = result
+                cv2.line(img, (x1, y1), (x2, y2), color, thickness)
+
+        if xn and yn:
+            result = cls.extrapolate(xn, yn)
+            if result:
+                x1, y1, x2, y2 = result
+                cv2.line(img, (x1, y1), (x2, y2), color, thickness)
+
+    @classmethod
+    def hough_lines(cls, img, rho, theta, threshold, min_line_len, max_line_gap):
+        lines = cv2.HoughLinesP(img, rho, theta, threshold, np.array([]),
+                                minLineLength=min_line_len, maxLineGap=max_line_gap)
+        line_img = np.zeros((*img.shape, 1), dtype=np.uint8)
+        cls.draw_lines(line_img, lines)
+        return line_img
+
+    @classmethod
+    def Lane_Mask_Pipeline(cls, image):
+        # Apply grayscale, Gaussian blur, and Canny edge detection
+        gray = cls.grayscale(image)
+        blur_gray = cls.gaussian_blur(gray, 3)
+
+        # Lowering the thresholds to detect more edges
+        edges = cls.canny(blur_gray, low_threshold=30, high_threshold=100)
+
+        # Define the region of interest (ROI) as a polygon
+        ysize, xsize = image.shape[:2]
+        vertices = np.array([[
+            (0, ysize),
+            (2.4 * xsize / 5, 1.22 * ysize / 2),
+            (2.6 * xsize / 5, 1.22 * ysize / 2),
+            (xsize, ysize)
+        ]], dtype=np.int32)
+
+        # Mask the edges to only include the region of interest
+        masked_edges = cls.region_of_interest(edges, vertices)
+
+        # Apply Hough transform with adjusted parameters for more line detection
+        lane_lines = cls.hough_lines(
+            masked_edges,
+            rho=2,  # Resolution in pixels of the accumulator
+            theta=np.pi / 180,  # Angular resolution in radians
+            threshold=0,  # Lower the threshold to detect more lines
+            min_line_len=10,  # Detect shorter lines (lower length)
+            max_line_gap=300  # Increase line gap to connect more disjointed segments
+        )
+
+        return lane_lines
 
 
 class CropWrapper(gym.ObservationWrapper):
