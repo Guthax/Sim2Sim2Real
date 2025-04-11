@@ -17,6 +17,19 @@ _CONFIG_CARLA_RGB = {
     }
 }
 
+
+_CONFIG_CARLA_RGB_FEATURE = {
+    "name": "carla_feature",
+    "algorithm": "PPO",
+    "algorithm_policy_network": "CnnPolicy",
+    "algorithm_hyperparams": algorithm_params["PPO_FEATURE"],
+    "observation_space": gym.spaces.Box(low=0, high=255, shape=(120, 160, 3), dtype=np.uint8),
+    "action_space": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
+    "environments": {
+        "carla": environment_configs["carla"],
+    }
+}
+
 _CONFIG_CARLA_GRAY = {
     "name": "carla_gray",
     "algorithm": "PPO",
@@ -105,7 +118,7 @@ _CONFIG_DUCKIE_SEG = {
 }
 
 
-configs = [_CONFIG_CARLA_RGB, _CONFIG_CARLA_RGB_SEG,_CONFIG_CARLA_GRAY, _CONFIG_CARLA_SEG, _CONFIG_CARLA_CANNY,
+configs = [_CONFIG_CARLA_RGB, _CONFIG_CARLA_RGB_SEG,_CONFIG_CARLA_GRAY, _CONFIG_CARLA_SEG, _CONFIG_CARLA_CANNY, _CONFIG_CARLA_RGB_FEATURE,
            _CONFIG_DUCKIE_RGB, _CONFIG_DUCKIE_GRAY, _CONFIG_DUCKIE_SEG]
 
 def get_config_by_name(name: str):

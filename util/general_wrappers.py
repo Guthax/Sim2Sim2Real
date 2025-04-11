@@ -190,7 +190,6 @@ class OneHotEncodeSegWrapper(gym.ObservationWrapper):
         return one_hot_mask
 
 
-
 class CannyWrapper(gym.ObservationWrapper):
     def __init__(self, env=None):
         super().__init__(env)
@@ -201,7 +200,8 @@ class CannyWrapper(gym.ObservationWrapper):
 
     def observation(self, observation):
         processed_image = self.Lane_Mask_Pipeline(observation)
-        #processed_image = np.expand_dims(processed_image, axis=2)
+        processed_image[:40, :] = 0
+        processed_image = np.expand_dims(processed_image, axis=2)
         cv2.imshow("processed", processed_image)
         cv2.waitKey(1)
         return processed_image
@@ -281,34 +281,27 @@ class CannyWrapper(gym.ObservationWrapper):
     def Lane_Mask_Pipeline(cls, image):
         # Apply grayscale, Gaussian blur, and Canny edge detection
         gray = cls.grayscale(image)
-        blur_gray = cls.gaussian_blur(gray, 3)
+        blur_gray = cls.gaussian_blur(gray, 5)
 
         # Lowering the thresholds to detect more edges
         edges = cls.canny(blur_gray, low_threshold=30, high_threshold=100)
 
-        # Define the region of interest (ROI) as a polygon
-        ysize, xsize = image.shape[:2]
-        vertices = np.array([[
-            (0, ysize),
-            (2.4 * xsize / 5, 1.22 * ysize / 2),
-            (2.6 * xsize / 5, 1.22 * ysize / 2),
-            (xsize, ysize)
-        ]], dtype=np.int32)
-
-        # Mask the edges to only include the region of interest
-        masked_edges = cls.region_of_interest(edges, vertices)
-
-        # Apply Hough transform with adjusted parameters for more line detection
-        lane_lines = cls.hough_lines(
-            masked_edges,
-            rho=2,  # Resolution in pixels of the accumulator
-            theta=np.pi / 180,  # Angular resolution in radians
-            threshold=0,  # Lower the threshold to detect more lines
-            min_line_len=10,  # Detect shorter lines (lower length)
-            max_line_gap=300  # Increase line gap to connect more disjointed segments
+        lines = cv2.HoughLinesP(
+            edges,
+            rho=1,
+            theta=np.pi / 180,
+            threshold=50,
+            minLineLength=50,
+            maxLineGap=10
         )
 
-        return lane_lines
+        line_image = np.zeros_like(edges)
+        if lines is not None:
+            for line in lines:
+                x1, y1, x2, y2 = line[0]
+                cv2.line(line_image, (x1, y1), (x2, y2), 255, 2)
+
+        return line_image
 
 
 class CropWrapper(gym.ObservationWrapper):
