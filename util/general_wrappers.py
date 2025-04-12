@@ -97,7 +97,12 @@ class OneHotEncodeSegWrapper(gym.ObservationWrapper):
     def __init__(self, env=None):
         gym.ObservationWrapper.__init__(self, env)
         h,w = self.observation_space.shape[0], self.observation_space.shape[1]
-        self.observation_space = spaces.Box(low=0, high=255, shape=(len(self.color_map), h, w), dtype=np.uint8)
+
+        if isinstance(self.env.observation_space, spaces.Dict):
+            self.observation_space["camera_rgb"] = self.observation_space["camera_rgb"]
+            self.observation_space["camera_seg"] = spaces.Box(low=0, high=255, shape=(len(self.color_map), h, w), dtype=np.uint8)
+        else:
+            self.observation_space = spaces.Box(low=0, high=255, shape=(len(self.color_map), h, w), dtype=np.uint8)
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
@@ -108,7 +113,11 @@ class OneHotEncodeSegWrapper(gym.ObservationWrapper):
             array = observation["camera_seg"]
 
         one_hot_mask = self.one_hot_encode_segmentation_torch(torch.from_numpy(array).to(torch.uint8))
-        return one_hot_mask
+        if isinstance(self.env.observation_space, spaces.Dict):
+            observation["camera_seg"] = one_hot_mask
+
+
+        return observation
 
 
     def one_hot_encode_segmentation_torch(self,mask, background_class=0):
