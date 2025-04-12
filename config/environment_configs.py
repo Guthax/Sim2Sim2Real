@@ -60,7 +60,7 @@ environment_configs = {
             seg_camera=True,
         ),
         "wrappers": [
-            (SegmentationFilterWrapper, None)
+            (OneHotEncodeSegWrapper, None)
         ]
     },
     "carla_canny": {
