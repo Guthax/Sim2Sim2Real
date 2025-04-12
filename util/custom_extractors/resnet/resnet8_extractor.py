@@ -39,17 +39,14 @@ class ResnetExtractor(BaseFeaturesExtractor):
         for param in self.cnn.parameters():
             param.requires_grad = False
 
-        # Unfreeze Layer3 and Layer4
-        for param in self.cnn.layer3.parameters():
-            param.requires_grad = True
-        for param in self.cnn.layer4.parameters():
-            param.requires_grad = True
-        # Compute shape by doing one forward pass
-        with th.no_grad():
-            n_flatten = self.cnn(th.as_tensor(observation_space.sample()[None]).float()).shape[1]
+        # Remove the final fc layer, keep everything else
+        self.backbone = nn.Sequential(*list(self.cnn.children())[:-1])  # [B, 512, 1, 1]
 
-        self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim), nn.ReLU())
+        # SB3 expects a flat feature vector
+        self._features_dim = features_dim
 
     def forward(self, observations: th.Tensor) -> th.Tensor:
         x = ResNet18_Weights.IMAGENET1K_V1.transforms()(observations)
-        return self.linear(self.cnn(x))
+        x = self.backbone(x)               # [B, 512, 1, 1]
+        x = th.flatten(x, 1)                       # [B, 512]
+        return x
