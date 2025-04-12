@@ -37,6 +37,12 @@ class ResnetExtractor(BaseFeaturesExtractor):
         n_input_channels = observation_space.shape[0]
         self.cnn = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
         for param in self.cnn.parameters():
+            param.requires_grad = False
+
+        # Unfreeze Layer3 and Layer4
+        for param in self.cnn.layer3.parameters():
+            param.requires_grad = True
+        for param in self.cnn.layer4.parameters():
             param.requires_grad = True
         # Compute shape by doing one forward pass
         with th.no_grad():
