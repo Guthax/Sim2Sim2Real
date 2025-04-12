@@ -100,10 +100,10 @@ class OneHotEncodeSegWrapper(gym.ObservationWrapper):
         if isinstance(self.env.observation_space, spaces.Dict):
             h, w = self.observation_space["camera_seg"].shape[0], self.observation_space["camera_seg"].shape[1]
             self.observation_space["camera_rgb"] = self.observation_space["camera_rgb"]
-            self.observation_space["camera_seg"] = spaces.Box(low=0, high=255, shape=(len(self.color_map), h, w), dtype=np.uint8)
+            self.observation_space["camera_seg"] = spaces.Box(low=0, high=255, shape=(h, w, len(self.color_map)), dtype=np.uint8)
         else:
             h, w = self.observation_space.shape[0], self.observation_space.shape[1]
-            self.observation_space = spaces.Box(low=0, high=255, shape=(len(self.color_map), h, w), dtype=np.uint8)
+            self.observation_space = spaces.Box(low=0, high=255, shape=(h, w, len(self.color_map)), dtype=np.uint8)
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
@@ -164,7 +164,7 @@ class OneHotEncodeSegWrapper(gym.ObservationWrapper):
         class_mask = mapped_indices.view(H, W)
 
         # One-hot encode the class indices
-        one_hot_mask = torch.nn.functional.one_hot(class_mask, num_classes=C).permute(2, 0, 1).to(
+        one_hot_mask = torch.nn.functional.one_hot(class_mask, num_classes=C).to(
             torch.float32).cpu().numpy()  # (C, H, W)
 
         return one_hot_mask

@@ -55,7 +55,7 @@ environment_configs = {
     "carla_rgb_seg": {
         "base_env": SelfCarlaEnv,
         "arguments": dict(
-            render=False,
+            render=True,
             rgb_camera=True,
             seg_camera=True,
         ),
