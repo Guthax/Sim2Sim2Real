@@ -36,9 +36,12 @@ class ResnetExtractor(BaseFeaturesExtractor):
 
         n_input_channels = observation_space.shape[0]
         self.cnn = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
-        for param in self.cnn.parameters():
-            param.requires_grad = False
 
+        for name, param in self.cnn.named_parameters():
+            if any(layer in name for layer in ['conv1', 'bn1', 'layer1', 'layer2']):
+                param.requires_grad = False
+            else:
+                param.requires_grad = True  # layer3, layer4 will be finetuned
         # Remove the final fc layer, keep everything else
         self.backbone = nn.Sequential(*list(self.cnn.children())[:-1])  # [B, 512, 1, 1]
 
