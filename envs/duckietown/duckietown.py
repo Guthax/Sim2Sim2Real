@@ -191,24 +191,21 @@ class DuckietownBaseDynamics(Simulator):
         self.current_steps = 0
 
         print(f"Laps completed: {self.laps_completed}. Laps done: {self.laps_done}")
+        self.previous_steer = None
 
-
-        obs_rgb = cv2.cvtColor(obs_rgb, cv2.COLOR_BGR2RGB)
+        obs = cv2.cvtColor(obs_rgb, cv2.COLOR_BGR2RGB)
         if self.camera_rgb_enabled and self.camera_seg_enabled:
             obs_seg = self.render_obs(True)
             obs_seg = cv2.cvtColor(obs_seg, cv2.COLOR_BGR2RGB)
             obs = {
-                "camera_rgb": obs_rgb,
+                "camera_rgb": obs,
                 "camera_seg": obs_seg
             }
-        elif self.camera_rgb_enabled:
-            obs = obs_rgb
         elif self.camera_seg_enabled:
             obs_seg = self.render_obs(True)
-            return obs_seg, {}
+            obs = obs_seg
 
-        self.previous_steer = None
-        return obs_rgb, {}
+        return obs, {}
 
     def render_obs(self, segment: bool = False):
         image = Simulator.render_obs(self, segment)

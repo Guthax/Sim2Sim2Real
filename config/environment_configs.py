@@ -123,13 +123,13 @@ environment_configs = {
         "base_env": DuckietownBaseDynamics,
         "arguments": dict(
             render_img=True,
-
             rgb_camera=True,
             seg_camera=True,
             randomize_maps_on_reset=False,
         ),
         "wrappers": [
-            (DuckieClipWrapper, None)
+            (DuckieClipWrapper, None),
+            (OneHotEncodeSegWrapper, None)
         ]
     },
 }

@@ -189,12 +189,12 @@ DEFAULT_MAP_NAME = "ETH_small_loop_1"
 # Layout is from bottomleft to topright
 
 DEFAULT_START_POSES = [[(0,1),[0.4, 0, 0.5], np.pi / 2],
-                       [(0,1),[0.175, 0, 0.5], -np.pi / 2],
+                       [(0,1),[0.25, 0, 0.5], -np.pi / 2],
                        [(2,1),[0.4, 0, 0.5], np.pi / 2],
-                       [(2,1),[0.175, 0, 0.5], -np.pi / 2],
+                       [(2,1),[0.25, 0, 0.5], -np.pi / 2],
                        [(1,0),[0.4, 0, 0.5], 0],
-                       [(1,0),[0.4, 0, 0.175], np.pi],
-                       [(1,2),[0.4, 0, 0.175], np.pi],
+                       [(1,0),[0.4, 0, 0.25], np.pi],
+                       [(1,2),[0.4, 0, 0.25], np.pi],
                        [(1,2),[0.4, 0, 0.5], 0]]
 
 
@@ -730,7 +730,7 @@ class Simulator(gym.Env):
             z = j * self.road_tile_size + self.start_pose[0][2]
             propose_pos = np.array([x, 0, z])
 
-            random_angle_diff = np.random.uniform(-np.pi / 8, np.pi / 8)
+            random_angle_diff = np.random.uniform(-np.pi / 12, np.pi / 12)
             propose_angle = self.start_pose[1] + random_angle_diff
 
             logger.info(f"Using map pose start. \n Pose: {propose_pos}, Angle: {propose_angle}")

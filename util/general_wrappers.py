@@ -116,8 +116,8 @@ class OneHotEncodeSegWrapper(gym.ObservationWrapper):
         one_hot_mask = self.one_hot_encode_segmentation_torch(torch.from_numpy(array).to(torch.uint8))
         if isinstance(self.env.observation_space, spaces.Dict):
             observation["camera_seg"] = one_hot_mask
-
-
+        else:
+            observation = one_hot_mask
         return observation
 
 
@@ -389,25 +389,8 @@ class DuckieClipWrapper(gym.ObservationWrapper):
         new_rgb =(157,234, 50)# RGB value to replace with
 
         modified_image = self.replace_nearby_colors(modified_image, target_rgb, new_rgb, threshold=20)
-        return modified_image
-        # Create mask where pixels match the target color
-        #mask_1 = np.all(modified_image == (128,64,128), axis=-1, keepdims=True)
-        #mask_2 = np.all(modified_image == (50,234,157), axis=-1, keepdims=True)
-        """
-        mask = mask_1 + mask_2
-        image = modified_image * mask.astype(modified_image.dtype)
-
-        mask = np.zeros(image.shape[:2], dtype=np.uint8)
-        for color in [(128,64,128), (50,234,157)]:
-            mask |= np.all(image == color, axis=-1)  # Mark pixels that match any of the colors
-
-        # Apply the mask: Keep only selected colors, set others to black
-        filtered_image = np.zeros_like(image)  # Create a black image
-        filtered_image[mask == 1] = image[mask == 1]  # Copy only the kept colors
         if isinstance(self.env.observation_space, spaces.Dict):
-            result = observation
-            result["camera_seg"] = filtered_image
-            return result
+            observation["camera_seg"] = modified_image
+            return observation
 
-        return filtered_image
-        """
+        return modified_image
