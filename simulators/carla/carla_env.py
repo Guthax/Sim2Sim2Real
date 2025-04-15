@@ -404,6 +404,7 @@ class SelfCarlaEnv(gym.Env):
         steer_change_penalty = -abs(steer_value - self.previous_steer) * 0.5 if self.previous_steer else 0
         self.previous_steer = steer_value  # Update previous steering value
         invasion_penalty = 0
+        steer_change_penalty = 0
 
 
         # Reward is a combination of staying in lane, smooth steering, and avoiding sudden changes
