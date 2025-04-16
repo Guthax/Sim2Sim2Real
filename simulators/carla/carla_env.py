@@ -94,13 +94,6 @@ class SelfCarlaEnv(gym.Env):
         self.laps_completed = 0
         self.laps_done = 0
 
-
-
-        self.colors_to_keep_seg = [
-            (128, 64, 128),
-            (157, 234, 50)
-        ]
-
         weather = carla.WeatherParameters(
             cloudiness=random.uniform(0, 50),  # 0 to 100
             precipitation=random.uniform(0, 2),  # 0 to 2 (light precipitation)
@@ -118,8 +111,8 @@ class SelfCarlaEnv(gym.Env):
         spawn_points = self.world.get_map().get_spawn_points()
 
         #valid_spawn_point_indexes = [10, 15, 97, 95, 33, 41, 1, 86, 87, 89]
-        #valid_spawn_point_indexes = [15,95]
-        valid_spawn_point_indexes = [10,15, 28,89, 35,43,97, 20, 23, 95,33, 39]
+        valid_spawn_point_indexes = [15,95]
+        #valid_spawn_point_indexes = [10,15, 28,89, 35,43,97, 20, 23, 95,33, 39]
         for _ in range(10):  # Try up to 10 times to find a valid spawn point
             spawn_point_index = random.choice(valid_spawn_point_indexes)
             spawn_point = spawn_points[spawn_point_index]
