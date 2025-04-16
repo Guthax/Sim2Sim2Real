@@ -21,7 +21,7 @@ CAMERA_HEIGHT = 120
 def slight_variation(base, delta):
     return base + random.uniform(-delta, delta)
 class SelfCarlaEnv(gym.Env):
-    def __init__(self, host='localhost', port=2000, rgb_camera=True, seg_camera=False, render=False):
+    def __init__(self, host='localhost', port=2000, rgb_camera=True, seg_camera=False, render=False, layered_mapping=False):
         super(SelfCarlaEnv, self).__init__()
         self.client = carla.Client(host, port)
         self.client.set_timeout(20.0)
@@ -41,14 +41,14 @@ class SelfCarlaEnv(gym.Env):
         self.world.tick()
 
 
-        self.world.unload_map_layer(carla.MapLayer.Buildings)
-        self.world.unload_map_layer(carla.MapLayer.Decals)
-        self.world.unload_map_layer(carla.MapLayer.Foliage)
-        self.world.unload_map_layer(carla.MapLayer.ParkedVehicles)
-        self.world.unload_map_layer(carla.MapLayer.Particles)
-        self.world.unload_map_layer(carla.MapLayer.Props)
-        self.world.unload_map_layer(carla.MapLayer.StreetLights)
-        self.world.unload_map_layer(carla.MapLayer.Walls)
+        self.layered_mapping = layered_mapping
+        self.layered_mapping_counter = 200000
+        self.current_mapping_counter = 0
+        self.map_layers = [carla.MapLayer.Buildings, carla.MapLayer.Decals,
+                  carla.MapLayer.Foliage, carla.MapLayer.ParkedVehicles,
+                  carla.MapLayer.Particles, carla.MapLayer.Props, carla.MapLayer.StreetLights,
+                  carla.MapLayer.Walls]
+        [self.world.unload_map_layer(layer) for layer in self.map_layers]
 
 
         self.blueprint_library = self.world.get_blueprint_library()
@@ -83,8 +83,9 @@ class SelfCarlaEnv(gym.Env):
 
         self._setup_vehicle()
 
+
         self.count_until_randomization = 0
-        self.randomize_every_steps = 100000
+        self.randomize_every_steps = 50000
 
         self.distance_until_lap_complete = 5
         self.min_steps_for_lap = 600
@@ -94,13 +95,18 @@ class SelfCarlaEnv(gym.Env):
         self.laps_completed = 0
         self.laps_done = 0
 
+        self.total_amount_steps = 0
+
         weather = carla.WeatherParameters(
-            cloudiness=random.uniform(0, 50),  # 0 to 100
-            precipitation=random.uniform(0, 2),  # 0 to 2 (light precipitation)
-            sun_altitude_angle=random.uniform(25, 60),  # sun low in sky
-            fog_density=random.uniform(8, 12),  # moderate fog
-            wetness=random.uniform(60, 40),  # wet roads
-            fog_distance=random.uniform(180, 220),  # visibility distance in fog
+            cloudiness=random.uniform(0, 100),
+            sun_altitude_angle=random.uniform(0, 60),
+            precipitation=0,
+            wetness=0,  # Simulates dark glossy roads
+            fog_density=random.uniform(5, 15),
+            fog_distance=random.uniform(80, 150),
+            wind_intensity=random.uniform(5, 30),
+            precipitation_deposits=0,
+            scattering_intensity=random.uniform(0.2, 0.4),  # Diffuses light = less sharp textures
         )
         self.world.set_weather(weather)
 
@@ -180,13 +186,17 @@ class SelfCarlaEnv(gym.Env):
 
     def _randomize_weather(self):
         weather = carla.WeatherParameters(
-            cloudiness=random.uniform(0, 50),  # 0 to 100
-            precipitation=random.uniform(0, 2),  # 0 to 2 (light precipitation)
-            sun_altitude_angle=random.uniform(25, 60),  # sun low in sky
-            fog_density=random.uniform(8, 12),  # moderate fog
-            wetness=random.uniform(60, 40),  # wet roads
-            fog_distance=random.uniform(180, 220),  # visibility distance in fog
+            cloudiness=random.uniform(0, 100),
+            sun_altitude_angle=random.uniform(0, 60),
+            precipitation=0,
+            wetness=0,  # Simulates dark glossy roads
+            fog_density=random.uniform(5, 15),
+            fog_distance=random.uniform(80, 150),
+            wind_intensity=random.uniform(5, 30),
+            precipitation_deposits=0,
+            scattering_intensity=random.uniform(0.2, 0.4),  # Diffuses light = less sharp textures
         )
+        print("Randomized weather")
         self.world.set_weather(weather)
 
     def _on_collision(self, event):
@@ -238,6 +248,12 @@ class SelfCarlaEnv(gym.Env):
         if self.count_until_randomization >= self.randomize_every_steps:
             self._randomize_weather()
             self.count_until_randomization = 0
+
+        if self.current_mapping_counter > self.layered_mapping_counter and len(self.map_layers) > 0:
+            layer_to_load = self.map_layers.pop(random.randrange(len(self.map_layers)))
+            self.world.load_map_layer(layer_to_load)
+            print("Loading: ", layer_to_load)
+            self.current_mapping_counter = 0
         self.actor_list = []
 
         self.collision_occurred = False
@@ -369,6 +385,8 @@ class SelfCarlaEnv(gym.Env):
         if done:
             self.laps_done += 1
         self.current_steps += 1
+        self.current_mapping_counter += 1
+        self.total_amount_steps += 1
         return observation, reward, done, False, info
 
     def _get_reward_new(self):
