@@ -8,15 +8,17 @@ from config.environment_configs import environment_configs
 _CONFIG_CARLA_RGB = {
     "name": "carla_rgb",
     "algorithm": "PPO",
-    "algorithm_policy_network": "CnnPolicy",
+    "algorithm_policy_network": "MultiInputPolicy",
     "algorithm_hyperparams": algorithm_params["PPO"],
-    "observation_space": gym.spaces.Box(low=0, high=255, shape=(120, 160, 3), dtype=np.uint8),
+    "observation_space": gym.spaces.Dict({
+                "camera_rgb": gym.spaces.Box(low=0, high=255, shape=(120, 160, 3), dtype=np.uint8),
+                "vehicle_dynamics": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
+            }),
     "action_space": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
     "environments": {
         "carla": environment_configs["carla"],
     }
 }
-
 
 _CONFIG_CARLA_RGB_FEATURE = {
     "name": "carla_feature",
@@ -27,6 +29,22 @@ _CONFIG_CARLA_RGB_FEATURE = {
     "action_space": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
     "environments": {
         "carla": environment_configs["carla"],
+    }
+}
+
+
+_CONFIG_CARLA_ENCODER = {
+    "name": "carla_encoder",
+    "algorithm": "PPO",
+    "algorithm_policy_network": "MultiInputPolicy",
+    "algorithm_hyperparams": algorithm_params["PPO"],
+    "observation_space": gym.spaces.Dict({
+            "encoding": gym.spaces.Box(low=-10, high=10, shape=(95,), dtype=np.float32),
+            "vehicle_dynamics": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
+        }),
+    "action_space": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
+    "environments": {
+        "carla": environment_configs["carla_encoder"],
     }
 }
 
@@ -57,9 +75,12 @@ _CONFIG_CARLA_CANNY = {
 _CONFIG_CARLA_SEG = {
     "name": "carla_seg",
     "algorithm": "PPO",
-    "algorithm_policy_network": "CnnPolicy",
+    "algorithm_policy_network": "MultiInputPolicy",
     "algorithm_hyperparams": algorithm_params["PPO"],
-    "observation_space": gym.spaces.Box(low=0, high=255, shape=(3, 120, 160), dtype=np.uint8),
+    "observation_space": gym.spaces.Dict({
+                "camera_seg": gym.spaces.Box(low=0, high=255, shape=(120, 160, 3), dtype=np.uint8),
+                "vehicle_dynamics": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
+            }),
     "action_space": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
     "environments": {
         "carla": environment_configs["carla_seg"],
@@ -92,6 +113,7 @@ _CONFIG_DUCKIE_RGB = {
         "duckie": environment_configs["duckietown"],
     }
 }
+
 
 _CONFIG_DUCKIE_GRAY = {
     "name": "duckie_gray",
@@ -134,7 +156,8 @@ _CONFIG_DUCKIE_RGB_SEG = {
 
 
 configs = [_CONFIG_CARLA_RGB, _CONFIG_CARLA_RGB_SEG,_CONFIG_CARLA_GRAY, _CONFIG_CARLA_SEG, _CONFIG_CARLA_CANNY, _CONFIG_CARLA_RGB_FEATURE,
-           _CONFIG_DUCKIE_RGB, _CONFIG_DUCKIE_GRAY, _CONFIG_DUCKIE_SEG, _CONFIG_DUCKIE_RGB_SEG]
+           _CONFIG_DUCKIE_RGB, _CONFIG_DUCKIE_GRAY, _CONFIG_DUCKIE_SEG, _CONFIG_DUCKIE_RGB_SEG,
+           _CONFIG_CARLA_ENCODER]
 
 def get_config_by_name(name: str):
     return next((item for item in configs if item['name'] == name), None)

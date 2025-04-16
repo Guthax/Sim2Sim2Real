@@ -21,7 +21,7 @@ CAMERA_HEIGHT = 120
 def slight_variation(base, delta):
     return base + random.uniform(-delta, delta)
 class SelfCarlaEnv(gym.Env):
-    def __init__(self, host='localhost', port=2000, rgb_camera=True, seg_camera=False, render=False, layered_mapping=False):
+    def __init__(self, host='localhost', port=2000, rgb_camera=True, seg_camera=False, render=False, domain_rand= False, layered_mapping=False, convert_segmentation=True):
         super(SelfCarlaEnv, self).__init__()
         self.client = carla.Client(host, port)
         self.client.set_timeout(20.0)
@@ -76,17 +76,28 @@ class SelfCarlaEnv(gym.Env):
             self.observation_space = spaces.Dict({
                 "camera_rgb": spaces.Box(low=0, high=255, shape=(CAMERA_HEIGHT, CAMERA_WIDTH, 3), dtype=np.uint8),
                 "camera_seg": spaces.Box(low=0, high=255, shape=(CAMERA_HEIGHT, CAMERA_WIDTH, 3), dtype=np.uint8),
+                "vehicle_dynamics": spaces.Box(low=np.float32(-1), high=np.float32(1))
             })
         else:
-            self.observation_space = spaces.Box(low=0, high=255, shape=(CAMERA_HEIGHT, CAMERA_WIDTH, 3),dtype=np.uint8)
-
+            camera_space_key = "camera_rgb" if self.camera_rgb_enabled else "camera_seg"
+            self.observation_space = spaces.Dict({
+                camera_space_key: spaces.Box(low=0, high=255, shape=(CAMERA_HEIGHT, CAMERA_WIDTH, 3), dtype=np.uint8),
+                "vehicle_dynamics": spaces.Box(low=np.float32(-1), high=np.float32(1))
+            })
 
         self._setup_vehicle()
 
-
+        self.domain_rand = domain_rand
         self.count_until_randomization = 0
         self.randomize_every_steps = 50000
-
+        self.weather_presets = [
+            carla.WeatherParameters.ClearNoon,
+            carla.WeatherParameters.CloudySunset,
+            carla.WeatherParameters.WetNoon,
+            carla.WeatherParameters.HardRainSunset,
+            carla.WeatherParameters.SoftRainSunset,
+            carla.WeatherParameters.MidRainyNoon,
+        ]
         self.distance_until_lap_complete = 5
         self.min_steps_for_lap = 600
         self.current_steps = 0
@@ -97,20 +108,16 @@ class SelfCarlaEnv(gym.Env):
 
         self.total_amount_steps = 0
 
-        weather = carla.WeatherParameters(
-            cloudiness=random.uniform(0, 100),
-            sun_altitude_angle=random.uniform(0, 60),
-            precipitation=0,
-            wetness=0,  # Simulates dark glossy roads
-            fog_density=random.uniform(5, 15),
-            fog_distance=random.uniform(80, 150),
-            wind_intensity=random.uniform(5, 30),
-            precipitation_deposits=0,
-            scattering_intensity=random.uniform(0.2, 0.4),  # Diffuses light = less sharp textures
-        )
-        self.world.set_weather(weather)
+        #weather = carla.WeatherParameters(
+        #    wetness=50,
+        #)
+        #self.world.set_weather(weather)
+        
 
-        self.world.tick()
+        #self.world.tick()
+
+        self.convert_segmentation = convert_segmentation
+
 
 
     def _setup_vehicle(self):
@@ -185,19 +192,7 @@ class SelfCarlaEnv(gym.Env):
         self.invasion_sensor.listen(self._on_lane_invasion)
 
     def _randomize_weather(self):
-        weather = carla.WeatherParameters(
-            cloudiness=random.uniform(0, 100),
-            sun_altitude_angle=random.uniform(0, 60),
-            precipitation=0,
-            wetness=0,  # Simulates dark glossy roads
-            fog_density=random.uniform(5, 15),
-            fog_distance=random.uniform(80, 150),
-            wind_intensity=random.uniform(5, 30),
-            precipitation_deposits=0,
-            scattering_intensity=random.uniform(0.2, 0.4),  # Diffuses light = less sharp textures
-        )
-        print("Randomized weather")
-        self.world.set_weather(weather)
+        self.world.set_weather(random.choice(self.weather_presets))
 
     def _on_collision(self, event):
         #print("Collision detected!")
@@ -224,7 +219,8 @@ class SelfCarlaEnv(gym.Env):
         image.convert(carla.ColorConverter.CityScapesPalette)
         array = np.frombuffer(image.raw_data, dtype=np.uint8)
         array = array.reshape((image.height, image.width, 4))[:, :, :3]
-        array = cv2.cvtColor(array, cv2.COLOR_BGR2RGB)
+        if self.convert_segmentation:
+            array = cv2.cvtColor(array, cv2.COLOR_BGR2RGB)
         self.seg_queue.put(array)
 
     def _get_observation_rgb(self):
@@ -245,8 +241,8 @@ class SelfCarlaEnv(gym.Env):
         for actor in self.actor_list:
             actor.destroy()
 
-        if self.count_until_randomization >= self.randomize_every_steps:
-            self._randomize_weather()
+        if self.count_until_randomization >= self.randomize_every_steps and self.domain_rand:
+            self.world.set_weather(random.choice(self.weather_presets))
             self.count_until_randomization = 0
 
         if self.current_mapping_counter > self.layered_mapping_counter and len(self.map_layers) > 0:
@@ -280,14 +276,21 @@ class SelfCarlaEnv(gym.Env):
             observation = {
                 "camera_rgb": self.image_rgb,
                 "camera_seg": self.image_seg,
+                "vehicle_dynamics": 0.0,
             }
         elif self.camera_rgb_enabled:
             self.image_rgb = self.rgb_queue.get()
-            observation = self.image_rgb
+            observation = {
+                "camera_rgb": self.image_rgb,
+                "vehicle_dynamics": 0.0
+            }
 
         elif self.camera_seg_enabled:
             self.image_seg = self.seg_queue.get()
-            observation =  self.image_seg
+            observation = {
+                "camera_seg": self.image_seg,
+                "vehicle_dynamics": 0.0
+            }
         else:
             print("black")
             observation = np.zeros((CAMERA_HEIGHT, CAMERA_WIDTH, 3), dtype=np.uint8)
@@ -353,16 +356,22 @@ class SelfCarlaEnv(gym.Env):
             observation = {
                 "camera_rgb": self.image_rgb,
                 "camera_seg": self.image_seg,
+                "vehicle_dynamics": steer,
             }
         elif self.camera_rgb_enabled:
             self.image_rgb = self.rgb_queue.get()
-            observation = self.image_rgb
+            observation = {
+                "camera_rgb": self.image_rgb,
+                "vehicle_dynamics": steer
+            }
 
         elif self.camera_seg_enabled:
             self.image_seg = self.seg_queue.get()
-            observation =  self.image_seg
+            observation = {
+                "camera_seg": self.image_seg,
+                "vehicle_dynamics": steer
+            }
         else:
-            print("black")
             observation = np.zeros((CAMERA_HEIGHT, CAMERA_WIDTH, 3), dtype=np.uint8)
 
         self.waypoints = self.route_planner.run_step()
@@ -387,6 +396,7 @@ class SelfCarlaEnv(gym.Env):
         self.current_steps += 1
         self.current_mapping_counter += 1
         self.total_amount_steps += 1
+
         return observation, reward, done, False, info
 
     def _get_reward_new(self):

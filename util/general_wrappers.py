@@ -8,6 +8,7 @@ from gymnasium import spaces
 from gymnasium.core import ObsType, WrapperObsType
 from stable_baselines3.common.utils import obs_as_tensor
 from torchvision.transforms import transforms
+from vae.encoder import VariationalEncoder
 
 
 class ResizeWrapper(gym.ObservationWrapper):
@@ -97,27 +98,15 @@ class OneHotEncodeSegWrapper(gym.ObservationWrapper):
     def __init__(self, env=None):
         gym.ObservationWrapper.__init__(self, env)
 
-        if isinstance(self.env.observation_space, spaces.Dict):
-            h, w = self.observation_space["camera_seg"].shape[0], self.observation_space["camera_seg"].shape[1]
-            self.observation_space["camera_rgb"] = self.observation_space["camera_rgb"]
-            self.observation_space["camera_seg"] = spaces.Box(low=0, high=255, shape=(h, w, len(self.color_map)), dtype=np.uint8)
-        else:
-            h, w = self.observation_space.shape[0], self.observation_space.shape[1]
-            self.observation_space = spaces.Box(low=0, high=255, shape=(h, w, len(self.color_map)), dtype=np.uint8)
+        h, w = self.observation_space["camera_seg"].shape[0], self.observation_space["camera_seg"] .shape[1]
+        self.observation_space["camera_seg"] = spaces.Box(low=0, high=255, shape=(h, w, len(self.color_map)), dtype=np.uint8)
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
     def observation(self, observation):
-        array = observation
-        #array = cv2.cvtColor(array, cv2.COLOR_BGR2RGB)
-        if isinstance(self.env.observation_space, spaces.Dict):
-            array = observation["camera_seg"]
-
+        array = observation["camera_seg"]
         one_hot_mask = self.one_hot_encode_segmentation_torch(torch.from_numpy(array).to(torch.uint8))
-        if isinstance(self.env.observation_space, spaces.Dict):
-            observation["camera_seg"] = one_hot_mask
-        else:
-            observation = one_hot_mask
+        observation["camera_seg"] = one_hot_mask
         return observation
 
 
@@ -165,7 +154,7 @@ class OneHotEncodeSegWrapper(gym.ObservationWrapper):
 
         # One-hot encode the class indices
         one_hot_mask = torch.nn.functional.one_hot(class_mask, num_classes=C).to(
-            torch.float32).cpu().numpy()  # (C, H, W)
+            torch.float32).cpu().numpy()
 
         return one_hot_mask
 
@@ -199,6 +188,29 @@ class OneHotEncodeSegWrapper(gym.ObservationWrapper):
 
         return one_hot_mask
 
+class EncoderWrapper(gym.ObservationWrapper):
+    def __init__(self, env=None):
+        gym.ObservationWrapper.__init__(self, env)
+        device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+        self.encoder = VariationalEncoder()
+        self.encoder.load()
+        self.encoder.to(device)
+
+        self.observation_space = gym.spaces.Dict({
+            "encoding": gym.spaces.Box(low=0, high=255, shape=(95,), dtype=np.float32),
+            "vehicle_dynamics": gym.spaces.Box(np.float32(-1), high=np.float32(1))
+        })
+
+    def observation(self, observation):
+        img = observation["camera_seg"]
+        tensor = torch.from_numpy(img).permute(2, 0, 1).unsqueeze(0).float()
+        encoding = self.encoder.forward(tensor).cpu().numpy()
+
+        obs = {
+            "encoding": encoding,
+            "vehicle_dynamics": observation["vehicle_dynamics"]
+        }
+        return obs
 
 class CannyWrapper(gym.ObservationWrapper):
     def __init__(self, env=None):
