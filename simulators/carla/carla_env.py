@@ -84,7 +84,7 @@ class SelfCarlaEnv(gym.Env):
         self._setup_vehicle()
 
         self.count_until_randomization = 0
-        self.randomize_every_steps = 150000
+        self.randomize_every_steps = 100000
 
         self.distance_until_lap_complete = 5
         self.min_steps_for_lap = 600
@@ -102,12 +102,12 @@ class SelfCarlaEnv(gym.Env):
         ]
 
         weather = carla.WeatherParameters(
-            cloudiness=slight_variation(50, 10),  # 40-60
-            precipitation=slight_variation(0, 2),  # 0-2 (mostly dry)
-            sun_altitude_angle=slight_variation(30, 5),  # 25-35
-            fog_density=slight_variation(10, 2),  # 8-12
-            wetness=slight_variation(70, 10),  # 60-80
-            fog_distance=slight_variation(200, 20),  # 180-220
+            cloudiness=random.uniform(0, 50),  # 0 to 100
+            precipitation=random.uniform(0, 2),  # 0 to 2 (light precipitation)
+            sun_altitude_angle=random.uniform(25, 60),  # sun low in sky
+            fog_density=random.uniform(8, 12),  # moderate fog
+            wetness=random.uniform(60, 40),  # wet roads
+            fog_distance=random.uniform(180, 220),  # visibility distance in fog
         )
         self.world.set_weather(weather)
 
@@ -187,12 +187,12 @@ class SelfCarlaEnv(gym.Env):
 
     def _randomize_weather(self):
         weather = carla.WeatherParameters(
-            cloudiness=slight_variation(50, 10),  # 40-60
-            precipitation=slight_variation(0, 2),  # 0-2 (mostly dry)
-            sun_altitude_angle=slight_variation(30, 5),  # 25-35
-            fog_density=slight_variation(10, 2),  # 8-12
-            wetness=slight_variation(70, 10),  # 60-80
-            fog_distance=slight_variation(200, 20),  # 180-220
+            cloudiness=random.uniform(0, 50),  # 0 to 100
+            precipitation=random.uniform(0, 2),  # 0 to 2 (light precipitation)
+            sun_altitude_angle=random.uniform(25, 60),  # sun low in sky
+            fog_density=random.uniform(8, 12),  # moderate fog
+            wetness=random.uniform(60, 40),  # wet roads
+            fog_distance=random.uniform(180, 220),  # visibility distance in fog
         )
         self.world.set_weather(weather)
 
