@@ -12,7 +12,7 @@ environment_configs = {
             render=True,
             rgb_camera=True,
             seg_camera=False,
-            layered_mapping=True,
+            layered_mapping=False,
         ),
         "wrappers": [
             (TimeLimit, dict(max_episode_steps=300))
