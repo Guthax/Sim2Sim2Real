@@ -105,9 +105,12 @@ _CONFIG_CARLA_RGB_SEG = {
 _CONFIG_DUCKIE_RGB = {
     "name": "duckie_rgb",
     "algorithm": "PPO",
-    "algorithm_policy_network": "CnnPolicy",
+    "algorithm_policy_network": "MultiInputPolicy",
     "algorithm_hyperparams": algorithm_params["PPO"],
-    "observation_space": gym.spaces.Box(low=0, high=255, shape=(120, 160, 3), dtype=np.uint8),
+    "observation_space": gym.spaces.Dict({
+                "camera_rgb": gym.spaces.Box(low=0, high=255, shape=(120, 160, 3), dtype=np.uint8),
+                "vehicle_dynamics": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
+            }),
     "action_space": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
     "environments": {
         "duckie": environment_configs["duckietown"],

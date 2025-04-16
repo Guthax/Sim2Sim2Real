@@ -245,7 +245,7 @@ class SelfCarlaEnv(gym.Env):
             self.world.set_weather(random.choice(self.weather_presets))
             self.count_until_randomization = 0
 
-        if self.current_mapping_counter > self.layered_mapping_counter and len(self.map_layers) > 0:
+        if self.current_mapping_counter > self.layered_mapping_counter and len(self.map_layers) > 0 and self.layered_mapping:
             layer_to_load = self.map_layers.pop(random.randrange(len(self.map_layers)))
             self.world.load_map_layer(layer_to_load)
             print("Loading: ", layer_to_load)
