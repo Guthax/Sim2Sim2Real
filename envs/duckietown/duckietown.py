@@ -99,7 +99,7 @@ class DuckietownBaseDynamics(Simulator):
         vels = np.array([left_wheel_velocity, right_wheel_velocity])
         obs_bgr, reward, done, trunc, info = Simulator.step(self, vels)
         obs_rgb = cv2.cvtColor(obs_bgr, cv2.COLOR_BGR2RGB)
-        cv2.imshow("OBSRGB", obs_rgb)
+        #cv2.imshow("OBSRGB", obs_rgb)
 
         steer_value = action
         steer_change_penalty = -0.5* abs(steer_value - self.previous_steer) if self.previous_steer else 0
@@ -153,7 +153,7 @@ class DuckietownBaseDynamics(Simulator):
         self.current_steps += 1
 
         distance_to_spawn = abs(np.linalg.norm(self.cur_pos - self.first_pos))
-        print(distance_to_spawn, self.current_steps)
+        #print(distance_to_spawn, self.current_steps)
         if distance_to_spawn < self.distance_until_lap_complete and self.current_steps >= self.min_steps_for_lap:
             done = True
             self.laps_completed += 1
