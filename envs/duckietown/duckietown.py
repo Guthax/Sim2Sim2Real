@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import math
 from gymnasium import spaces
+from matplotlib import pyplot as plt
 
 from simulators.duckietown import logger
 from simulators.duckietown.exceptions import NotInLane
@@ -97,9 +98,7 @@ class DuckietownBaseDynamics(Simulator):
         right_wheel_velocity = 0.25 * (1 - steering_angle)
 
         vels = np.array([left_wheel_velocity, right_wheel_velocity])
-        obs_bgr, reward, done, trunc, info = Simulator.step(self, vels)
-        obs_rgb = cv2.cvtColor(obs_bgr, cv2.COLOR_BGR2RGB)
-        #cv2.imshow("OBSRGB", obs_rgb)
+        obs_rgb, reward, done, trunc, info = Simulator.step(self, vels)
 
         steer_value = action
         steer_change_penalty = -0.5* abs(steer_value - self.previous_steer) if self.previous_steer else 0
@@ -116,7 +115,6 @@ class DuckietownBaseDynamics(Simulator):
                 "camera_seg": obs_seg
             }
         elif self.camera_rgb_enabled:
-
             obs = {
                 "camera_rgb": obs_rgb
             }
@@ -243,7 +241,6 @@ class DuckietownBaseDynamics(Simulator):
                 segment=False,
                 custom_segmentation_folder="/home/jurriaan/Documents/Programming/Sim2Sim2Real/simulators/duckietown/segmentation"
             )
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             cv2.imshow("rgb", img)
             cv2.waitKey(1)
         if self.camera_seg_enabled:
@@ -257,7 +254,6 @@ class DuckietownBaseDynamics(Simulator):
                 segment=True,
                 custom_segmentation_folder="/home/jurriaan/Documents/Programming/Sim2Sim2Real/simulators/duckietown/segmentation"
             )
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             cv2.imshow("seg", img)
             cv2.waitKey(1)
 

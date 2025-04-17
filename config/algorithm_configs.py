@@ -5,6 +5,8 @@ from stable_baselines3.common.noise import NormalActionNoise
 from util.custom_extractors.parsing_net.extractor import ParsingNetFeatureExtractor
 from util.custom_extractors.resnet.resnet8_extractor import ResnetExtractor
 from util.feature_extractors import PaperCNN
+from stable_baselines3.common.torch_layers import CombinedExtractor, NatureCNN
+
 from utils import lr_schedule
 import torch as th
 
@@ -24,6 +26,8 @@ algorithm_params = {
             net_arch=[512, 256],  # 2 layers of 256 units (Unity: 32–512)
             activation_fn=torch.nn.ReLU,
             log_std_init = -1,
+            features_extractor_class=CombinedExtractor,
+            features_extractor_kwargs=dict(normalized_image=True)
     ),
     ),
     "PPO_FEATURE": dict(

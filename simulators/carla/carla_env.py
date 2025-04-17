@@ -14,7 +14,7 @@ from jedi.inference.arguments import repack_with_argument_clinic
 from simulators.carla.misc import get_pos, get_closest_waypoint, get_next_waypoint, compute_angle
 from simulators.carla.route_planner import RoutePlanner
 
-
+import matplotlib.pyplot as plt
 CAMERA_WIDTH = 160
 CAMERA_HEIGHT = 120
 
@@ -75,13 +75,15 @@ class SelfCarlaEnv(gym.Env):
         if self.camera_rgb_enabled and self.camera_seg_enabled:
             self.observation_space = spaces.Dict({
                 "camera_rgb": spaces.Box(low=0, high=255, shape=(CAMERA_HEIGHT, CAMERA_WIDTH, 3), dtype=np.uint8),
-                "camera_seg": spaces.Box(low=0, high=255, shape=(CAMERA_HEIGHT, CAMERA_WIDTH, 3), dtype=np.uint8),
+                "camera_seg": spaces.Box(low=0, high=1, shape=(CAMERA_HEIGHT, CAMERA_WIDTH, 3), dtype=np.uint8),
                 "vehicle_dynamics": spaces.Box(low=np.float32(-1), high=np.float32(1))
             })
         else:
             camera_space_key = "camera_rgb" if self.camera_rgb_enabled else "camera_seg"
+            low = 0
+            high = 255 if self.camera_rgb_enabled else 1
             self.observation_space = spaces.Dict({
-                camera_space_key: spaces.Box(low=0, high=255, shape=(CAMERA_HEIGHT, CAMERA_WIDTH, 3), dtype=np.uint8),
+                camera_space_key: spaces.Box(low=low, high=high, shape=(CAMERA_HEIGHT, CAMERA_WIDTH, 3), dtype=np.uint8),
                 "vehicle_dynamics": spaces.Box(low=np.float32(-1), high=np.float32(1))
             })
 
@@ -209,33 +211,20 @@ class SelfCarlaEnv(gym.Env):
         self.lane_invasion_occured = True
 
     def _process_image_rgb(self, image):
-        #print("RGB image received")
         array = np.frombuffer(image.raw_data, dtype=np.uint8)
-        array = array.reshape((image.height, image.width, 4))[:, :, :3]
+        array = array.reshape((image.height, image.width, 4))
+        array = array[:, :, :3] #BGR
+        array = cv2.cvtColor(array, cv2.COLOR_BGR2RGB) #RGB
         self.rgb_queue.put(array)
 
     def _process_image_seg(self, image):
         #print("Segmentation image received")
         image.convert(carla.ColorConverter.CityScapesPalette)
         array = np.frombuffer(image.raw_data, dtype=np.uint8)
-        array = array.reshape((image.height, image.width, 4))[:, :, :3]
-        if self.convert_segmentation:
-            array = cv2.cvtColor(array, cv2.COLOR_BGR2RGB)
+        array = array.reshape((image.height, image.width, 4))
+        array = array[:, :, :3] #BGR
+        array = cv2.cvtColor(array, cv2.COLOR_BGR2RGB) #RGB
         self.seg_queue.put(array)
-
-    def _get_observation_rgb(self):
-        while self.rgb_buffer is None:
-            pass
-        obs = self.rgb_buffer.copy()
-        self.rgb_buffer = None
-        return obs
-
-    def _get_observation_seg(self):
-        while self.seg_buffer is None:
-            pass
-        obs = self.seg_buffer.copy()
-        self.seg_buffer = None
-        return obs
 
     def reset(self, *, seed=None, options=None):
         for actor in self.actor_list:
@@ -450,8 +439,11 @@ class SelfCarlaEnv(gym.Env):
 
     def render(self, mode='human'):
         if self.image_rgb is not None:
+
             cv2.imshow("CARLA Camera RGB", self.image_rgb)
             cv2.waitKey(1)
+
+
         if self.image_seg is not None:
             cv2.imshow("CARLA Camera SEG", self.image_seg)
             cv2.waitKey(1)

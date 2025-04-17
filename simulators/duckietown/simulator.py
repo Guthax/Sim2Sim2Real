@@ -2017,7 +2017,6 @@ class Simulator(gym.Env):
         # self.undistort - for UndistortWrapper
         if self.distortion and not self.undistort:
             observation = self.camera_model.distort(observation)
-
         return observation
 
     def render(self, mode: str = "human", close: bool = False, segment: bool = False):

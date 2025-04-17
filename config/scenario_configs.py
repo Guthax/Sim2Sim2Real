@@ -11,7 +11,7 @@ _CONFIG_CARLA_RGB = {
     "algorithm_policy_network": "MultiInputPolicy",
     "algorithm_hyperparams": algorithm_params["PPO"],
     "observation_space": gym.spaces.Dict({
-                "camera_rgb": gym.spaces.Box(low=0, high=255, shape=(120, 160, 3), dtype=np.uint8),
+                "camera_rgb": gym.spaces.Box(low=0, high=255, shape=(3, 120, 160), dtype=np.uint8),
                 "vehicle_dynamics": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
             }),
     "action_space": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
@@ -78,7 +78,7 @@ _CONFIG_CARLA_SEG = {
     "algorithm_policy_network": "MultiInputPolicy",
     "algorithm_hyperparams": algorithm_params["PPO"],
     "observation_space": gym.spaces.Dict({
-                "camera_seg": gym.spaces.Box(low=0, high=255, shape=(120, 160, 3), dtype=np.uint8),
+                "camera_seg": gym.spaces.Box(low=0, high=1, shape=(3, 120, 160), dtype=np.uint8),
                 "vehicle_dynamics": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
             }),
     "action_space": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
@@ -87,6 +87,7 @@ _CONFIG_CARLA_SEG = {
     }
 }
 
+
 _CONFIG_CARLA_RGB_SEG = {
     "name": "carla_rgb_seg",
     "algorithm": "PPO",
@@ -94,7 +95,7 @@ _CONFIG_CARLA_RGB_SEG = {
     "algorithm_hyperparams": algorithm_params["PPO"],
     "observation_space": gym.spaces.Dict({
                 "camera_rgb": gym.spaces.Box(low=0, high=255, shape=(120, 160, 3), dtype=np.uint8),
-                "camera_seg": gym.spaces.Box(low=0, high=255, shape=(120, 160, 3), dtype=np.uint8),
+                "camera_seg": gym.spaces.Box(low=0, high=1, shape=(120, 160, 3), dtype=np.uint8),
             }),
     "action_space": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
     "environments": {
@@ -108,7 +109,7 @@ _CONFIG_DUCKIE_RGB = {
     "algorithm_policy_network": "MultiInputPolicy",
     "algorithm_hyperparams": algorithm_params["PPO"],
     "observation_space": gym.spaces.Dict({
-                "camera_rgb": gym.spaces.Box(low=0, high=255, shape=(120, 160, 3), dtype=np.uint8),
+                "camera_rgb": gym.spaces.Box(low=0, high=255, shape=(3, 120, 160), dtype=np.uint8),
                 "vehicle_dynamics": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
             }),
     "action_space": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
@@ -133,9 +134,12 @@ _CONFIG_DUCKIE_GRAY = {
 _CONFIG_DUCKIE_SEG = {
     "name": "duckie_seg",
     "algorithm": "PPO",
-    "algorithm_policy_network": "CnnPolicy",
+    "algorithm_policy_network": "MultiInputPolicy",
     "algorithm_hyperparams": algorithm_params["PPO"],
-    "observation_space": gym.spaces.Box(low=0, high=255, shape=(3, 120, 160), dtype=np.uint8),
+    "observation_space": gym.spaces.Dict({
+                "camera_seg": gym.spaces.Box(low=0, high=1, shape=(3, 120, 160), dtype=np.uint8),
+                "vehicle_dynamics": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
+    }),
     "action_space": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
     "environments": {
         "duckie": environment_configs["duckie_seg"],
@@ -149,7 +153,7 @@ _CONFIG_DUCKIE_RGB_SEG = {
     "algorithm_hyperparams": algorithm_params["PPO"],
     "observation_space": gym.spaces.Dict({
                 "camera_rgb": gym.spaces.Box(low=0, high=255, shape=(120, 160, 3), dtype=np.uint8),
-                "camera_seg": gym.spaces.Box(low=0, high=255, shape=(120, 160, 3), dtype=np.uint8),
+                "camera_seg": gym.spaces.Box(low=0, high=1, shape=(120, 160, 3), dtype=np.uint8),
             }),
     "action_space": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
     "environments": {

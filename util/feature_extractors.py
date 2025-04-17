@@ -3,6 +3,9 @@ import torch.nn as nn
 import gymnasium as gym
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
+from stable_baselines3.common.type_aliases import TensorDict
+
+
 class PaperCNN(BaseFeaturesExtractor):
     """
     CNN feature extractor for segmentation inputs, following the architecture from:

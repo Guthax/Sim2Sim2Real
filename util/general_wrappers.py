@@ -1,6 +1,7 @@
 from typing import Any
 
 import cv2
+import matplotlib.pyplot as plt
 import numpy as np
 import gymnasium as gym
 import torch
@@ -9,6 +10,34 @@ from gymnasium.core import ObsType, WrapperObsType
 from stable_baselines3.common.utils import obs_as_tensor
 from torchvision.transforms import transforms
 from vae.encoder import VariationalEncoder
+import matplotlib.pyplot as plt
+
+
+class ChannelFirstWrapper(gym.ObservationWrapper):
+    def __init__(self, env=None):
+        super().__init__(env)
+        if "camera_seg" in self.observation_space.spaces:
+            self.observation_space["camera_seg"] = gym.spaces.Box(low=0, high=1, shape=(3, 120, 160), dtype=np.uint8)
+        if "camera_rgb" in self.observation_space.spaces:
+            self.observation_space["camera_rgb"] = gym.spaces.Box(low=0, high=255, shape=(3, 120, 160), dtype=np.uint8)
+
+    def observation(self, observation):
+        if "camera_seg" in observation:
+            observation["camera_seg"] = np.transpose(observation["camera_seg"], (2, 0, 1))  # (H, W, C) -> (C, H, W)
+        if "camera_rgb" in observation:
+            observation["camera_rgb"] = np.transpose(observation["camera_rgb"], (2, 0, 1))
+        return observation
+
+class NormalizeWrapper(gym.ObservationWrapper):
+    def __init__(self, env=None):
+        super().__init__(env)
+        if "camera_rgb" in self.observation_space.spaces:
+            self.observation_space["camera_rgb"] = gym.spaces.Box(low=0, high=1, shape=(3, 120, 160), dtype=np.float32)
+
+    def observation(self, observation):
+        if "camera_rgb" in observation:
+            observation["camera_rgb"] = observation["camera_rgb"] / 255
+        return observation
 
 
 class ResizeWrapper(gym.ObservationWrapper):
@@ -99,7 +128,7 @@ class OneHotEncodeSegWrapper(gym.ObservationWrapper):
         gym.ObservationWrapper.__init__(self, env)
 
         h, w = self.observation_space["camera_seg"].shape[0], self.observation_space["camera_seg"] .shape[1]
-        self.observation_space["camera_seg"] = spaces.Box(low=0, high=255, shape=(h, w, len(self.color_map)), dtype=np.uint8)
+        self.observation_space["camera_seg"] = spaces.Box(low=0, high=1, shape=(h, w, len(self.color_map)), dtype=np.uint8)
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
@@ -158,36 +187,6 @@ class OneHotEncodeSegWrapper(gym.ObservationWrapper):
 
         return one_hot_mask
 
-    def one_hot_encode_segmentation(self, mask, background_class=0):
-        """
-        Convert an HxWx3 RGB segmentation mask to a CxHxW one-hot encoded representation.
-        Unrecognized colors are assigned to the background class.
-
-        Args:
-            mask (numpy.ndarray): HxWx3 segmentation mask (RGB format).
-            color_map (dict): Dictionary mapping RGB tuples to class indices.
-            background_class (int): Class index for background.
-
-        Returns:
-            numpy.ndarray: One-hot encoded mask of shape (C, H, W).
-        """
-        color_map = self.color_map
-        H, W, _ = mask.shape
-        C = len(set(color_map.values()))  # Number of valid classes
-
-        # Flatten mask for fast processing
-        mask_reshaped = mask.reshape(-1, 3)
-
-        # Map RGB values to class indices, defaulting to background if not found
-        class_indices = np.array([
-            color_map.get(tuple(rgb), background_class) for rgb in map(tuple, mask_reshaped)
-        ]).reshape(H, W)
-
-        # One-hot encode and transpose to (C, H, W)
-        one_hot_mask = np.eye(C)[class_indices].transpose(2, 0, 1)
-
-        return one_hot_mask
-
 class EncoderWrapper(gym.ObservationWrapper):
     def __init__(self, env=None):
         gym.ObservationWrapper.__init__(self, env)
@@ -197,7 +196,7 @@ class EncoderWrapper(gym.ObservationWrapper):
         self.encoder.to(device)
 
         self.observation_space = gym.spaces.Dict({
-            "encoding": gym.spaces.Box(low=0, high=255, shape=(95,), dtype=np.float32),
+            "encoding": gym.spaces.Box(low=-3, high=3, shape=(95,), dtype=np.float32),
             "vehicle_dynamics": gym.spaces.Box(np.float32(-1), high=np.float32(1))
         })
 
@@ -327,7 +326,7 @@ class CannyWrapper(gym.ObservationWrapper):
 
 
 class CropWrapper(gym.ObservationWrapper):
-    def __init__(self, env=None, crop_height_start= 40, crop_height_end=120, crop_width_start=0, crop_width_end=160, channels=3):
+    def __init__(self, env=None, keys=[], crop_height_start= 40, crop_height_end=120, crop_width_start=0, crop_width_end=160, channels=3):
         gym.ObservationWrapper.__init__(self, env)
 
         self.crop_h_start =crop_height_start
@@ -335,13 +334,17 @@ class CropWrapper(gym.ObservationWrapper):
         self.crop_w_start = crop_width_start
         self.crop_w_end = crop_width_end
         self.num_channels = channels
-        self.observation_space = spaces.Box(low=0, high=255, shape=(crop_height_end - crop_height_start, crop_width_end - crop_width_start, channels), dtype=np.uint8)
+        self.keys = keys
+        for key in self.keys:
+            if key in self.observation_space.spaces:
+                self.observation_space[key] =  spaces.Box(low=0, high=255, shape=(crop_height_end - crop_height_start, crop_width_end - crop_width_start, channels), dtype=np.uint8)
 
     def observation(self, observation):
-        cropped = observation[self.crop_h_start:self.crop_h_end, self.crop_w_start:self.crop_w_end, :]
-        #cv2.imshow("cropped", cropped)
-        #cv2.waitKey(1)
-        return cropped
+
+        for key in self.keys:
+            if key in observation:
+                observation[key] = observation[key][self.crop_h_start:self.crop_h_end, self.crop_w_start:self.crop_w_end, :]
+        return observation
 
 class GrayscaleWrapper(gym.ObservationWrapper):
     def __init__(self, env=None):

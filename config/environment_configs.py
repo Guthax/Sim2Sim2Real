@@ -2,7 +2,7 @@ from gymnasium.wrappers import TimeLimit
 
 from envs.duckietown.duckietown import DuckietownBaseDynamics
 from simulators.carla.carla_env import SelfCarlaEnv
-from util.general_wrappers import ResizeWrapper, CropWrapper, CannyWrapper, SegmentationFilterWrapper, \
+from util.general_wrappers import NormalizeWrapper, ChannelFirstWrapper, ResizeWrapper, CropWrapper, CannyWrapper, SegmentationFilterWrapper, \
     DuckieClipWrapper, OneHotEncodeSegWrapper, GrayscaleWrapper, EncoderWrapper
 
 environment_configs = {
@@ -15,7 +15,9 @@ environment_configs = {
             layered_mapping=False,
         ),
         "wrappers": [
-            (TimeLimit, dict(max_episode_steps=300))
+            (TimeLimit, dict(max_episode_steps=300)),
+            (ChannelFirstWrapper, None),
+            (NormalizeWrapper, None)
         ]
     },
     "carla_gray": {
@@ -50,7 +52,8 @@ environment_configs = {
             seg_camera=True,
         ),
         "wrappers": [
-            (OneHotEncodeSegWrapper, None)
+            (OneHotEncodeSegWrapper, None),
+            (ChannelFirstWrapper, None),
         ]
     },
     "carla_encoder": {
@@ -63,7 +66,7 @@ environment_configs = {
             convert_segmentation=False
         ),
         "wrappers": [
-            (CropWrapper, None),
+            (CropWrapper, dict(keys=["camera_seg"])),
             (EncoderWrapper, None),
             (TimeLimit, dict(max_episode_steps=300))
 
@@ -107,7 +110,9 @@ environment_configs = {
             randomize_maps_on_reset=False,
         ),
         "wrappers": [
-            (TimeLimit, dict(max_episode_steps=1000))
+            (TimeLimit, dict(max_episode_steps=1000)),
+            (ChannelFirstWrapper, None),
+            (NormalizeWrapper, None),
         ]
     },
 
@@ -121,7 +126,8 @@ environment_configs = {
         ),
         "wrappers": [
             (DuckieClipWrapper, None),
-            (OneHotEncodeSegWrapper, None)
+            (OneHotEncodeSegWrapper, None),
+            (ChannelFirstWrapper, None)
         ]
     },
     "duckie_gray": {
