@@ -198,7 +198,7 @@ class EncoderWrapper(gym.ObservationWrapper):
         self.encoder.to(device)
 
         self.observation_space = gym.spaces.Dict({
-            "encoding": gym.spaces.Box(low=-3, high=3, shape=(95,), dtype=np.float32),
+            "encoding": gym.spaces.Box(low=-10, high=10, shape=(95,), dtype=np.float32),
             "vehicle_dynamics": gym.spaces.Box(np.float32(-1), high=np.float32(1))
         })
 
