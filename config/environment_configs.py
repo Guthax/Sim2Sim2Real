@@ -15,10 +15,9 @@ environment_configs = {
             layered_mapping=False,
         ),
         "wrappers": [
-            (CropWrapper, dict(keys=["camera_rgb"])),
+            (TimeLimit, dict(max_episode_steps=300)),
             (ChannelFirstWrapper, None),
-            (NormalizeWrapper, None),
-            (TimeLimit, dict(max_episode_steps=300))
+            (NormalizeWrapper, None)
         ]
     },
     "carla_gray": {
@@ -104,7 +103,7 @@ environment_configs = {
             (TimeLimit, dict(max_episode_steps=2000))
         ]
     },
-    "duckietown": {
+    "duckie_rgb": {
         "base_env": DuckietownBaseDynamics,
         "arguments": dict(
             render_img=True,

@@ -61,7 +61,7 @@ class Scenario:
                     current_env = wrapper(current_env)
                 print(current_env.observation_space, current_env.action_space)
 
-            if current_env.observation_space.shape == self.config["observation_space"].shape and current_env.action_space == self.config["action_space"]:
+            if current_env.observation_space == self.config["observation_space"] and current_env.action_space == self.config["action_space"]:
                 self.environments[key] = current_env
             else:
                 print(current_env.observation_space,self.config["observation_space"])
