@@ -32,7 +32,8 @@ class NormalizeWrapper(gym.ObservationWrapper):
     def __init__(self, env=None):
         super().__init__(env)
         if "camera_rgb" in self.observation_space.spaces:
-            self.observation_space["camera_rgb"] = gym.spaces.Box(low=0, high=1, shape=(3, 120, 160), dtype=np.float32)
+            h, w = self.observation_space["camera_rgb"].shape[0], self.observation_space["camera_rgb"].shape[1]
+            self.observation_space["camera_rgb"] = gym.spaces.Box(low=0, high=1, shape=(3, h, w), dtype=np.float32)
 
     def observation(self, observation):
         if "camera_rgb" in observation:

@@ -15,9 +15,10 @@ environment_configs = {
             layered_mapping=False,
         ),
         "wrappers": [
-            (TimeLimit, dict(max_episode_steps=300)),
+            (CropWrapper, dict(keys=["camera_rgb"])),
             (ChannelFirstWrapper, None),
-            (NormalizeWrapper, None)
+            (NormalizeWrapper, None),
+            (TimeLimit, dict(max_episode_steps=300))
         ]
     },
     "carla_gray": {
