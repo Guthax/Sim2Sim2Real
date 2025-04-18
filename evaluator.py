@@ -41,8 +41,8 @@ class Evaluator:
                 state, reward, done, info = self.evaluation_environment.step(action)
                 #print(reward)
                 if self.apply_grad_cam:
-                    self.grad_cam(state)
-                    #self.grad_cam(state, key="camera_rgb")
+                    #self.grad_cam(state)
+                    self.grad_cam(state, key="camera_rgb")
                     #self.grad_cam(state, key="camera_seg")
                 total_reward += reward
                 timesteps += 1
@@ -61,14 +61,14 @@ class Evaluator:
         policy_net = self.algorithm.policy
 
         if key:
-            last_cnn_layer= policy_net.features_extractor.extractors[key].cnn[1]
+            last_cnn_layer= policy_net.features_extractor.extractors[key].cnn[0]
         else:
             last_cnn_layer = policy_net.features_extractor.cnn[1]
 
         activations = {}
         gradients = {}
 
-        # Hook for forward pass (store activations)
+        # Hook for forarla_rgb_dynamics_model_trained_800000_stepsward pass (store activations)
         def forward_hook(module, input, output):
             activations["features"] = output
 

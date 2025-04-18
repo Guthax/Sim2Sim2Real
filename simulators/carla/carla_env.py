@@ -91,14 +91,14 @@ class SelfCarlaEnv(gym.Env):
 
         self.domain_rand = domain_rand
         self.count_until_randomization = 0
-        self.randomize_every_steps = 50000
+        self.randomize_every_steps = 1
         self.weather_presets = [
             carla.WeatherParameters.ClearNoon,
             carla.WeatherParameters.CloudySunset,
-            carla.WeatherParameters.WetNoon,
-            carla.WeatherParameters.HardRainSunset,
+            carla.WeatherParameters.CloudyNight,
+            carla.WeatherParameters.ClearSunset,
             carla.WeatherParameters.SoftRainSunset,
-            carla.WeatherParameters.MidRainyNoon,
+            carla.WeatherParameters.SoftRainNoon,
         ]
         self.distance_until_lap_complete = 5
         self.min_steps_for_lap = 600
@@ -231,7 +231,18 @@ class SelfCarlaEnv(gym.Env):
             actor.destroy()
 
         if self.count_until_randomization >= self.randomize_every_steps and self.domain_rand:
-            self.world.set_weather(random.choice(self.weather_presets))
+            weather = carla.WeatherParameters(
+                cloudiness=random.uniform(0.0, 100.0),  # Affects sky brightness & texture
+                precipitation=0.0,  # Keep it dry to preserve sky view
+                precipitation_deposits=0.0,
+                wind_intensity=random.uniform(0.0, 50.0),  # Optional, just for variety
+                sun_altitude_angle=random.uniform(-20.0, 90.0),  # Negative = dawn/dusk
+                sun_azimuth_angle=random.uniform(0.0, 360.0),  # Sun position in sky
+                fog_density=random.uniform(0.0, 0.2),  # Adds atmosphere/color
+                fog_distance=random.uniform(0.0, 100.0),
+                wetness=0.0,
+            )
+            self.world.set_weather(weather)
             self.count_until_randomization = 0
 
         if self.current_mapping_counter > self.layered_mapping_counter and len(self.map_layers) > 0 and self.layered_mapping:

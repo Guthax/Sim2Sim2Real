@@ -19,7 +19,6 @@ class DuckietownBaseDynamics(Simulator):
         self.obs_rgb_name = "camera_rgb"
         self.camera_rgb_enabled = rgb_camera
         self.camera_seg_enabled = seg_camera
-
         self.laps_completed = 0
         self.laps_done = 0
 
@@ -29,7 +28,7 @@ class DuckietownBaseDynamics(Simulator):
 
         self.previous_steer = None
 
-        Simulator.__init__(self, **kwargs)
+        Simulator.__init__(self, color_sky = [0,0,0], color_ground=[0,0,0], domain_rand=False, **kwargs)
 
         self.action_space = spaces.Box(low=np.float32(-1), high=np.float32(1))
 
