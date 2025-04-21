@@ -240,8 +240,7 @@ class SelfCarlaEnv(gym.Env):
                 fog_density=random.uniform(0.0, 20.0),  # Light fog
                 fog_distance=random.uniform(50.0, 500.0),  # Allow visibility
                 wetness=random.uniform(0.0, 50.0),  # Slightly wet roads
-                fog_falloff=random.uniform(0.8, 5.0),
-                scattered_light_intensity=random.uniform(10.0, 80.0)
+                fog_falloff=random.uniform(0.8, 5.0)
             )
             self.world.set_weather(weather)
             self.count_until_randomization = 0
