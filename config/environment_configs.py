@@ -29,6 +29,8 @@ environment_configs = {
         ),
         "wrappers": [
             (GrayscaleWrapper, None),
+            (ChannelFirstWrapper, None),
+            (NormalizeWrapper, None),
             (TimeLimit, dict(max_episode_steps=300))
         ]
     },
@@ -106,7 +108,7 @@ environment_configs = {
     "duckie_rgb": {
         "base_env": DuckietownBaseDynamics,
         "arguments": dict(
-            render_img=False,
+            render_img=True,
             randomize_maps_on_reset=False,
         ),
         "wrappers": [

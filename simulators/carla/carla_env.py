@@ -191,9 +191,6 @@ class SelfCarlaEnv(gym.Env):
         self.actor_list.append(self.invasion_sensor)
         self.invasion_sensor.listen(self._on_lane_invasion)
 
-    def _randomize_weather(self):
-        self.world.set_weather(random.choice(self.weather_presets))
-
     def _on_collision(self, event):
         #print("Collision detected!")
         self.collision_occurred = True
@@ -230,15 +227,13 @@ class SelfCarlaEnv(gym.Env):
 
         if self.count_until_randomization >= self.randomize_every_steps and self.domain_rand:
             weather = carla.WeatherParameters(
-                cloudiness=random.uniform(0.0, 80.0),  # Avoid fully overcast
+                cloudiness=random.uniform(0.0, 80.0),
                 precipitation=random.uniform(0.0, 30.0),  # Light rain only
                 wind_intensity=random.uniform(0.0, 40.0),
-                sun_azimuth_angle=random.uniform(0.0, 360.0),
                 sun_altitude_angle=random.uniform(15.0, 75.0),  # Keep sun up
-                fog_density=random.uniform(0.0, 20.0),  # Light fog
-                fog_distance=random.uniform(50.0, 500.0),  # Allow visibility
-                wetness=random.uniform(0.0, 50.0),  # Slightly wet roads
-                fog_falloff=random.uniform(0.8, 5.0)
+                fog_density=random.uniform(0.0, 60.0),  # Light fog
+                fog_distance=random.uniform(20.0, 100.0),  # Allow visibility
+                wetness=random.uniform(0.0, 70.0)
             )
             self.world.set_weather(weather)
             self.count_until_randomization = 0
