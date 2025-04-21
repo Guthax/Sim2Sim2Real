@@ -32,8 +32,9 @@ class Evaluator:
         current_episode_length = 0
         total_reward = 0
 
-        cv2.startWindowThread()
-        cv2.namedWindow("gradients")
+        if self.apply_grad_cam:
+            cv2.startWindowThread()
+            cv2.namedWindow("gradients")
 
         while timesteps < self.evaluation_timesteps or self.evaluation_timesteps == -1:
             while not done and current_episode_length < self.episode_length:
