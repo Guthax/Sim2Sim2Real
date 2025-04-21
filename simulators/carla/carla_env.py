@@ -116,13 +116,7 @@ class SelfCarlaEnv(gym.Env):
         self.convert_segmentation = convert_segmentation
 
         if not self.domain_rand:
-            weather = carla.WeatherParameters(
-                cloudiness=random.uniform(0.0),  # Avoid fully overcast
-                precipitation=random.uniform(0.0),  # Light rain only
-                wind_intensity=random.uniform(0.0),
-                wetness=random.uniform(0.0)
-            )
-            self.world.set_weather(weather)
+            self.world.set_weather(carla.WeatherParameters.Default)
 
 
 
