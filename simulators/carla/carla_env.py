@@ -90,16 +90,11 @@ class SelfCarlaEnv(gym.Env):
         self._setup_vehicle()
 
         self.domain_rand = domain_rand
+
+
         self.count_until_randomization = 0
         self.randomize_every_steps = 1
-        self.weather_presets = [
-            carla.WeatherParameters.ClearNoon,
-            carla.WeatherParameters.CloudySunset,
-            carla.WeatherParameters.CloudyNight,
-            carla.WeatherParameters.ClearSunset,
-            carla.WeatherParameters.SoftRainSunset,
-            carla.WeatherParameters.SoftRainNoon,
-        ]
+
         self.distance_until_lap_complete = 5
         self.min_steps_for_lap = 600
         self.current_steps = 0
@@ -119,6 +114,15 @@ class SelfCarlaEnv(gym.Env):
         #self.world.tick()
 
         self.convert_segmentation = convert_segmentation
+
+        if not self.domain_rand:
+            weather = carla.WeatherParameters(
+                cloudiness=random.uniform(0.0),  # Avoid fully overcast
+                precipitation=random.uniform(0.0),  # Light rain only
+                wind_intensity=random.uniform(0.0),
+                wetness=random.uniform(0.0)
+            )
+            self.world.set_weather(weather)
 
 
 
