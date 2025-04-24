@@ -8,7 +8,7 @@ from stable_baselines3.common.env_util import make_vec_env
 import cv2
 from torch.backends.cudnn import deterministic
 
-from util.grad_cam import grad_cam, feature_map
+from util.grad_cam import grad_cam, feature_map, final_representation
 from utils import lr_schedule
 from skimage.metrics import structural_similarity as ssim, mean_squared_error
 
@@ -47,6 +47,8 @@ class ModelComparator:
                 "vehicle_dynamics": [[0]],
             }
 
+            fr= final_representation(self.model_1, obs, key="camera_rgb")
+
             grad_cam_model_1 = grad_cam(self.model_1, obs, key="camera_rgb", action=torch.tensor([0]))
             grad_cam_model_2 = grad_cam(self.model_2, obs, key="camera_rgb", action=torch.tensor([0]))
             cv2.imshow("grad1", grad_cam_model_1)
@@ -70,9 +72,9 @@ class ModelComparator:
             total_ssim += ssim(grad_cam_model_1, grad_cam_model_2, channel_axis=-1)
             frame_count+=1
         print(f"AVG AM SIM: {total_am_sim / frame_count}")
-        print(f"AVG SSIM: {total_ssim / frame_count}")
-model_1 = PPO.load("/home/jurriaan/Documents/Programming/Sim2Sim2Real/results/carla_rgb_manual_normalization_heavy_domain_rand_2_model_trained_1000000_steps", device='cuda' if torch.cuda.is_available() else 'cpu')
-model_2 = PPO.load("/home/jurriaan/Documents/Programming/Sim2Sim2Real/results/duckie_rgb_manual_normalization_no_sp_model_trained_200000_steps", device='cuda' if torch.cuda.is_available() else 'cpu')
+        print(f"AVG GCAM SSIM: {total_ssim / frame_count}")
+model_1 = PPO.load("/home/jurriaan/Documents/Programming/Sim2Sim2Real/results/carla_rgb_heavy_domain_rand_model_trained_1000000", device='cuda' if torch.cuda.is_available() else 'cpu')
+model_2 = PPO.load("/home/jurriaan/Documents/Programming/Sim2Sim2Real/results/duckie_rgb_manual_normalization_no_sp_model_trained_2000000", device='cuda' if torch.cuda.is_available() else 'cpu')
 ge = ModelComparator(video_path='/home/jurriaan/Documents/Programming/Sim2Sim2Real/test/videos/duckie_video_right_lane.mp4',
                       model_1=model_1,
                       model_2=model_2)

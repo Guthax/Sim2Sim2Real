@@ -91,9 +91,37 @@ def feature_map(algorithm, obs, key=None):
     policy_net = algorithm.policy
 
     if key:
-        last_cnn_layer = policy_net.features_extractor.extractors[key].cnn[0]
+        last_cnn_layer = policy_net.features_extractor.extractors[key].cnn[2]
     else:
         last_cnn_layer = policy_net.features_extractor.cnn[1]
+    last_cnn_layer.eval()
+    activations = {}
+
+    def forward_hook(module, input, output):
+        activations["features"] = output
+
+    forward_handle = last_cnn_layer.register_forward_hook(forward_hook)
+
+    tensor = obs_as_tensor(obs, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
+    tensor = preprocess_obs(tensor, algorithm.observation_space)
+
+    policy_net(tensor)
+
+    feature_maps = activations["features"]
+
+
+    return feature_maps
+
+
+
+
+def final_representation(algorithm, obs, key=None):
+    policy_net = algorithm.policy
+
+    if key:
+        last_cnn_layer = policy_net.value_net
+    else:
+        last_cnn_layer = policy_net.features_extractor.cnn[-1]
     last_cnn_layer.eval()
     activations = {}
 
