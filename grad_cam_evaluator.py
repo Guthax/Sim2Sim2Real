@@ -12,6 +12,7 @@ from util.grad_cam import grad_cam, feature_map, final_representation
 from utils import lr_schedule
 from skimage.metrics import structural_similarity as ssim, mean_squared_error
 
+import torch.nn.functional as F
 
 class ModelComparator:
     def __init__(self, model_1=None, model_2=None, video_path=None):
@@ -21,7 +22,6 @@ class ModelComparator:
         #                                                               verbose=0)
 
         self.video_path = video_path
-
         self.model_1 = model_1
         self.model_2 = model_2
         self.model_1.policy.eval()
@@ -40,7 +40,7 @@ class ModelComparator:
             if not ret:
                 break
 
-            print(frame.shape)
+
             frame_processed = np.expand_dims(np.transpose(frame, (2,0,1)) / 255.0, axis=0)
             obs = {
                 "camera_rgb": deepcopy(frame_processed),
@@ -57,12 +57,18 @@ class ModelComparator:
 
             fm1 = feature_map(self.model_1, obs, key="camera_rgb").squeeze(0)
             fm2 = feature_map(self.model_2, obs, key="camera_rgb").squeeze(0)
+
+            fr1 = final_representation(self.model_1, obs, key="camera_rgb")
+            fr2 = final_representation(self.model_2, obs, key="camera_rgb")
+
+            similarity = F.cosine_similarity(fr1, fr2, dim=1)
+            print("Similarity: ", similarity)
             assert fm1.shape == fm2.shape
 
             total_attention_map_sim_for_frame = 0
             for attention_map_index in range(fm1.shape[0]):
-                am_1 = fm1[attention_map_index].detach().numpy()
-                am_2 = fm2[attention_map_index].detach().numpy()
+                am_1 = fm1[attention_map_index].detach().cpu().numpy()
+                am_2 = fm2[attention_map_index].detach().cpu().numpy()
                 similarity = ssim(am_1, am_2)
                 total_attention_map_sim_for_frame += similarity
             avg_attention_map_for_frame = total_attention_map_sim_for_frame / fm1.shape[0]
@@ -73,9 +79,9 @@ class ModelComparator:
             frame_count+=1
         print(f"AVG AM SIM: {total_am_sim / frame_count}")
         print(f"AVG GCAM SSIM: {total_ssim / frame_count}")
-model_1 = PPO.load("/home/jurriaan/Documents/Programming/Sim2Sim2Real/results/carla_rgb_heavy_domain_rand_model_trained_1000000", device='cuda' if torch.cuda.is_available() else 'cpu')
-model_2 = PPO.load("/home/jurriaan/Documents/Programming/Sim2Sim2Real/results/duckie_rgb_manual_normalization_no_sp_model_trained_2000000", device='cuda' if torch.cuda.is_available() else 'cpu')
-ge = ModelComparator(video_path='/home/jurriaan/Documents/Programming/Sim2Sim2Real/test/videos/duckie_video_right_lane.mp4',
+model_1 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/carla_rgb_heavy_domain_rand_3_model_trained_2000000", device='cuda' if torch.cuda.is_available() else 'cpu')
+model_2 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/random", device='cuda' if torch.cuda.is_available() else 'cpu')
+ge = ModelComparator(video_path='/home/jurriaan/workplace/programming/Sim2Sim2Real/test/videos/duckie_video_right_lane.mp4',
                       model_1=model_1,
                       model_2=model_2)
 ge.run()

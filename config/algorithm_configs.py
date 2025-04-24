@@ -23,11 +23,11 @@ algorithm_params = {
     vf_coef=0.5,                    # Value loss weight
     max_grad_norm=0.5,              # Gradient clipping
     policy_kwargs=dict(
-            net_arch=[512, 256],  # 2 layers of 256 units (Unity: 32–512)
+            net_arch=[512, 256],
             activation_fn=torch.nn.ReLU,
             log_std_init = -1,
             features_extractor_class=CombinedExtractor,
-            features_extractor_kwargs=dict(normalized_image=True)
+            features_extractor_kwargs=dict(normalized_image=True, cnn_output_dim=256)
     ),
     ),
     "PPO_FEATURE": dict(
