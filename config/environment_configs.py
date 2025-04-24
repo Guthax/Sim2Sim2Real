@@ -112,7 +112,7 @@ environment_configs = {
             randomize_maps_on_reset=False,
         ),
         "wrappers": [
-           # (TimeLimit, dict(max_episode_steps=1000)),
+            (TimeLimit, dict(max_episode_steps=1000)),
             (ChannelFirstWrapper, None),
             (NormalizeWrapper, None),
         ]
