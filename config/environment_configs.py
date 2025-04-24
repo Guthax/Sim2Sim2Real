@@ -15,7 +15,7 @@ environment_configs = {
             layered_mapping=False,
         ),
         "wrappers": [
-            (TimeLimit, dict(max_episode_steps=300)),
+            (TimeLimit, dict(max_episode_steps=500)),
             (ChannelFirstWrapper, None),
             (NormalizeWrapper, None)
         ]

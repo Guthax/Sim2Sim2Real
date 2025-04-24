@@ -12,7 +12,7 @@ import torch as th
 
 algorithm_params = {
     "PPO": dict(
-    learning_rate=lr_schedule(3e-4, 1e-5, 2),             # Tunable; schedules can help too
+    learning_rate=lr_schedule(3e-4, 1e-5, 2),
     n_steps=1024,                   # Larger buffer for image-based learning
     batch_size=128,                # Larger mini-batch for stable gradients
     n_epochs=10,                     # Fewer epochs for large batch/step sizes
