@@ -80,8 +80,8 @@ class ModelComparator:
         print(f"AVG AM SIM: {total_am_sim / frame_count}")
         print(f"AVG GCAM SSIM: {total_ssim / frame_count}")
 model_1 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/carla_rgb_heavy_domain_rand_3_model_trained_2000000", device='cuda' if torch.cuda.is_available() else 'cpu')
-model_2 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/random", device='cuda' if torch.cuda.is_available() else 'cpu')
-ge = ModelComparator(video_path='/home/jurriaan/workplace/programming/Sim2Sim2Real/test/videos/duckie_video_right_lane.mp4',
+model_2 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/duckie_rgb_model_trained_600000_steps", device='cuda' if torch.cuda.is_available() else 'cpu')
+ge = ModelComparator(video_path='/home/jurriaan/workplace/programming/Sim2Sim2Real/test/videos/duckiebot_real.mp4',
                       model_1=model_1,
                       model_2=model_2)
 ge.run()
