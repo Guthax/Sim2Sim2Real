@@ -158,7 +158,7 @@ class SelfCarlaEnv(gym.Env):
         camera_bp.set_attribute('image_size_x', str(CAMERA_WIDTH))
         camera_bp.set_attribute('image_size_y', str(CAMERA_HEIGHT))
         camera_bp.set_attribute('fov', '90')
-        camera_bp.set_attribute('enable_postprocess_effects', 'True')
+        #camera_bp.set_attribute('enable_postprocess_effects', 'True')
         #camera_bp.set_attribute("sensor_tick", "0.05")  # Match world tick
         spawn_point = carla.Transform(carla.Location(x=2.4, z=1.25), carla.Rotation(pitch=-20))
         self.camera_rgb = self.world.spawn_actor(camera_bp, spawn_point, attach_to=self.vehicle)

@@ -22,13 +22,13 @@ class DuckietownBaseDynamics(Simulator):
         self.laps_completed = 0
         self.laps_done = 0
 
-        self.distance_until_lap_complete = 0.25
+        self.distance_until_lap_complete = 0.3
         self.min_steps_for_lap = 500
         self.current_steps = 0
 
         self.previous_steer = None
         # color_sky = [0,0,0], color_ground=[0,0,0], domain_rand=False,
-        Simulator.__init__(self, **kwargs)
+        Simulator.__init__(self,**kwargs)
 
         self.action_space = spaces.Box(low=np.float32(-1), high=np.float32(1))
 
@@ -93,8 +93,8 @@ class DuckietownBaseDynamics(Simulator):
         #steering_angle = self.convert_steering(action)
 
         # Map the steering angle to wheel velocities
-        left_wheel_velocity = 0.25 * (1 + steering_angle)
-        right_wheel_velocity = 0.25 * (1 - steering_angle)
+        left_wheel_velocity = 0.25 * (2 + steering_angle)
+        right_wheel_velocity = 0.25 * (2 - steering_angle)
 
         vels = np.array([left_wheel_velocity, right_wheel_velocity])
         obs_rgb, reward, done, trunc, info = Simulator.step(self, vels)
@@ -102,7 +102,7 @@ class DuckietownBaseDynamics(Simulator):
         steer_value = action
         steer_change_penalty = -0.5* abs(steer_value - self.previous_steer) if self.previous_steer else 0
         self.previous_steer = steer_value  # Update previous steering value
-        reward += steer_change_penalty
+        #reward += steer_change_penalty
 
         if done:
             self.laps_done += 1
