@@ -6,28 +6,27 @@ from util.custom_extractors.parsing_net.extractor import ParsingNetFeatureExtrac
 from util.custom_extractors.resnet.resnet8_extractor import ResnetExtractor
 from util.feature_extractors import PaperCNN
 from stable_baselines3.common.torch_layers import CombinedExtractor, NatureCNN
-
 from utils import lr_schedule
 import torch as th
 
 algorithm_params = {
     "PPO": dict(
-    learning_rate=lr_schedule(3e-4, 1e-5, 2),             # Tunable; schedules can help too
-    n_steps=1024,                   # Larger buffer for image-based learning
+    learning_rate=lr_schedule(3e-4, 1e-5, 1),
+    n_steps=2048,                   # Larger buffer for image-based learning
     batch_size=128,                # Larger mini-batch for stable gradients
     n_epochs=10,                     # Fewer epochs for large batch/step sizes
     gamma=0.99,                     # Discount factor
     gae_lambda=0.95,                # GAE lambda
-    clip_range=0.2,                 # Policy clip range
+    clip_range=0.1,                 # Policy clip range
     ent_coef=0.02,                 # Entropy regularization (beta)
     vf_coef=0.5,                    # Value loss weight
     max_grad_norm=0.5,              # Gradient clipping
     policy_kwargs=dict(
-            net_arch=[512, 256],  # 2 layers of 256 units (Unity: 32–512)
+            net_arch=[512, 256],
             activation_fn=torch.nn.ReLU,
             log_std_init = -1,
             features_extractor_class=CombinedExtractor,
-            features_extractor_kwargs=dict(normalized_image=True)
+            features_extractor_kwargs=dict(normalized_image=True, cnn_output_dim=256)
     ),
     ),
     "PPO_FEATURE": dict(

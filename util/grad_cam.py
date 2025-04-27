@@ -6,9 +6,9 @@ from stable_baselines3.common.preprocessing import preprocess_obs
 from stable_baselines3.common.utils import obs_as_tensor
 import cv2
 
-def grad_cam(algorithm, obs, action=None, key=None):
+def grad_cam(algorithm, obs, action=None, key=None, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')):
     # print(obs.shape)
-    policy_net = algorithm.policy
+    policy_net = algorithm.policy.to(device)
 
     if key:
         last_cnn_layer = policy_net.features_extractor.extractors[key].cnn[0]
@@ -29,14 +29,14 @@ def grad_cam(algorithm, obs, action=None, key=None):
     forward_handle = last_cnn_layer.register_forward_hook(forward_hook)
     backward_handle = last_cnn_layer.register_backward_hook(backward_hook)
 
-    tensor = obs_as_tensor(obs, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
+    tensor = obs_as_tensor(obs, device=device)
     tensor = preprocess_obs(tensor, algorithm.observation_space)
     # tensor["camera_rgb"] = tensor["camera_rgb"].permute(2,0,1).unsqueeze(0)
 
     with torch.set_grad_enabled(True):
         gaussian = algorithm.policy.get_distribution(tensor)
         action_distribution = gaussian.distribution
-        action_sample = action if action is not None else action_distribution.sample()  # Sample an action
+        action_sample = action.to(device) if action is not None else action_distribution.sample().to(device)  # Sample an action
 
 
         log_prob = action_distribution.log_prob(action_sample)  # Compute log probability
@@ -87,8 +87,8 @@ def grad_cam(algorithm, obs, action=None, key=None):
     return heatmap
 
 
-def feature_map(algorithm, obs, key=None):
-    policy_net = algorithm.policy
+def feature_map(algorithm, obs, key=None, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')):
+    policy_net = algorithm.policy.to(device)
 
     if key:
         last_cnn_layer = policy_net.features_extractor.extractors[key].cnn[2]
@@ -102,22 +102,27 @@ def feature_map(algorithm, obs, key=None):
 
     forward_handle = last_cnn_layer.register_forward_hook(forward_hook)
 
-    tensor = obs_as_tensor(obs, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
+    tensor = obs_as_tensor(obs, device=device)
     tensor = preprocess_obs(tensor, algorithm.observation_space)
 
     policy_net(tensor)
 
     feature_maps = activations["features"]
+
+    forward_handle.remove()
+
+    activations = {}
+
     return feature_maps
 
 
 
 
-def final_representation(algorithm, obs, key=None):
-    policy_net = algorithm.policy
+def final_representation(algorithm, obs, key=None, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')):
+    policy_net = algorithm.policy.to(device)
 
     if key:
-        last_cnn_layer = policy_net.value_net
+        last_cnn_layer = policy_net.features_extractor.extractors[key].linear
     else:
         last_cnn_layer = policy_net.features_extractor.cnn[-1]
     last_cnn_layer.eval()
@@ -128,7 +133,7 @@ def final_representation(algorithm, obs, key=None):
 
     forward_handle = last_cnn_layer.register_forward_hook(forward_hook)
 
-    tensor = obs_as_tensor(obs, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
+    tensor = obs_as_tensor(obs, device=device)
     tensor = preprocess_obs(tensor, algorithm.observation_space)
 
     policy_net(tensor)
@@ -136,7 +141,12 @@ def final_representation(algorithm, obs, key=None):
     feature_maps = activations["features"]
 
 
+    forward_handle.remove()
+
+    activations = {}
+
     return feature_maps
+
 
 def compare_histograms(img1, img2):
 
