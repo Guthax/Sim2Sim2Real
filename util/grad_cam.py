@@ -108,8 +108,6 @@ def feature_map(algorithm, obs, key=None):
     policy_net(tensor)
 
     feature_maps = activations["features"]
-
-
     return feature_maps
 
 
@@ -139,3 +137,41 @@ def final_representation(algorithm, obs, key=None):
 
 
     return feature_maps
+
+def compare_histograms(img1, img2):
+
+
+    # Convert to HSV color space
+    hsv_img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2HSV)
+    hsv_img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2HSV)
+
+    # Parameters for histogram calculation
+    h_bins = 50
+    s_bins = 60
+    hist_size = [h_bins, s_bins]
+    h_ranges = [0, 180]
+    s_ranges = [0, 256]
+    ranges = h_ranges + s_ranges  # Concatenate ranges
+    channels = [0, 1]
+
+    # Calculate the histograms and normalize them
+    hist_img1 = cv2.calcHist([hsv_img1], channels, None, hist_size, ranges, accumulate=False)
+    cv2.normalize(hist_img1, hist_img1, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)
+
+    hist_img2 = cv2.calcHist([hsv_img2], channels, None, hist_size, ranges, accumulate=False)
+    cv2.normalize(hist_img2, hist_img2, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)
+
+    # Compare the histograms
+    methods = {
+        "Correlation": cv2.HISTCMP_CORREL,
+        "Chi-Square": cv2.HISTCMP_CHISQR,
+        "Intersection": cv2.HISTCMP_INTERSECT,
+        "Bhattacharyya": cv2.HISTCMP_BHATTACHARYYA,
+    }
+
+    results = {}
+    for method_name, method in methods.items():
+        result = cv2.compareHist(hist_img1, hist_img2, method)
+        results[method_name] = result
+
+    return results
