@@ -12,7 +12,7 @@ import torch as th
 algorithm_params = {
     "PPO": dict(
     learning_rate=lr_schedule(3e-4, 1e-5, 1),
-    n_steps=2048,                   # Larger buffer for image-based learning
+    n_steps=1024,                   # Larger buffer for image-based learning
     batch_size=256,                # Larger mini-batch for stable gradients
     n_epochs=10,                     # Fewer epochs for large batch/step sizes
     gamma=0.99,                     # Discount factor
@@ -24,7 +24,7 @@ algorithm_params = {
     policy_kwargs=dict(
             net_arch=[512, 256],
             activation_fn=torch.nn.ReLU,
-            log_std_init = -1,
+            log_std_init = -2,
             features_extractor_class=CombinedExtractor,
             features_extractor_kwargs=dict(normalized_image=True, cnn_output_dim=256)
     ),
