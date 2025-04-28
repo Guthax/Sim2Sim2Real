@@ -6,6 +6,7 @@ from matplotlib import pyplot as plt
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
 import cv2
+from torch import cosine_similarity
 from torch.backends.cudnn import deterministic
 
 from util.grad_cam import grad_cam, feature_map, final_representation, compare_histograms, compare_image_histograms
@@ -26,6 +27,7 @@ class ModelComparator:
         self.model_2 = model_2
         self.model_1.policy.eval()
         self.model_2.policy.eval()
+
     def run(self):
         if not self.video_path:
             raise ValueError("Video path not provided.")
@@ -96,8 +98,23 @@ class ModelComparator:
         print(f"AVG HIST COMPARE: {total_grad_hist_compare / frame_count}")
         print(f"AVG FINAL SIM : {total_fr_similarity / frame_count}")
         print(f"AVG ACTION DIFF : {total_action_diff / frame_count}")
+
+
+
 model_1 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/duckie_rgb_baseline_long_model_trained_3200000_steps", device='cuda' if torch.cuda.is_available() else 'cpu')
-model_2 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/carla_domain_rand_long_model_trained_3200000_steps", device='cuda' if torch.cuda.is_available() else 'cpu')
+model_2 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/nieuwe_random", device='cuda' if torch.cuda.is_available() else 'cpu')
+
+params_1 = model_1.policy.parameters()
+params_2 = model_2.policy.parameters()
+
+# Convert parameters to arrays
+params_1_flat = np.concatenate([p.flatten().detach().cpu().numpy() for p in params_1])
+params_2_flat = np.concatenate([p.flatten().detach().cpu().numpy() for p in params_2])
+
+# Compute cosine similarity
+similarity = cosine_similarity(torch.Tensor([params_1_flat]), torch.Tensor([params_2_flat]))
+print(f"General weight similarity: {similarity}")
+
 ge = ModelComparator(video_path='/home/jurriaan/workplace/programming/Sim2Sim2Real/test/videos/duckiebot_real.mp4',
                       model_1=model_1,
                       model_2=model_2)
