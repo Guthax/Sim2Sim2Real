@@ -11,7 +11,7 @@ def grad_cam(algorithm, obs, action=None, key=None, device=torch.device('cuda' i
     policy_net = algorithm.policy.to(device)
 
     if key:
-        last_cnn_layer = policy_net.features_extractor.extractors[key].cnn[0]
+        last_cnn_layer = policy_net.features_extractor.extractors[key].cnn[4]
     else:
         last_cnn_layer = policy_net.features_extractor.cnn[1]
     last_cnn_layer.eval()
@@ -148,40 +148,43 @@ def final_representation(algorithm, obs, key=None, device=torch.device('cuda' if
     return feature_maps
 
 
-def compare_histograms(img1, img2):
 
+def calculate_histogram(image):
+    """Calculates the normalized histogram for each color channel."""
+    hist_b = cv2.calcHist([image], [0], None, [256], [0, 256])
+    hist_g = cv2.calcHist([image], [1], None, [256], [0, 256])
+    hist_r = cv2.calcHist([image], [2], None, [256], [0, 256])
 
-    # Convert to HSV color space
-    hsv_img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2HSV)
-    hsv_img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2HSV)
+    norm_hist_b = hist_b / hist_b.sum() if hist_b.sum() > 0 else hist_b
+    norm_hist_g = hist_g / hist_g.sum() if hist_g.sum() > 0 else hist_g
+    norm_hist_r = hist_r / hist_r.sum() if hist_r.sum() > 0 else hist_r
 
-    # Parameters for histogram calculation
-    h_bins = 50
-    s_bins = 60
-    hist_size = [h_bins, s_bins]
-    h_ranges = [0, 180]
-    s_ranges = [0, 256]
-    ranges = h_ranges + s_ranges  # Concatenate ranges
-    channels = [0, 1]
+    return norm_hist_b, norm_hist_g, norm_hist_r
 
-    # Calculate the histograms and normalize them
-    hist_img1 = cv2.calcHist([hsv_img1], channels, None, hist_size, ranges, accumulate=False)
-    cv2.normalize(hist_img1, hist_img1, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)
+def compare_histograms(hist1, hist2):
+    """Calculates the correlation between two histograms."""
+    correlation = cv2.compareHist(hist1, hist2, cv2.HISTCMP_CORREL)
+    return correlation
 
-    hist_img2 = cv2.calcHist([hsv_img2], channels, None, hist_size, ranges, accumulate=False)
-    cv2.normalize(hist_img2, hist_img2, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)
+def compare_image_histograms(img1, img2):
+    """Loads two images and compares their color histograms using correlation."""
+    try:
+        if img1 is None or img2 is None:
+            print("Error: Could not open or find the images.")
+            return None
 
-    # Compare the histograms
-    methods = {
-        "Correlation": cv2.HISTCMP_CORREL,
-        "Chi-Square": cv2.HISTCMP_CHISQR,
-        "Intersection": cv2.HISTCMP_INTERSECT,
-        "Bhattacharyya": cv2.HISTCMP_BHATTACHARYYA,
-    }
+        hist1_b, hist1_g, hist1_r = calculate_histogram(img1)
+        hist2_b, hist2_g, hist2_r = calculate_histogram(img2)
 
-    results = {}
-    for method_name, method in methods.items():
-        result = cv2.compareHist(hist_img1, hist_img2, method)
-        results[method_name] = result
+        corr_b = compare_histograms(hist1_b, hist2_b)
+        corr_g = compare_histograms(hist1_g, hist2_g)
+        corr_r = compare_histograms(hist1_r, hist2_r)
 
-    return results
+        # You can average the correlations of the three channels for an overall similarity score
+        overall_correlation = (corr_b + corr_g + corr_r) / 3
+
+        return overall_correlation, corr_b, corr_g, corr_r
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None

@@ -1,4 +1,5 @@
 import os
+import random
 from platform import architecture
 
 import numpy as np
@@ -35,11 +36,18 @@ class Scenario:
             architecture = TD3
 
         if not model_path:
+            seed = 42
+            random.seed(seed)
+            np.random.seed(seed)
+            torch.manual_seed(seed)
+            torch.cuda.manual_seed(seed)  # if you're using CUDA
+            torch.cuda.manual_seed_all(seed)  # for all GPUs
+            torch.backends.cudnn.deterministic = True  # ensures deterministic behavior
             first_env = self.environments[next(iter(self.environments))]
             self.algorithm = architecture(self.config['algorithm_policy_network'], first_env, verbose=2,
                                  device='cuda' if torch.cuda.is_available() else 'cpu',
                                  **self.config["algorithm_hyperparams"])
-            self.algorithm.save("random")
+            self.algorithm.save("nieuwe_random")
         else:
             self.algorithm = architecture.load(model_path,
                                       custom_objects = dict(
