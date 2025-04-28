@@ -11,7 +11,7 @@ def grad_cam(algorithm, obs, action=None, key=None, device=torch.device('cuda' i
     policy_net = algorithm.policy.to(device)
 
     if key:
-        last_cnn_layer = policy_net.features_extractor.extractors[key].cnn[4]
+        last_cnn_layer = policy_net.features_extractor.extractors[key].cnn[0]
     else:
         last_cnn_layer = policy_net.features_extractor.cnn[1]
     last_cnn_layer.eval()

@@ -11,23 +11,21 @@ import torch as th
 
 algorithm_params = {
     "PPO": dict(
-    learning_rate=lr_schedule(3e-4, 1e-5, 1),
-    n_steps=1024,                   # Larger buffer for image-based learning
-    batch_size=128,                # Larger mini-batch for stable gradients
-    n_epochs=10,                     # Fewer epochs for large batch/step sizes
-    gamma=0.99,                     # Discount factor
-    gae_lambda=0.95,                # GAE lambda
-    clip_range=0.2,                 # Policy clip range
-    ent_coef=0.02,                 # Entropy regularization (beta)
-    vf_coef=0.5,                    # Value loss weight
-    max_grad_norm=0.5,              # Gradient clipping
-    seed = 42,
+    learning_rate=1e-4,
+    n_steps=2048,
+    batch_size=64,
+    n_epochs=10,
+    gamma=0.99,
+    gae_lambda=0.95,
+    clip_range=0.2,
+    ent_coef=1e-4,
+    vf_coef=0.5,
+    max_grad_norm=0.5,
+    seed=42,
     policy_kwargs=dict(
             net_arch=[512, 256],
-            activation_fn=torch.nn.ReLU,
-            log_std_init = -1,
             features_extractor_class=CombinedExtractor,
-            features_extractor_kwargs=dict(normalized_image=True, cnn_output_dim=256)
+            features_extractor_kwargs=dict(normalized_image=True, cnn_output_dim=512)
     ),
     ),
     "PPO_FEATURE": dict(

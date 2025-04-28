@@ -6,6 +6,8 @@ from matplotlib import pyplot as plt
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
 import cv2
+from stable_baselines3.common.preprocessing import preprocess_obs
+from stable_baselines3.common.utils import obs_as_tensor
 from torch import cosine_similarity
 from torch.backends.cudnn import deterministic
 
@@ -38,6 +40,7 @@ class ModelComparator:
         total_ssim = 0
         total_am_sim = 0
         total_grad_hist_compare = 0
+        total_kl = 0
         total_fr_similarity = 0
         total_action_diff = 0
         while cap.isOpened():
@@ -86,6 +89,13 @@ class ModelComparator:
             a2 = self.model_2.predict(obs, deterministic=True)
             total_action_diff += abs(a2[0] - a1[0])
 
+            tensor = obs_as_tensor(obs, device='cuda' if torch.cuda.is_available() else 'cpu')
+            tensor = preprocess_obs(tensor, self.model_1.observation_space)
+
+            dist1 = self.model_1.policy.get_distribution(tensor)
+            dist2 = self.model_2.policy.get_distribution(tensor)
+
+            total_kl += torch.distributions.kl_divergence(dist1.distribution, dist2.distribution).mean()
             # Compute SSIM
             score, _ = ssim(img1_gray, img2_gray, full=True)
             total_ssim += score
@@ -98,11 +108,12 @@ class ModelComparator:
         print(f"AVG HIST COMPARE: {total_grad_hist_compare / frame_count}")
         print(f"AVG FINAL SIM : {total_fr_similarity / frame_count}")
         print(f"AVG ACTION DIFF : {total_action_diff / frame_count}")
+        print(f"AVG KL DIVERGENCE : {total_kl / frame_count}")
 
 
 
 model_1 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/duckie_rgb_baseline_long_model_trained_3200000_steps", device='cuda' if torch.cuda.is_available() else 'cpu')
-model_2 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/nieuwe_random", device='cuda' if torch.cuda.is_available() else 'cpu')
+model_2 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/carla_domain_rand_model_trained_400000_steps", device='cuda' if torch.cuda.is_available() else 'cpu')
 
 params_1 = model_1.policy.parameters()
 params_2 = model_2.policy.parameters()
