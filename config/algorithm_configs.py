@@ -11,7 +11,7 @@ import torch as th
 
 algorithm_params = {
     "PPO": dict(
-    learning_rate=1e-5,
+    learning_rate=lr_schedule(3e-4, 1e-5, 1),
     n_steps=2048,
     batch_size=64,
     n_epochs=10,
