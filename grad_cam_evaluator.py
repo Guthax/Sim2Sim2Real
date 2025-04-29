@@ -112,8 +112,8 @@ class ModelComparator:
 
 
 
-model_1 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/duckie_rgb_baseline_long_model_trained_3200000_steps", device='cuda' if torch.cuda.is_available() else 'cpu')
-model_2 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/random", device='cuda' if torch.cuda.is_available() else 'cpu')
+model_1 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/nieuwe_random", device='cuda' if torch.cuda.is_available() else 'cpu')
+model_2 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/duckie_home_model_trained_600000_steps", device='cuda' if torch.cuda.is_available() else 'cpu')
 
 params_1 = model_1.policy.parameters()
 params_2 = model_2.policy.parameters()
