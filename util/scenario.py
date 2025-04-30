@@ -47,7 +47,6 @@ class Scenario:
             self.algorithm = architecture(self.config['algorithm_policy_network'], first_env, verbose=2,
                                  device='cuda' if torch.cuda.is_available() else 'cpu',
                                  **self.config["algorithm_hyperparams"])
-            self.algorithm.save("nieuwe_random")
         else:
             self.algorithm = architecture.load(model_path,
                                       custom_objects = dict(

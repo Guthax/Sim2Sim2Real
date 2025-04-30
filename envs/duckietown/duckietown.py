@@ -23,12 +23,12 @@ class DuckietownBaseDynamics(Simulator):
         self.laps_done = 0
 
         self.distance_until_lap_complete = 0.3
-        self.min_steps_for_lap = 500
+        self.min_steps_for_lap = 300
         self.current_steps = 0
 
         self.previous_steer = None
         # color_sky = [0,0,0], color_ground=[0,0,0], domain_rand=False,
-        Simulator.__init__(self,**kwargs)
+        Simulator.__init__(self,color_sky = [0,0,0], color_ground=[0,0,0], domain_rand=False,**kwargs)
 
         self.action_space = spaces.Box(low=np.float32(-1), high=np.float32(1))
 
@@ -150,7 +150,7 @@ class DuckietownBaseDynamics(Simulator):
         self.current_steps += 1
 
         distance_to_spawn = abs(np.linalg.norm(self.cur_pos - self.first_pos))
-        #print(distance_to_spawn, self.current_steps)
+        print(distance_to_spawn, self.current_steps)
         if distance_to_spawn < self.distance_until_lap_complete and self.current_steps >= self.min_steps_for_lap:
             done = True
             self.laps_completed += 1

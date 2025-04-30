@@ -139,6 +139,7 @@ class OneHotEncodeSegWrapper(gym.ObservationWrapper):
     def observation(self, observation):
         array = observation["camera_seg"]
         one_hot_mask = self.one_hot_encode_segmentation_torch(torch.from_numpy(array).to(torch.uint8))
+        one_hot_mask[:, :, 0] = 0
         observation["camera_seg"] = one_hot_mask
         return observation
 

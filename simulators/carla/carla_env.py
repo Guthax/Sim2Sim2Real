@@ -21,7 +21,7 @@ CAMERA_HEIGHT = 120
 def slight_variation(base, delta):
     return base + random.uniform(-delta, delta)
 class SelfCarlaEnv(gym.Env):
-    def __init__(self, host='localhost', port=2000, rgb_camera=True, seg_camera=False, render=False, domain_rand= True, layered_mapping=False, convert_segmentation=True):
+    def __init__(self, host='localhost', port=2000, rgb_camera=True, seg_camera=False, render=False, domain_rand= False, layered_mapping=False, convert_segmentation=True):
         super(SelfCarlaEnv, self).__init__()
         self.client = carla.Client(host, port)
         self.client.set_timeout(20.0)
@@ -95,7 +95,7 @@ class SelfCarlaEnv(gym.Env):
         self.count_until_randomization = 0
         self.randomize_every_steps = 1
 
-        self.distance_until_lap_complete = 5
+        self.distance_until_lap_complete = 20
         self.min_steps_for_lap = 600
         self.current_steps = 0
 
@@ -411,6 +411,7 @@ class SelfCarlaEnv(gym.Env):
          #   20, False)
 
         lane_distance = abs(ego_loc.y - waypt.transform.location.y)
+        print(lane_distance)
         lane_penalty = max(2.5 - lane_distance, 0)
 
         angle, dot_dir = compute_angle(ego_loc, waypt.transform.location, self.vehicle.get_transform().rotation.yaw)

@@ -139,10 +139,6 @@ ge = ModelComparator(video_path='/home/jurriaan/workplace/programming/Sim2Sim2Re
                       model_2=model_2)
 ge.run()
 
-ge = ModelComparator(video_path='/home/jurriaan/workplace/programming/Sim2Sim2Real/test/videos/duckie_video_left_lane.mp4',
-                      model_1=model_1,
-                      model_2=model_2)
-ge.run()
 
 ge = ModelComparator(video_path='/home/jurriaan/workplace/programming/Sim2Sim2Real/test/videos/duckiebot_real.mp4',
                       model_1=model_1,

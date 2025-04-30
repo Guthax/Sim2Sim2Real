@@ -149,6 +149,35 @@ def final_representation(algorithm, obs, key=None, device=torch.device('cuda' if
 
 
 
+def final_representation_actor(algorithm, obs,device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')):
+    policy_net = algorithm.policy.to(device)
+
+    action_net = policy_net.action_net
+
+    action_net.eval()
+    activations = {}
+
+    def forward_hook(module, input, output):
+        activations["features"] = output
+
+    forward_handle = action_net.register_forward_hook(forward_hook)
+
+    tensor = obs_as_tensor(obs, device=device)
+    tensor = preprocess_obs(tensor, algorithm.observation_space)
+
+    policy_net(tensor)
+
+    feature_maps = activations["features"]
+
+
+    forward_handle.remove()
+
+    activations = {}
+
+    return feature_maps
+
+
+
 def calculate_histogram(image):
     """Calculates the normalized histogram for each color channel."""
     hist_b = cv2.calcHist([image], [0], None, [256], [0, 256])
