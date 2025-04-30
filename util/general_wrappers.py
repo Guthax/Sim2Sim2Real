@@ -22,12 +22,17 @@ class ChannelFirstWrapper(gym.ObservationWrapper):
         if "camera_rgb" in self.observation_space.spaces:
             c, h, w = self.observation_space["camera_rgb"].shape[2], self.observation_space["camera_rgb"].shape[0], self.observation_space["camera_rgb"].shape[1]
             self.observation_space["camera_rgb"] = gym.spaces.Box(low=0, high=255, shape=(c, h, w), dtype=np.uint8)
+        if "camera_gray" in self.observation_space.spaces:
+            c, h, w = self.observation_space["camera_gray"].shape[2], self.observation_space["camera_gray"].shape[0], self.observation_space["camera_gray"].shape[1]
+            self.observation_space["camera_gray"] = gym.spaces.Box(low=0, high=255, shape=(c, h, w), dtype=np.uint8)
 
     def observation(self, observation):
         if "camera_seg" in observation:
             observation["camera_seg"] = np.transpose(observation["camera_seg"], (2, 0, 1))  # (H, W, C) -> (C, H, W)
         if "camera_rgb" in observation:
             observation["camera_rgb"] = np.transpose(observation["camera_rgb"], (2, 0, 1))
+        if "camera_gray" in observation:
+            observation["camera_gray"] = np.transpose(observation["camera_gray"], (2, 0, 1))
         return observation
 
 class NormalizeWrapper(gym.ObservationWrapper):
@@ -37,10 +42,14 @@ class NormalizeWrapper(gym.ObservationWrapper):
         if "camera_rgb" in self.observation_space.spaces:
             c = self.observation_space["camera_rgb"].shape[0]
             self.observation_space["camera_rgb"] = gym.spaces.Box(low=0, high=1, shape=(c, 120, 160), dtype=np.float32)
+        if "camera_gray" in self.observation_space.spaces:
+            self.observation_space["camera_gray"] = gym.spaces.Box(low=0, high=1, shape=(1, 120, 160), dtype=np.float32)
 
     def observation(self, observation):
         if "camera_rgb" in observation:
             observation["camera_rgb"] = observation["camera_rgb"] / 255
+        if "camera_gray" in observation:
+            observation["camera_gray"] = observation["camera_gray"] / 255
         return observation
 
 
@@ -355,14 +364,22 @@ class GrayscaleWrapper(gym.ObservationWrapper):
     def __init__(self, env=None):
         gym.ObservationWrapper.__init__(self, env)
 
-        self.observation_space = spaces.Box(low=0, high=255, shape=(self.observation_space.shape[0], self.observation_space.shape[1], 1), dtype=np.uint8)
+        h, w = self.observation_space["camera_rgb"].shape[0], self.observation_space["camera_rgb"] .shape[1]
+        self.observation_space = spaces.Dict({
+            "camera_gray":spaces.Box(low=0, high=255, shape=(h, w, 1), dtype=np.uint8),
+            "vehicle_dynamics": gym.spaces.Box(np.float32(-1), high=np.float32(1))
+        })
 
     def observation(self, observation):
-        gray = cv2.cvtColor(observation, cv2.COLOR_RGB2GRAY)
+        gray = cv2.cvtColor(observation["camera_rgb"], cv2.COLOR_RGB2GRAY)
         gray = np.expand_dims(gray, axis=2)  # Expand dimensions for compatibility
         cv2.imshow("gray", gray)
         cv2.waitKey(1)
-        return gray
+        obs = {
+            "camera_gray": gray,
+            "vehicle_dynamics": observation["vehicle_dynamics"]
+        }
+        return obs
 
 
 class DuckieClipWrapper(gym.ObservationWrapper):

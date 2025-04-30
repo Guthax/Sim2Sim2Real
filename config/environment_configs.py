@@ -141,6 +141,9 @@ environment_configs = {
         ),
         "wrappers": [
             (GrayscaleWrapper, None),
+            (ChannelFirstWrapper, None),
+            (NormalizeWrapper, None),
+            (TimeLimit, dict(max_episode_steps=600))
         ]
     },
     "duckie_rgb_seg": {
