@@ -43,6 +43,11 @@ class ModelComparator:
         total_kl = 0
         total_fr_similarity = 0
         total_action_diff = 0
+
+        w1 = self.model_1.policy.action_net.weight.view(-1)  # Shape: (256,)
+        w2 = self.model_2.policy.action_net.weight.view(-1)
+        action_net_similarity = F.cosine_similarity(w1,w2,dim=0)
+        print(f"Action_net_similarity: {action_net_similarity}")
         while cap.isOpened():
             ret, frame = cap.read()
             if not ret:
@@ -107,13 +112,16 @@ class ModelComparator:
         print(f"AVG GCAM SSIM: {total_ssim / frame_count}")
         print(f"AVG HIST COMPARE: {total_grad_hist_compare / frame_count}")
         print(f"AVG FINAL SIM : {total_fr_similarity / frame_count}")
+
+        #print(f"ACTOR SIM : {self.model_1.policy. / frame_count}")
+
         print(f"AVG ACTION DIFF : {total_action_diff / frame_count}")
         print(f"AVG KL DIVERGENCE : {total_kl / frame_count}")
 
 
 
-model_1 = PPO.load("/home/jurriaan/Documents/Programming/Sim2Sim2Real/results/duckie_rgb_final_model_trained_600000_steps", device='cuda' if torch.cuda.is_available() else 'cpu')
-model_2 = PPO.load("/home/jurriaan/Documents/Programming/Sim2Sim2Real/results/carla_rgb_domain_rand_final_model_trained_800000_steps", device='cuda' if torch.cuda.is_available() else 'cpu')
+model_1 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/carla_rgb_domain_rand_final_high_res_model_trained_1000000", device='cuda' if torch.cuda.is_available() else 'cpu')
+model_2 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/duckie_rgb_final_256_output_model_trained_1000000", device='cuda' if torch.cuda.is_available() else 'cpu')
 
 params_1 = model_1.policy.parameters()
 params_2 = model_2.policy.parameters()
@@ -126,7 +134,17 @@ params_2_flat = np.concatenate([p.flatten().detach().cpu().numpy() for p in para
 similarity = cosine_similarity(torch.Tensor([params_1_flat]), torch.Tensor([params_2_flat]))
 print(f"General weight similarity: {similarity}")
 
-ge = ModelComparator(video_path='/home/jurriaan/Documents/Programming/Sim2Sim2Real/test/videos/duckiebot_real.mp4',
+ge = ModelComparator(video_path='/home/jurriaan/workplace/programming/Sim2Sim2Real/test/videos/duckie_video_right_lane.mp4',
+                      model_1=model_1,
+                      model_2=model_2)
+ge.run()
+
+ge = ModelComparator(video_path='/home/jurriaan/workplace/programming/Sim2Sim2Real/test/videos/duckie_video_left_lane.mp4',
+                      model_1=model_1,
+                      model_2=model_2)
+ge.run()
+
+ge = ModelComparator(video_path='/home/jurriaan/workplace/programming/Sim2Sim2Real/test/videos/duckiebot_real.mp4',
                       model_1=model_1,
                       model_2=model_2)
 ge.run()
