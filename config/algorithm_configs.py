@@ -11,7 +11,7 @@ import torch as th
 
 algorithm_params = {
     "PPO": dict(
-    learning_rate=lr_schedule(1e-4, 1e-5, 3),
+    learning_rate=lr_schedule(3e-4, 1e-5, 3),
     n_steps=1024,
     batch_size=64,
     n_epochs=10,
@@ -28,7 +28,7 @@ algorithm_params = {
             normalize_images=False,
             log_std_init = -1,
             features_extractor_class=CombinedExtractor,
-            features_extractor_kwargs=dict(normalized_image=True, cnn_output_dim=256)
+            features_extractor_kwargs=dict(normalized_image=True, cnn_output_dim=512)
     ),
     ),
     "PPO_FEATURE": dict(
