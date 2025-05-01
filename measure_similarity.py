@@ -23,10 +23,6 @@ import torch.nn.functional as F
 
 class SimilarityMeasurer:
     def __init__(self, model_1=None, model_2=None, video_path=None):
-        #self.model_1 = PPO.load(model_1_path) if model_1_path else PPO("CnnPolicy", make_vec_env("CartPole-v1"),
-        #                                                               verbose=0)
-        #self.model_2 = PPO.load(model_2_path) if model_2_path else PPO("CnnPolicy", make_vec_env("CartPole-v1"),
-        #                                                               verbose=0)
 
         self.video_path = video_path
         self.model_1 = model_1
@@ -34,7 +30,8 @@ class SimilarityMeasurer:
         self.model_1.policy.eval()
         self.model_2.policy.eval()
 
-    def run(self):
+
+    def run_rgb(self):
         if not self.video_path:
             raise ValueError("Video path not provided.")
 
@@ -90,12 +87,68 @@ class SimilarityMeasurer:
         print('Linear CKA from Features: {:.5f}'.format(cka_from_features))
         print(f'CCA: {cca_score}')
 
+    def run_gray(self):
+        if not self.video_path:
+            raise ValueError("Video path not provided.")
+
+        cap = cv2.VideoCapture(self.video_path)
+
+        samples_m1 = []
+        samples_m2 = []
+
+        samples_action_m1 = []
+        samples_action_m2 = []
+
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            frame_processed = np.expand_dims(np.expand_dims(frame / 255.0, axis=0), axis=0)
+            obs = {
+                "camera_gray": deepcopy(frame_processed),
+                "vehicle_dynamics": [[0]],
+            }
+            fr1 = final_representation(self.model_1, obs, key="camera_gray").detach().cpu().numpy()
+            fr2 = final_representation(self.model_2, obs, key="camera_gray").detach().cpu().numpy()
+            samples_m1.append(fr1[0])
+            samples_m2.append(fr2[0])
+
+            fr_a1 = final_representation_actor(self.model_1, obs).detach().cpu().numpy()
+            fr_a2 = final_representation_actor(self.model_2, obs).detach().cpu().numpy()
+            samples_action_m1.append(fr_a1[0])
+            samples_action_m2.append(fr_a2[0])
+        samples_m1 = np.array(samples_m1)
+        samples_m2 = np.array(samples_m2)
 
 
-model_1 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/carla_rgb_no_domain_rand_model_trained_400000_steps", device='cuda' if torch.cuda.is_available() else 'cpu')
-model_2 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/duckie_rgb_final_256_output_model_trained_1000000", device='cuda' if torch.cuda.is_available() else 'cpu')
+        samples_action_m1 = np.array(samples_action_m1)
+        samples_action_m2 = np.array(samples_action_m2)
 
-ge = SimilarityMeasurer(video_path='/home/jurriaan/workplace/programming/Sim2Sim2Real/test/videos/duckie_video_right_lane.mp4',
+        cca_score = cca(samples_m1, samples_m2)
+        cka_from_examples = cka(gram_linear(samples_m1), gram_linear(samples_m2))
+        cka_from_features = feature_space_linear_cka(samples_m1, samples_m2)
+
+        print('Linear CKA from Examples: {:.5f}'.format(cka_from_examples))
+        print('Linear CKA from Features: {:.5f}'.format(cka_from_features))
+        print(f'CCA: {cca_score}')
+
+
+        cca_score = cca(samples_action_m1, samples_action_m2)
+        cka_from_examples = cka(gram_linear(samples_action_m1), gram_linear(samples_action_m2))
+        cka_from_features = feature_space_linear_cka(samples_action_m1, samples_action_m2)
+
+        print('Linear CKA from Examples: {:.5f}'.format(cka_from_examples))
+        print('Linear CKA from Features: {:.5f}'.format(cka_from_features))
+        print(f'CCA: {cca_score}')
+
+
+
+model_1 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/carla_gray_domain_rand", device='cuda' if torch.cuda.is_available() else 'cpu')
+model_2 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/final_random_gray", device='cuda' if torch.cuda.is_available() else 'cpu')
+
+ge = SimilarityMeasurer(video_path='/home/jurriaan/workplace/programming/Sim2Sim2Real/test/videos/duckiebot_real.mp4',
                       model_1=model_1,
                       model_2=model_2)
-ge.run()
+ge.run_gray()

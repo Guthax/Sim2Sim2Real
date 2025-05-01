@@ -16,7 +16,8 @@ environment_configs = {
         ),
         "wrappers": [
             (ChannelFirstWrapper, None),
-            (NormalizeWrapper, None)
+            (NormalizeWrapper, None),
+            (TimeLimit, dict(max_episode_steps=300))
         ]
     },
     "carla_gray": {

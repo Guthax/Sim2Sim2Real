@@ -120,8 +120,8 @@ class ModelComparator:
 
 
 
-model_1 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/carla_rgb_domain_rand_final_high_res_model_trained_1000000", device='cuda' if torch.cuda.is_available() else 'cpu')
-model_2 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/duckie_rgb_final_256_output_model_trained_1000000", device='cuda' if torch.cuda.is_available() else 'cpu')
+model_1 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/carla_rgb_domain_rand", device='cuda' if torch.cuda.is_available() else 'cpu')
+model_2 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/duckie_baseline", device='cuda' if torch.cuda.is_available() else 'cpu')
 
 params_1 = model_1.policy.parameters()
 params_2 = model_2.policy.parameters()
@@ -135,12 +135,6 @@ similarity = cosine_similarity(torch.Tensor([params_1_flat]), torch.Tensor([para
 print(f"General weight similarity: {similarity}")
 
 ge = ModelComparator(video_path='/home/jurriaan/workplace/programming/Sim2Sim2Real/test/videos/duckie_video_right_lane.mp4',
-                      model_1=model_1,
-                      model_2=model_2)
-ge.run()
-
-
-ge = ModelComparator(video_path='/home/jurriaan/workplace/programming/Sim2Sim2Real/test/videos/duckiebot_real.mp4',
                       model_1=model_1,
                       model_2=model_2)
 ge.run()
