@@ -50,8 +50,7 @@ class Scenario:
         else:
             self.algorithm = architecture.load(model_path,
                                       custom_objects = dict(
-                                          learning_rate = lr_schedule(1e-4, 5e-5, 2),
-                                          clip_range = 0.1
+                                          learning_rate = lr_schedule(3e-5, 1e-5, 2),
                                       ),
                                       device='cuda' if torch.cuda.is_available() else 'cpu')
 
