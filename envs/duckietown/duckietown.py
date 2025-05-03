@@ -218,7 +218,7 @@ class DuckietownBaseDynamics(Simulator):
             obs = {
                 "camera_seg": obs_seg
             }
-        obs["vehicle_dynamics"] = 0
+        obs["vehicle_dynamics"] = [0.0]
         return obs, {}
 
     def render_obs(self, segment: bool = False):
