@@ -12,8 +12,8 @@ import torch as th
 algorithm_params = {
     "PPO": dict(
     learning_rate=lr_schedule(3e-4, 1e-5, 3),
-    n_steps=1024,
-    batch_size=64,
+    n_steps=2048,
+    batch_size=128,
     n_epochs=10,
     gamma=0.99,
     gae_lambda=0.95,
@@ -94,22 +94,17 @@ algorithm_params = {
         policy_kwargs=dict(net_arch=[400, 300]),
     ),
     "SAC_BEST": dict(
-        learning_rate=lr_schedule(1e-4, 5e-7, 2),
-        buffer_size=300000,
-        batch_size=256,
-        ent_coef='auto',
-        gamma=0.98,
-        tau=0.02,
-        train_freq=64,
-        gradient_steps=64,
-        learning_starts=10000,
-        use_sde=True,
-        policy_kwargs=dict(
-            log_std_init=-3,
-            net_arch=[500, 300],
-            features_extractor_class= PaperCNN,
-            features_extractor_kwargs= {"features_dim": 256},
-        ),
+        learning_rate=0.0003,
+        buffer_size=1000,  # Can increase to 1M if memory allows
+        learning_starts=1000,  # Delay learning to allow buffer to fill
+        batch_size=256,  # 128–256 is common
+        tau=0.005,  # Target smoothing coefficient
+        gamma=0.99,  # Discount factor
+        train_freq=8,  # Train every step
+        gradient_steps=8,  # One update per step (can increase if you want more updates per env step)
+        ent_coef="auto",  # Automatically tuned entropy regularization
+        use_sde=True,  # Use State-Dependent Exploration (helps on sim2real)
+        sde_sample_freq=4,  # How often to resample SDE noise
     ),
     "TD3": dict(
         policy_kwargs= {

@@ -41,9 +41,13 @@ class NormalizeWrapper(gym.ObservationWrapper):
         super().__init__(env)
         if "camera_rgb" in self.observation_space.spaces:
             c = self.observation_space["camera_rgb"].shape[0]
-            self.observation_space["camera_rgb"] = gym.spaces.Box(low=0, high=1, shape=(c, 120, 160), dtype=np.float32)
+            h = self.observation_space["camera_rgb"].shape[1]
+            w = self.observation_space["camera_rgb"].shape[2]
+            self.observation_space["camera_rgb"] = gym.spaces.Box(low=0, high=1, shape=(c, h, w), dtype=np.float32)
         if "camera_gray" in self.observation_space.spaces:
-            self.observation_space["camera_gray"] = gym.spaces.Box(low=0, high=1, shape=(1, 120, 160), dtype=np.float32)
+            h = self.observation_space["camera_gray"].shape[1]
+            w = self.observation_space["camera_gray"].shape[2]
+            self.observation_space["camera_gray"] = gym.spaces.Box(low=0, high=1, shape=(1, h, w), dtype=np.float32)
 
     def observation(self, observation):
         if "camera_rgb" in observation:
@@ -358,6 +362,8 @@ class CropWrapper(gym.ObservationWrapper):
         for key in self.keys:
             if key in observation:
                 observation[key] = observation[key][self.crop_h_start:self.crop_h_end, self.crop_w_start:self.crop_w_end, :]
+                cv2.imshow("test", observation[key])
+                cv2.waitKey(1)
         return observation
 
 class GrayscaleWrapper(gym.ObservationWrapper):

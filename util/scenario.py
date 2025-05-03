@@ -30,7 +30,7 @@ class Scenario:
     def _init_algorithm(self, model_path = None):
         if self.config["algorithm"] == "PPO":
             architecture = PPO
-        elif self.config["algorithm"] == "SAC":
+        elif "SAC"  in self.config["algorithm"]:
             architecture = SAC
         else:
             architecture = TD3

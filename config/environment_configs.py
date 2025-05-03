@@ -15,6 +15,7 @@ environment_configs = {
             layered_mapping=False,
         ),
         "wrappers": [
+            (CropWrapper, dict(keys=["camera_rgb"])),
             (ChannelFirstWrapper, None),
             (NormalizeWrapper, None),
             (TimeLimit, dict(max_episode_steps=300))
@@ -112,9 +113,10 @@ environment_configs = {
             randomize_maps_on_reset=False,
         ),
         "wrappers": [
+            (CropWrapper, dict(keys=["camera_rgb"])),
             (ChannelFirstWrapper, None),
             (NormalizeWrapper, None),
-            (TimeLimit, dict(max_episode_steps=1000)),
+            (TimeLimit, dict(max_episode_steps=500)),
         ]
     },
 

@@ -230,12 +230,11 @@ class SelfCarlaEnv(gym.Env):
         if self.count_until_randomization >= self.randomize_every_steps and self.domain_rand:
             weather = carla.WeatherParameters(
                 cloudiness=random.uniform(0.0, 80.0),
-                precipitation=random.uniform(0.0, 30.0),  # Light rain only
                 wind_intensity=random.uniform(0.0, 40.0),
-                sun_altitude_angle=random.uniform(15.0, 75.0),  # Keep sun up
+                sun_altitude_angle=random.uniform(5.0, 30.0),  # Keep sun up
                 fog_density=random.uniform(0.0, 60.0),  # Light fog
                 fog_distance=random.uniform(20.0, 100.0),  # Allow visibility
-                wetness=random.uniform(0.0, 70.0)
+                wetness=random.uniform(0.0, 90.0)
             )
             self.world.set_weather(weather)
             self.count_until_randomization = 0
