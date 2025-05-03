@@ -156,7 +156,7 @@ class DuckietownBaseDynamics(Simulator):
             self.laps_completed += 1
             self.laps_done += 1
             # Add a small delay for frame rate control
-        obs["vehicle_dynamics"] = action
+        obs["vehicle_dynamics"] = 0.0
         return obs, reward, done, trunc, info
 
 

@@ -351,20 +351,20 @@ class SelfCarlaEnv(gym.Env):
             observation = {
                 "camera_rgb": self.image_rgb,
                 "camera_seg": self.image_seg,
-                "vehicle_dynamics": steer,
+                "vehicle_dynamics": 0.0,
             }
         elif self.camera_rgb_enabled:
             self.image_rgb = self.rgb_queue.get()
             observation = {
                 "camera_rgb": self.image_rgb,
-                "vehicle_dynamics": steer
+                "vehicle_dynamics": 0.0
             }
 
         elif self.camera_seg_enabled:
             self.image_seg = self.seg_queue.get()
             observation = {
                 "camera_seg": self.image_seg,
-                "vehicle_dynamics": steer
+                "vehicle_dynamics": 0.0
             }
         else:
             observation = np.zeros((CAMERA_HEIGHT, CAMERA_WIDTH, 3), dtype=np.uint8)

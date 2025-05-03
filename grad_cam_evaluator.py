@@ -118,6 +118,21 @@ class ModelComparator:
         print(f"AVG ACTION DIFF : {total_action_diff / frame_count}")
         print(f"AVG KL DIVERGENCE : {total_kl / frame_count}")
 
+    def run_on_random(self):
+        total = 0
+        for i in range(1000):
+            noise = np.random.randint(0, 256, (1, 3, 120, 160), dtype=np.uint8) / 255.0
+            obs = {
+                "camera_rgb": deepcopy(noise),
+                "vehicle_dynamics": [[0]],
+            }
+            fr1 = final_representation(self.model_1, obs, key="camera_rgb")
+            fr2 = final_representation(self.model_2, obs, key="camera_rgb")
+
+            similarity = F.cosine_similarity(fr1, fr2, dim=1)
+            total += similarity
+        print(f"Total similarity on random noise: {total/ 1000}")
+
 
 
 model_1 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/carla_rgb_domain_rand", device='cuda' if torch.cuda.is_available() else 'cpu')
@@ -137,4 +152,5 @@ print(f"General weight similarity: {similarity}")
 ge = ModelComparator(video_path='/home/jurriaan/workplace/programming/Sim2Sim2Real/test/videos/duckie_video_right_lane.mp4',
                       model_1=model_1,
                       model_2=model_2)
-ge.run()
+#ge.run()
+ge.run_on_random()

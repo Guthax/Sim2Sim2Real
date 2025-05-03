@@ -146,9 +146,9 @@ class SimilarityMeasurer:
 
 
 model_1 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/carla_gray_domain_rand", device='cuda' if torch.cuda.is_available() else 'cpu')
-model_2 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/final_random_gray", device='cuda' if torch.cuda.is_available() else 'cpu')
+model_2 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/carla_gray_no_domain_rand", device='cuda' if torch.cuda.is_available() else 'cpu')
 
-ge = SimilarityMeasurer(video_path='/home/jurriaan/workplace/programming/Sim2Sim2Real/test/videos/duckiebot_real.mp4',
+ge = SimilarityMeasurer(video_path='/home/jurriaan/workplace/programming/Sim2Sim2Real/test/videos/duckie_video_right_lane.mp4',
                       model_1=model_1,
                       model_2=model_2)
 ge.run_gray()
