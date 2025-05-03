@@ -270,20 +270,20 @@ class SelfCarlaEnv(gym.Env):
             observation = {
                 "camera_rgb": self.image_rgb,
                 "camera_seg": self.image_seg,
-                "vehicle_dynamics": 0.0,
+                "vehicle_dynamics": [0.0],
             }
         elif self.camera_rgb_enabled:
             self.image_rgb = self.rgb_queue.get()
             observation = {
                 "camera_rgb": self.image_rgb,
-                "vehicle_dynamics": 0.0
+                "vehicle_dynamics": [0.0]
             }
 
         elif self.camera_seg_enabled:
             self.image_seg = self.seg_queue.get()
             observation = {
                 "camera_seg": self.image_seg,
-                "vehicle_dynamics": 0.0
+                "vehicle_dynamics": [0.0]
             }
         else:
             print("black")
@@ -350,20 +350,20 @@ class SelfCarlaEnv(gym.Env):
             observation = {
                 "camera_rgb": self.image_rgb,
                 "camera_seg": self.image_seg,
-                "vehicle_dynamics": 0.0,
+                "vehicle_dynamics": [0.0],
             }
         elif self.camera_rgb_enabled:
             self.image_rgb = self.rgb_queue.get()
             observation = {
                 "camera_rgb": self.image_rgb,
-                "vehicle_dynamics": 0.0
+                "vehicle_dynamics": [0.0]
             }
 
         elif self.camera_seg_enabled:
             self.image_seg = self.seg_queue.get()
             observation = {
                 "camera_seg": self.image_seg,
-                "vehicle_dynamics": 0.0
+                "vehicle_dynamics": [0.0]
             }
         else:
             observation = np.zeros((CAMERA_HEIGHT, CAMERA_WIDTH, 3), dtype=np.uint8)
@@ -410,7 +410,6 @@ class SelfCarlaEnv(gym.Env):
          #   20, False)
 
         lane_distance = abs(ego_loc.y - waypt.transform.location.y)
-        print(lane_distance)
         lane_penalty = max(2.5 - lane_distance, 0)
 
         angle, dot_dir = compute_angle(ego_loc, waypt.transform.location, self.vehicle.get_transform().rotation.yaw)
