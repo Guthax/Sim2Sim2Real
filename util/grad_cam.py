@@ -148,6 +148,11 @@ def final_representation(algorithm, obs, key=None, device=torch.device('cuda' if
     return feature_maps
 
 
+def extract_features(algorithm, obs, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')):
+    tensor = obs_as_tensor(obs, device=device)
+    tensor = preprocess_obs(tensor, algorithm.observation_space)
+    feat = algorithm.policy.features_extractor(tensor)
+    return feat
 
 def final_representation_actor(algorithm, obs,device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')):
     policy_net = algorithm.policy.to(device)

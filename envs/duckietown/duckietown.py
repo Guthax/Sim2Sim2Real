@@ -156,12 +156,12 @@ class DuckietownBaseDynamics(Simulator):
             self.laps_completed += 1
             self.laps_done += 1
             # Add a small delay for frame rate control
-        obs["vehicle_dynamics"] = 0.0
+        obs["vehicle_dynamics"] = [0.0]
         return obs, reward, done, False, info
 
-
+    """
     def compute_reward(self, pos, angle, speed):
-        """
+        
         try:
 
             lane_pos = self.get_lane_pos2(pos, angle)
@@ -181,7 +181,7 @@ class DuckietownBaseDynamics(Simulator):
         except NotInLane:
             # Heavy penalty for going out of lane
             reward = -10.0
-        """
+        
         col_penalty = self.proximity_penalty2(pos, angle)
 
         # Get the position relative to the right lane tangent
@@ -193,7 +193,36 @@ class DuckietownBaseDynamics(Simulator):
             return reward
         except NotInLane:
             return -40
+    """
+    def compute_reward(self, pos, angle, speed):
 
+        try:
+            lp = self.get_lane_pos2(pos, angle)
+
+            lane_penalty = min(np.abs(lp.dist) / 0.05, 1.0)  # in [0, 1]
+            dot_penalty = (1 - lp.dot_dir) / 2.0
+            reward = 1.0 - 0.8 * lane_penalty - 0.2 * dot_penalty
+
+            print(reward)
+            return reward
+        except NotInLane:
+            return -1
+    """
+        col_penalty = self.proximity_penalty2(pos, angle)
+
+        # Get the position relative to the right lane tangent
+        try:
+            lp = self.get_lane_pos2(pos, angle)
+
+            lane_penalty = min(np.abs(lp.dist) / 0.5, 1.0)  # in [0, 1]
+            dot_penalty = (1 - lp.dot_dir ) / 2.0
+            reward = 1.0 - 0.5 * lane_penalty - 0.5 * dot_penalty
+
+            print(reward)
+            return reward
+        except NotInLane:
+            return -1
+    """
     def reset(self, seed = None, options = None, segment: bool = False):
         obs_rgb, _ = super().reset(seed, options, segment)
         self.first_pos = self.cur_pos

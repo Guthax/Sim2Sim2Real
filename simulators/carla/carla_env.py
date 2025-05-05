@@ -371,7 +371,7 @@ class SelfCarlaEnv(gym.Env):
         self.waypoints = self.route_planner.run_step()
 
         # Calculate reward
-        reward, done = self._get_reward_new()
+        reward, done = self._get_reward_norm()
         #print(reward)
         info = {}
 
@@ -440,7 +440,45 @@ class SelfCarlaEnv(gym.Env):
         #    f"Lane penalty: {lane_distance}, Dot dir: {dot_dir}, Steer change: {steer_change_penalty}, invasion_penalty: {invasion_penalty}, total: {reward}")
 
 
+
         return reward, False
+    def _get_reward_norm(self):
+        # Get the lateral distance from the center of the lane
+
+        # Collision is heavily penalized
+        if self.collision_occurred:
+            return -1, True
+
+        ego_loc = self.vehicle.get_transform().location
+
+        waypt =  get_next_waypoint(self.waypoints, ego_loc.x, ego_loc.y, ego_loc.z)
+        waypt = waypt if waypt else get_closest_waypoint(self.waypoints, ego_loc.x, ego_loc.y, ego_loc.z)
+        #self.world.debug.draw_point(
+        #    carla.Location(waypt.transform.location.x, waypt.transform.location.y, 0.25), 0.1,
+        #    carla.Color(255, 0, 0),
+         #   20, False)
+
+        lane_distance = abs(ego_loc.y - waypt.transform.location.y)
+
+        angle, dot_dir = compute_angle(ego_loc, waypt.transform.location, self.vehicle.get_transform().rotation.yaw)
+
+        project_camera = self.camera_rgb if self.camera_rgb_enabled else self.camera_seg
+        is_off_road = self.world.get_map().get_waypoint(project_camera.get_transform().location, project_to_road=False) is None
+
+        if is_off_road or lane_distance > 5:
+            reward = -1
+            return reward, True
+
+        lane_penalty = min(lane_distance / 5.0, 1.0)  # in [0, 1]
+        dot_penalty = (1 - dot_dir) / 2.0
+        reward = 1.0 - 0.5 * lane_penalty - 0.5 * dot_penalty  # max = 1.0, min ~ 0.0
+
+        print(reward)
+
+        return reward, False
+        #print(
+        #    f"Lane penalty: {lane_distance}, Dot dir: {dot_dir}, Steer change: {steer_change_penalty}, invasion_penalty: {invasion_penalty}, total: {reward}")
+
 
     def render(self, mode='human'):
         if self.image_rgb is not None:

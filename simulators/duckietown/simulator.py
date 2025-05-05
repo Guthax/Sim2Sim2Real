@@ -189,13 +189,14 @@ DEFAULT_MAP_NAME = "ETH_small_loop_1"
 # Layout is from bottomleft to topright
 
 DEFAULT_START_POSES = [[(0,1),[0.4, 0, 0.5], np.pi / 2],
-                       [(0,1),[0.25, 0, 0.5], -np.pi / 2],
+                       [(0,1),[0.25, 0, 0.1], -np.pi / 2]]
+"""
                        [(2,1),[0.4, 0, 0.5], np.pi / 2],
                        [(2,1),[0.25, 0, 0.5], -np.pi / 2],
-                       [(1,0),[0.4, 0, 0.5], 0],
-                       [(1,0),[0.4, 0, 0.25], np.pi],
-                       [(1,2),[0.4, 0, 0.25], np.pi],
-                       [(1,2),[0.4, 0, 0.5], 0]]
+                       [(1,0),[0.5, 0, 0.5], 0],
+                       [(1,0),[0.5, 0, 0.35], np.pi],
+                       [(1,2),[0.5, 0, 0.35], np.pi],
+                       [(1,2),[0.5, 0, 0.5], 0]"""
 
 
 DEFAULT_FRAME_SKIP = 1
@@ -1453,7 +1454,6 @@ class Simulator(gym.Env):
 
         angle_deg = np.rad2deg(angle_rad)
         # return signedDist, dotDir, angle_deg
-
         return LanePosition(dist=signedDist, dot_dir=dotDir, angle_deg=angle_deg, angle_rad=angle_rad)
 
     def _drivable_pos(self, pos) -> bool:

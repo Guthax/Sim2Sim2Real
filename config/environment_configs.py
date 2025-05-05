@@ -29,22 +29,11 @@ environment_configs = {
             seg_camera=False,
         ),
         "wrappers": [
+            (CropWrapper, dict(keys=["camera_rgb"])),
             (GrayscaleWrapper, None),
             (ChannelFirstWrapper, None),
             (NormalizeWrapper, None),
             (TimeLimit, dict(max_episode_steps=300))
-        ]
-    },
-    "carla_crop": {
-        "base_env": SelfCarlaEnv,
-        "arguments": dict(
-            render=False,
-            rgb_camera=True,
-            seg_camera=False,
-        ),
-        "wrappers": [
-            (CropWrapper, None),
-            #(TimeLimit, dict(max_episode_steps=1000))
         ]
     },
     "carla_seg": {
@@ -143,6 +132,7 @@ environment_configs = {
             randomize_maps_on_reset=False,
         ),
         "wrappers": [
+            (CropWrapper, dict(keys=["camera_rgb"])),
             (GrayscaleWrapper, None),
             (ChannelFirstWrapper, None),
             (NormalizeWrapper, None),
