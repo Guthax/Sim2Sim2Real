@@ -81,7 +81,7 @@ _CONFIG_CARLA_SEG = {
     "algorithm_policy_network": "MultiInputPolicy",
     "algorithm_hyperparams": algorithm_params["PPO"],
     "observation_space": gym.spaces.Dict({
-                "camera_seg": gym.spaces.Box(low=0, high=1, shape=(3, 120, 160), dtype=np.uint8),
+                "camera_seg": gym.spaces.Box(low=0, high=1, shape=(3, 80, 160), dtype=np.uint8),
                 "vehicle_dynamics": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
             }),
     "action_space": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
@@ -143,7 +143,7 @@ _CONFIG_DUCKIE_SEG = {
     "algorithm_policy_network": "MultiInputPolicy",
     "algorithm_hyperparams": algorithm_params["PPO"],
     "observation_space": gym.spaces.Dict({
-                "camera_seg": gym.spaces.Box(low=0, high=1, shape=(3, 120, 160), dtype=np.uint8),
+                "camera_seg": gym.spaces.Box(low=0, high=1, shape=(3,120, 160), dtype=np.uint8),
                 "vehicle_dynamics": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
     }),
     "action_space": gym.spaces.Box(np.float32(-1), high=np.float32(1)),

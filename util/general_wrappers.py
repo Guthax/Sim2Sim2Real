@@ -18,7 +18,7 @@ class ChannelFirstWrapper(gym.ObservationWrapper):
         super().__init__(env)
         if "camera_seg" in self.observation_space.spaces:
             c, h, w =  self.observation_space["camera_seg"].shape[2], self.observation_space["camera_seg"].shape[0], self.observation_space["camera_seg"].shape[1]
-            self.observation_space["camera_seg"] = gym.spaces.Box(low=0, high=1, shape=(c, h, w), dtype=np.uint8)
+            self.observation_space["camera_seg"] = gym.spaces.Box(low=0, high=255, shape=(c, h, w), dtype=np.uint8)
         if "camera_rgb" in self.observation_space.spaces:
             c, h, w = self.observation_space["camera_rgb"].shape[2], self.observation_space["camera_rgb"].shape[0], self.observation_space["camera_rgb"].shape[1]
             self.observation_space["camera_rgb"] = gym.spaces.Box(low=0, high=255, shape=(c, h, w), dtype=np.uint8)
@@ -44,6 +44,11 @@ class NormalizeWrapper(gym.ObservationWrapper):
             h = self.observation_space["camera_rgb"].shape[1]
             w = self.observation_space["camera_rgb"].shape[2]
             self.observation_space["camera_rgb"] = gym.spaces.Box(low=0, high=1, shape=(c, h, w), dtype=np.float32)
+        if "camera_seg" in self.observation_space.spaces:
+            c = self.observation_space["camera_seg"].shape[0]
+            h = self.observation_space["camera_seg"].shape[1]
+            w = self.observation_space["camera_seg"].shape[2]
+            self.observation_space["camera_seg"] = gym.spaces.Box(low=0, high=1, shape=(c, h, w), dtype=np.float32)
         if "camera_gray" in self.observation_space.spaces:
             h = self.observation_space["camera_gray"].shape[1]
             w = self.observation_space["camera_gray"].shape[2]
@@ -52,6 +57,8 @@ class NormalizeWrapper(gym.ObservationWrapper):
     def observation(self, observation):
         if "camera_rgb" in observation:
             observation["camera_rgb"] = observation["camera_rgb"] / 255
+        if "camera_seg" in observation:
+            observation["camera_seg"] = observation["camera_seg"] / 255
         if "camera_gray" in observation:
             observation["camera_gray"] = observation["camera_gray"] / 255
         return observation
@@ -96,7 +103,7 @@ class SegmentationFilterWrapper(gym.ObservationWrapper):
     def __init__(self, env=None):
         gym.ObservationWrapper.__init__(self, env)
         #self.observation_space = spaces.Box(low=0, high=255, shape=(128, 128, 3), dtype=np.uint8)
-        self.gray_value = np.random.randint(0, 256, dtype=np.uint8)
+        self.gray_value = 0#np.random.randint(0, 256, dtype=np.uint8)
         self.counter = 0
         #window = cv2.namedWindow("filtered")
 
@@ -104,14 +111,12 @@ class SegmentationFilterWrapper(gym.ObservationWrapper):
         """Reset environment and randomize gray background."""
         
         if self.counter >= self.reset_every:
-            self.gray_value = np.random.randint(0, 256, dtype=np.uint8)
+            self.gray_value = 0#np.random.randint(0, 256, dtype=np.uint8)
             self.counter = 0  # Generate gray value on reset
         return super().reset(**kwargs)
 
     def observation(self, observation):
-        array = observation
-        if isinstance(self.env.observation_space, spaces.Dict):
-            array = observation["camera_seg"]
+        array = observation["camera_seg"]
 
         mask = np.zeros(array.shape[:2], dtype=np.uint8)
         for color in self.colors_to_keep_seg:
@@ -125,10 +130,7 @@ class SegmentationFilterWrapper(gym.ObservationWrapper):
         self.counter += 1
 
         result = observation
-        if isinstance(self.env.observation_space, spaces.Dict):
-            result["camera_seg"] = filtered_image
-        else:
-            result = filtered_image
+        result["camera_seg"] = filtered_image
 
         return result
 
@@ -205,6 +207,63 @@ class OneHotEncodeSegWrapper(gym.ObservationWrapper):
 
         return one_hot_mask
 
+class OneHotEncodeClassLabelWrapper(gym.ObservationWrapper):
+    color_map = {
+        (0, 0, 0): 0,  # Background
+        (128, 64, 128): 1,  # Class 1 (Road)
+        (157, 234, 50): 2,  # Class 2 (Markings)
+    }
+
+    reset_every = 10000
+
+    def __init__(self, env=None):
+        gym.ObservationWrapper.__init__(self, env)
+
+        h, w = self.observation_space["camera_seg"].shape[0], self.observation_space["camera_seg"].shape[1]
+        # Change observation space to a single channel with class labels (int) instead of one-hot encoding
+        self.observation_space["camera_seg"] = spaces.Box(low=0, high=len(self.color_map) - 1, shape=(h, w), dtype=np.uint8)
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+    def observation(self, observation):
+        array = observation["camera_seg"]
+        # Convert RGB mask to class label map (H, W) where each pixel is a class label
+        class_label_mask = self.convert_rgb_to_class_label(array)
+        observation["camera_seg"] = class_label_mask
+        return observation
+
+    def convert_rgb_to_class_label(self, rgb_mask):
+        """
+        Convert an HxWx3 RGB segmentation mask to an HxW class label map.
+
+        Args:
+            rgb_mask (np.ndarray): HxWx3 RGB mask.
+
+        Returns:
+            np.ndarray: HxW class label map.
+        """
+        # Convert to tensor for efficient processing
+        rgb_mask_tensor = torch.tensor(rgb_mask, dtype=torch.uint8, device=self.device)  # (H, W, 3)
+
+        # Get the RGB values from the color map and map them to class indices
+        color_map = self.color_map
+        colors = torch.tensor(list(color_map.keys()), dtype=torch.uint8, device=self.device)  # (num_classes, 3)
+        class_indices = torch.tensor(list(color_map.values()), dtype=torch.long, device=self.device)  # (num_classes,)
+
+        H, W, _ = rgb_mask_tensor.shape  # Get H and W dimensions
+
+        # Reshape the mask into (H * W, 3) for comparison
+        rgb_mask_flat = rgb_mask_tensor.view(-1, 3)  # (H * W, 3)
+
+        # Check for matching colors using broadcasting
+        matches = (rgb_mask_flat[:, None, :] == colors).all(dim=2)  # (H * W, num_classes)
+
+        # Find class index for each pixel
+        class_indices_flat = torch.argmax(matches, dim=1)  # (H * W)
+
+        # Reshape to (H, W)
+        class_label_mask = class_indices_flat.view(H, W).cpu().numpy()
+
+        return class_label_mask
 class EncoderWrapper(gym.ObservationWrapper):
     def __init__(self, env=None):
         gym.ObservationWrapper.__init__(self, env)
