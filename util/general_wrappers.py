@@ -56,11 +56,11 @@ class NormalizeWrapper(gym.ObservationWrapper):
 
     def observation(self, observation):
         if "camera_rgb" in observation:
-            observation["camera_rgb"] = observation["camera_rgb"] / 255
+            observation["camera_rgb"] = observation["camera_rgb"] / 255.0
         if "camera_seg" in observation:
-            observation["camera_seg"] = observation["camera_seg"] / 255
+            observation["camera_seg"] = observation["camera_seg"] / 255.0
         if "camera_gray" in observation:
-            observation["camera_gray"] = observation["camera_gray"] / 255
+            observation["camera_gray"] = observation["camera_gray"] / 255.0
         return observation
 
 

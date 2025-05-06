@@ -35,7 +35,7 @@ class RoutePlanner():
         self._world = self._vehicle.get_world()
         self._map = self._world.get_map()
 
-        self._sampling_radius = 0.5
+        self._sampling_radius = 1
         self._min_distance = 1
 
         self._ignore_intersections = ignore_intersections
@@ -53,17 +53,9 @@ class RoutePlanner():
         self._proximity_threshold = 15.0
 
 
-        self._compute_next_waypoints(k=200)
-
+        self._compute_next_waypoints(k=300)
 
     def _compute_next_waypoints(self, k=1):
-        """
-        Add new waypoints to the trajectory queue.
-
-        :param k: how many waypoints to compute
-        :return:
-        """
-        # check we do not overflow the queue
         available_entries = self._waypoints_queue.maxlen - len(self._waypoints_queue)
         k = min(available_entries, k)
 
@@ -72,27 +64,27 @@ class RoutePlanner():
             next_waypoints = list(last_waypoint.next(self._sampling_radius))
 
             if len(next_waypoints) == 1:
-                # only one option available ==> lanefollowing
+                road_options_list = retrieve_options(next_waypoints, last_waypoint)
                 next_waypoint = next_waypoints[0]
-                road_option = RoadOption.LANEFOLLOW
-            else:
-                # random choice between the possible options
+                road_option = road_options_list[0]
 
+            else:
                 road_options_list = retrieve_options(next_waypoints, last_waypoint)
 
-                road_option = random.choice(road_options_list)
-                if self._ignore_intersections and len(road_options_list) > 1:
-                    preferred_options = ['STRAIGHT', 'LANE_FOLLOW']
+                # Try to pick a STRAIGHT path first
+                preferred_options = [RoadOption.STRAIGHT]
+                straight_indices = [i for i, option in enumerate(road_options_list)
+                                    if option in preferred_options]
 
-                    preferred_options_list = [option for option in road_options_list if option.name in preferred_options]
-                    if len(preferred_options_list) > 0:
-                        road_option = preferred_options_list[0]
+                if self._ignore_intersections and straight_indices:
+                    selected_index = straight_indices[0]
+                else:
+                    selected_index = random.randint(0, len(next_waypoints) - 1)
 
+                next_waypoint = next_waypoints[selected_index]
+                road_option = road_options_list[selected_index]
 
-
-                next_waypoint = next_waypoints[road_options_list.index(
-                    road_option)]
-
+            print(f"Junction: {next_waypoint.is_junction}, Selected option: {road_option}")
             self._waypoints_queue.append((next_waypoint, road_option))
 
     def run_step(self):

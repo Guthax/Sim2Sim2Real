@@ -19,7 +19,7 @@ environment_configs = {
             (CropWrapper, dict(keys=["camera_rgb"])),
             (ChannelFirstWrapper, None),
             (NormalizeWrapper, None),
-            (TimeLimit, dict(max_episode_steps=300))
+            #z(TimeLimit, dict(max_episode_steps=300))
         ]
     },
     "carla_gray": {
@@ -121,6 +121,7 @@ environment_configs = {
             randomize_maps_on_reset=False,
         ),
         "wrappers": [
+            (CropWrapper, dict(keys=["camera_seg"])),
             (DuckieClipWrapper, None),
             (ChannelFirstWrapper, None),
             (NormalizeWrapper, None),

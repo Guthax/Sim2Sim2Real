@@ -12,7 +12,7 @@ from gymnasium import spaces
 from jedi.inference.arguments import repack_with_argument_clinic
 
 from simulators.carla.misc import get_pos, get_closest_waypoint, get_next_waypoint, compute_angle
-from simulators.carla.route_planner import RoutePlanner
+from simulators.carla.route_planner import RoutePlanner, RoadOption
 
 import matplotlib.pyplot as plt
 CAMERA_WIDTH = 160
@@ -125,8 +125,8 @@ class SelfCarlaEnv(gym.Env):
 
         #valid_spawn_point_indexes = [10, 15, 97, 95, 33, 41, 1, 86, 87, 89]
 
-        valid_spawn_point_indexes = [15,95]
-        #valid_spawn_point_indexes = [10,15, 28,89, 35,43,97, 20, 23, 95,33, 39]
+        #valid_spawn_point_indexes = [15,95]
+        valid_spawn_point_indexes = [10,15, 28,89, 35,43,97, 20, 23, 95,33, 39]
         for _ in range(10):  # Try up to 10 times to find a valid spawn point
             spawn_point_index = random.choice(valid_spawn_point_indexes)
             spawn_point = spawn_points[spawn_point_index]
@@ -292,6 +292,7 @@ class SelfCarlaEnv(gym.Env):
         self.current_steps = 0
         print(f"Completed laps: {self.laps_completed}, Laps done: {self.laps_done}")
         #self.laps_done += 1
+
         return observation, {}
 
     def _draw_points(self):
@@ -381,6 +382,7 @@ class SelfCarlaEnv(gym.Env):
 
         self.count_until_randomization += 1
         distance_to_spawn = self.vehicle.get_transform().location.distance(self.spawn_position.location)
+        print(distance_to_spawn)
         if distance_to_spawn < self.distance_until_lap_complete and self.current_steps >= self.min_steps_for_lap:
             done = True
             self.laps_completed += 1
@@ -451,15 +453,22 @@ class SelfCarlaEnv(gym.Env):
 
         ego_loc = self.vehicle.get_transform().location
 
+
         waypt =  get_next_waypoint(self.waypoints, ego_loc.x, ego_loc.y, ego_loc.z)
-        waypt = waypt if waypt else get_closest_waypoint(self.waypoints, ego_loc.x, ego_loc.y, ego_loc.z)
+        #waypt = waypt if waypt else get_closest_waypoint(self.waypoints, ego_loc.x, ego_loc.y, ego_loc.z)
+        if not waypt:
+            self.route_planner = RoutePlanner(self.vehicle, 12)
+            self.waypoints = self.route_planner.run_step()
+            waypt = get_next_waypoint(self.waypoints, ego_loc.x, ego_loc.y, ego_loc.z)
+
+
         #self.world.debug.draw_point(
         #    carla.Location(waypt.transform.location.x, waypt.transform.location.y, 0.25), 0.1,
         #    carla.Color(255, 0, 0),
-         #   20, False)
+        #    20, False)
 
         lane_distance = abs(ego_loc.y - waypt.transform.location.y)
-
+        print(lane_distance)
         angle, dot_dir = compute_angle(ego_loc, waypt.transform.location, self.vehicle.get_transform().rotation.yaw)
 
         project_camera = self.camera_rgb if self.camera_rgb_enabled else self.camera_seg
@@ -473,7 +482,6 @@ class SelfCarlaEnv(gym.Env):
         dot_penalty = (1 - dot_dir) / 2.0
         reward = 1.0 - 0.5 * lane_penalty - 0.5 * dot_penalty  # max = 1.0, min ~ 0.0
 
-        print(reward)
 
         return reward, False
         #print(

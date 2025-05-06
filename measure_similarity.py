@@ -123,9 +123,9 @@ class SimilarityMeasurer:
 
 
 
-model_1 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/duck_new_rew_model_trained_400000_steps", device='cuda' if torch.cuda.is_available() else 'cpu')
-model_2 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/carla_norm_rew_model_trained_400000_steps", device='cuda' if torch.cuda.is_available() else 'cpu')
-model_3 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/duck_new_rew_model_trained_800000_steps", device='cuda' if torch.cuda.is_available() else 'cpu')
+model_1 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/duckie_rgb_256_model_trained_400000_steps", device='cuda' if torch.cuda.is_available() else 'cpu')
+model_2 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/carla_rgb_256_model_trained_400000_steps", device='cuda' if torch.cuda.is_available() else 'cpu')
+model_3 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/carla_rgb_256_model_trained_400000_steps", device='cuda' if torch.cuda.is_available() else 'cpu')
 ge = SimilarityMeasurer(video_path='/home/jurriaan/workplace/programming/Sim2Sim2Real/test/videos/duckie_video_right_lane.mp4',
                       models = [model_1, model_2, model_3])
 ge.run()
