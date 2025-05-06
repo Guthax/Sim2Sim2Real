@@ -382,7 +382,7 @@ class SelfCarlaEnv(gym.Env):
 
         self.count_until_randomization += 1
         distance_to_spawn = self.vehicle.get_transform().location.distance(self.spawn_position.location)
-        print(distance_to_spawn)
+        #print(distance_to_spawn)
         if distance_to_spawn < self.distance_until_lap_complete and self.current_steps >= self.min_steps_for_lap:
             done = True
             self.laps_completed += 1
@@ -468,7 +468,6 @@ class SelfCarlaEnv(gym.Env):
         #    20, False)
 
         lane_distance = abs(ego_loc.y - waypt.transform.location.y)
-        print(lane_distance)
         angle, dot_dir = compute_angle(ego_loc, waypt.transform.location, self.vehicle.get_transform().rotation.yaw)
 
         project_camera = self.camera_rgb if self.camera_rgb_enabled else self.camera_seg

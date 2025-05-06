@@ -84,7 +84,7 @@ class RoutePlanner():
                 next_waypoint = next_waypoints[selected_index]
                 road_option = road_options_list[selected_index]
 
-            print(f"Junction: {next_waypoint.is_junction}, Selected option: {road_option}")
+            #print(f"Junction: {next_waypoint.is_junction}, Selected option: {road_option}")
             self._waypoints_queue.append((next_waypoint, road_option))
 
     def run_step(self):
