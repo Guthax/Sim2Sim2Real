@@ -54,7 +54,7 @@ _CONFIG_CARLA_GRAY = {
     "algorithm_policy_network": "MultiInputPolicy",
     "algorithm_hyperparams": algorithm_params["PPO"],
     "observation_space": gym.spaces.Dict({
-            "camera_gray": gym.spaces.Box(low=0, high=1.0, shape=(1,120, 160), dtype=np.float32),
+            "camera_gray": gym.spaces.Box(low=0, high=1.0, shape=(1,80, 160), dtype=np.float32),
             "vehicle_dynamics": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
         }),
     "action_space": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
