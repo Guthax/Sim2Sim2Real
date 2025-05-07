@@ -12,9 +12,11 @@ from gymnasium import spaces
 from jedi.inference.arguments import repack_with_argument_clinic
 
 from simulators.carla.misc import get_pos, get_closest_waypoint, get_next_waypoint, compute_angle
-from simulators.carla.route_planner import RoutePlanner, RoadOption
+from simulators.carla.route_planner import RoutePlanner, is_waypoint_behind_vehicle
 
 import matplotlib.pyplot as plt
+
+
 CAMERA_WIDTH = 160
 CAMERA_HEIGHT = 120
 
@@ -253,14 +255,12 @@ class SelfCarlaEnv(gym.Env):
 
         self._setup_vehicle()
         self.world.tick()
-        self.route_planner = RoutePlanner(self.vehicle, 12)
-        self.waypoints = self.route_planner.run_step()
+
 
         self.steps_alive = 0
         #if self.turn_on_render:
         #     self._draw_points()
 
-        start_time = time.time()
 
 
 
@@ -292,41 +292,19 @@ class SelfCarlaEnv(gym.Env):
         self.current_steps = 0
         print(f"Completed laps: {self.laps_completed}, Laps done: {self.laps_done}")
         #self.laps_done += 1
-
+        #print(f"Vehicle before calling routeplanner: {self.vehicle.get_transform()}")
+        self.route_planner = RoutePlanner(self.vehicle)
+        #print(f"Vehicle after calling routeplanner: {self.vehicle.get_transform()}")
+        #print(f"First waypoint: {self.route_planner.waypoints_queue[0]}")
+        distance = self.route_planner.waypoints_queue[0].transform.location.distance(self.vehicle.get_location())
+        if distance > 5:
+            return self.reset()
+        #distance = self.route_planner.waypoints_queue[0].location.distance(self.vehicle.get_transform().get_location())
         return observation, {}
 
-    def _draw_points(self):
-        life_time = 30
-        for i in range(0, len(self.waypoints)-1):
-            w0 = self.waypoints[i].transform
-            w1 = self.waypoints[i+1].transform
-
-            w0 = carla.Location(w0.location.x, w0.location.y, 0.25)
-            w1 = carla.Location(w1.location.x, w1.location.y, 0.25)
-            self.world.debug.draw_line(
-                w0,
-                w1,
-                thickness=0.1, color=carla.Color(255, 0, 0),
-                life_time=life_time, persistent_lines=False)
-            self.world.debug.draw_point(
-                w0, 0.1,
-                carla.Color(0, 255, 0) if i == 0 else carla.Color(255, 0, 0),
-                life_time, False)
-        #self.world.debug.draw_point(
-        #    self.waypoints[-1][0], 0.1,
-        #    carla.Color(0, 0, 255),
-        #    life_time, False)
 
     def step(self, action):
         steer = action
-
-        #target_speed = 4.77778  # 20 m/s, you can change this to any desired speed
-        #transform = self.vehicle.get_transform()
-        #forward_vector = transform.get_forward_vector()
-        #target_velocity = forward_vector * target_speed
-
-        # Set the target velocity (in the vehicle's local frame)
-        #self.vehicle.set_target_velocity(target_velocity)
 
         target_speed = 7
         velocity = self.vehicle.get_velocity()
@@ -342,7 +320,6 @@ class SelfCarlaEnv(gym.Env):
         self.vehicle.apply_control(control)
 
 
-        #self.vehicle.apply_control(carla.VehicleControl(throttle=float(0.5), steer=float(steer)))  # Fixed speed of 30 kph
         self.world.tick()
 
         if self.camera_rgb_enabled and self.camera_seg_enabled:
@@ -369,7 +346,6 @@ class SelfCarlaEnv(gym.Env):
         else:
             observation = np.zeros((CAMERA_HEIGHT, CAMERA_WIDTH, 3), dtype=np.uint8)
 
-        self.waypoints = self.route_planner.run_step()
 
         # Calculate reward
         reward, done = self._get_reward_norm()
@@ -395,53 +371,6 @@ class SelfCarlaEnv(gym.Env):
 
         return observation, reward, done, False, info
 
-    def _get_reward_new(self):
-        # Get the lateral distance from the center of the lane
-
-        # Collision is heavily penalized
-        if self.collision_occurred:
-            return -20.0, True  # Large negative reward and terminate episode
-
-        ego_loc = self.vehicle.get_transform().location
-
-        waypt =  get_next_waypoint(self.waypoints, ego_loc.x, ego_loc.y, ego_loc.z)
-        waypt = waypt if waypt else get_closest_waypoint(self.waypoints, ego_loc.x, ego_loc.y, ego_loc.z)
-        #self.world.debug.draw_point(
-        #    carla.Location(waypt.transform.location.x, waypt.transform.location.y, 0.25), 0.1,
-        #    carla.Color(255, 0, 0),
-         #   20, False)
-
-        lane_distance = abs(ego_loc.y - waypt.transform.location.y)
-        lane_penalty = max(2.5 - lane_distance, 0)
-
-        angle, dot_dir = compute_angle(ego_loc, waypt.transform.location, self.vehicle.get_transform().rotation.yaw)
-
-        # Get the steering action applied
-        steer_value = self.vehicle.get_control().steer
-        steer_change_penalty = -abs(steer_value - self.previous_steer) * 0.5 if self.previous_steer else 0
-        self.previous_steer = steer_value  # Update previous steering value
-        invasion_penalty = 0
-        steer_change_penalty = 0
-
-
-        # Reward is a combination of staying in lane, smooth steering, and avoiding sudden changes
-        reward = 1.0  + dot_dir - lane_distance + steer_change_penalty + invasion_penalty
-
-        project_camera = self.camera_rgb if self.camera_rgb_enabled else self.camera_seg
-        is_off_road = self.world.get_map().get_waypoint(project_camera.get_transform().location, project_to_road=False) is None
-
-        if is_off_road:
-            reward = reward - 10.0
-            return reward, True
-        #if self.lane_invasion_occured:
-        #    return reward - 5, Tru
-        if lane_distance > 5:
-            return reward, True
-
-        #print(
-        #    f"Lane penalty: {lane_distance}, Dot dir: {dot_dir}, Steer change: {steer_change_penalty}, invasion_penalty: {invasion_penalty}, total: {reward}")
-
-
 
         return reward, False
     def _get_reward_norm(self):
@@ -451,23 +380,22 @@ class SelfCarlaEnv(gym.Env):
         if self.collision_occurred:
             return -1, True
 
+
         ego_loc = self.vehicle.get_transform().location
-
-
-        waypt =  get_next_waypoint(self.waypoints, ego_loc.x, ego_loc.y, ego_loc.z)
+        waypt =  self.route_planner.waypoints_queue[0]
+        #print(f"First waypoint in step: {waypt}")
+        if is_waypoint_behind_vehicle(self.vehicle.get_transform(), waypt.transform):
+            self.route_planner.waypoints_queue.popleft()
+            waypt = self.route_planner.waypoints_queue[0]
         #waypt = waypt if waypt else get_closest_waypoint(self.waypoints, ego_loc.x, ego_loc.y, ego_loc.z)
-        if not waypt:
-            self.route_planner = RoutePlanner(self.vehicle, 12)
-            self.waypoints = self.route_planner.run_step()
-            waypt = get_next_waypoint(self.waypoints, ego_loc.x, ego_loc.y, ego_loc.z)
 
 
         #self.world.debug.draw_point(
         #    carla.Location(waypt.transform.location.x, waypt.transform.location.y, 0.25), 0.1,
         #    carla.Color(255, 0, 0),
         #    20, False)
-
         lane_distance = abs(ego_loc.y - waypt.transform.location.y)
+        #print(lane_distance)
         angle, dot_dir = compute_angle(ego_loc, waypt.transform.location, self.vehicle.get_transform().rotation.yaw)
 
         project_camera = self.camera_rgb if self.camera_rgb_enabled else self.camera_seg
