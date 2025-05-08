@@ -23,7 +23,7 @@ CAMERA_HEIGHT = 120
 def slight_variation(base, delta):
     return base + random.uniform(-delta, delta)
 class SelfCarlaEnv(gym.Env):
-    def __init__(self, host='localhost', port=2000, rgb_camera=True, seg_camera=False, render=False, domain_rand= True, layered_mapping=False, convert_segmentation=True):
+    def __init__(self, host='localhost', port=2000, rgb_camera=True, seg_camera=False, render=False, domain_rand= False, layered_mapping=False, convert_segmentation=True):
         super(SelfCarlaEnv, self).__init__()
         self.client = carla.Client(host, port)
         self.client.set_timeout(20.0)
@@ -127,8 +127,8 @@ class SelfCarlaEnv(gym.Env):
 
         #valid_spawn_point_indexes = [10, 15, 97, 95, 33, 41, 1, 86, 87, 89]
 
-        #valid_spawn_point_indexes = [15,95]
-        valid_spawn_point_indexes = [10,15, 28,89, 35,43,97, 20, 23, 95,33, 39]
+        valid_spawn_point_indexes = [15,95]
+        #valid_spawn_point_indexes = [10,15, 28,89, 35,43,97, 20, 23, 95,33, 39]
         for _ in range(10):  # Try up to 10 times to find a valid spawn point
             spawn_point_index = random.choice(valid_spawn_point_indexes)
             spawn_point = spawn_points[spawn_point_index]
@@ -293,14 +293,18 @@ class SelfCarlaEnv(gym.Env):
         print(f"Completed laps: {self.laps_completed}, Laps done: {self.laps_done}")
         #self.laps_done += 1
         #print(f"Vehicle before calling routeplanner: {self.vehicle.get_transform()}")
-        self.world.tick()
         self.route_planner = RoutePlanner(self.vehicle)
         #print(f"Vehicle after calling routeplanner: {self.vehicle.get_transform()}")
         #print(f"First waypoint: {self.route_planner.waypoints_queue[0]}")
         distance = self.route_planner.locations[0].distance(self.vehicle.get_location())
-        if distance > 5:
-            return self.reset()
+        #for waypt in self.route_planner.waypoints:
+         #   self.world.debug.draw_point(
+         #   carla.Location(waypt.transform.location.x, waypt.transform.location.y, 0.25), 0.1,
+        #        carla.Color(0, 255, 0),
+         #       2, False)
+
         #distance = self.route_planner.waypoints_queue[0].location.distance(self.vehicle.get_transform().get_location())
+
         return observation, {}
 
 
@@ -369,11 +373,8 @@ class SelfCarlaEnv(gym.Env):
         self.current_steps += 1
         self.current_mapping_counter += 1
         self.total_amount_steps += 1
-
         return observation, reward, done, False, info
 
-
-        return reward, False
     def _get_reward_norm(self):
         # Get the lateral distance from the center of the lane
 
@@ -408,7 +409,7 @@ class SelfCarlaEnv(gym.Env):
 
         lane_penalty = min(lane_distance / 5.0, 1.0)  # in [0, 1]
         dot_penalty = (1 - dot_dir) / 2.0
-        reward = 1.0 - 0.5 * lane_penalty - 0.5 * dot_penalty  # max = 1.0, min ~ 0.0
+        reward = 1.0 - 0.8 * lane_penalty - 0.2 * dot_penalty  # max = 1.0, min ~ 0.0
 
 
         return reward, False
