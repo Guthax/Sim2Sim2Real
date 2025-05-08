@@ -22,6 +22,19 @@ environment_configs = {
             (TimeLimit, dict(max_episode_steps=300))
         ]
     },
+    "carla_rgb_no_crop": {
+        "base_env": SelfCarlaEnv,
+        "arguments": dict(
+            render=False,
+            rgb_camera=True,
+            seg_camera=False,
+        ),
+        "wrappers": [
+            (ChannelFirstWrapper, None),
+            (NormalizeWrapper, None),
+            (TimeLimit, dict(max_episode_steps=300))
+        ]
+    },
     "carla_gray": {
         "base_env": SelfCarlaEnv,
         "arguments": dict(
@@ -31,6 +44,20 @@ environment_configs = {
         ),
         "wrappers": [
             (CropWrapper, dict(keys=["camera_rgb"])),
+            (GrayscaleWrapper, None),
+            (ChannelFirstWrapper, None),
+            (NormalizeWrapper, None),
+            (TimeLimit, dict(max_episode_steps=300))
+        ]
+    },
+    "carla_gray_no_crop": {
+        "base_env": SelfCarlaEnv,
+        "arguments": dict(
+            render=False,
+            rgb_camera=True,
+            seg_camera=False,
+        ),
+        "wrappers": [
             (GrayscaleWrapper, None),
             (ChannelFirstWrapper, None),
             (NormalizeWrapper, None),
