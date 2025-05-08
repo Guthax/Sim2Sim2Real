@@ -350,7 +350,7 @@ class SelfCarlaEnv(gym.Env):
 
         # Calculate reward
         reward, done = self._get_reward_norm()
-        #print(reward)
+        print(reward)
         info = {}
 
         if self.turn_on_render:

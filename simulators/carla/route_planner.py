@@ -23,7 +23,7 @@ class RoutePlanner:
     def get_straight_waypoint_chain(self,start_location, distance=1.0, max_length=1000):
 
 
-        current_wp = self._map.get_waypoint(start_location, project_to_road=True, lane_type=carla.LaneType.Driving).get_right_lane()
+        current_wp = self._map.get_waypoint(start_location, project_to_road=True, lane_type=carla.LaneType.Driving)
         start_location = current_wp.transform.location
         waypoints = [current_wp]
         locations = [current_wp.transform.location]
