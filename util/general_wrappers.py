@@ -18,7 +18,7 @@ class ChannelFirstWrapper(gym.ObservationWrapper):
         super().__init__(env)
         if "camera_seg" in self.observation_space.spaces:
             c, h, w =  self.observation_space["camera_seg"].shape[2], self.observation_space["camera_seg"].shape[0], self.observation_space["camera_seg"].shape[1]
-            self.observation_space["camera_seg"] = gym.spaces.Box(low=0, high=255, shape=(c, h, w), dtype=np.uint8)
+            self.observation_space["camera_seg"] = gym.spaces.Box(low=0, high=1, shape=(c, h, w), dtype=np.uint8)
         if "camera_rgb" in self.observation_space.spaces:
             c, h, w = self.observation_space["camera_rgb"].shape[2], self.observation_space["camera_rgb"].shape[0], self.observation_space["camera_rgb"].shape[1]
             self.observation_space["camera_rgb"] = gym.spaces.Box(low=0, high=255, shape=(c, h, w), dtype=np.uint8)
@@ -133,6 +133,37 @@ class SegmentationFilterWrapper(gym.ObservationWrapper):
         result["camera_seg"] = filtered_image
 
         return result
+
+
+class ClassEmbeddingWrapper(gym.ObservationWrapper):
+    color_map = {
+        (0, 0, 0): 0,  # Background
+        (128, 64, 128): 1,  # Class 1 (Road)
+        (157, 234, 50): 2,  # Class 2 (Markigns)
+    }
+
+
+    def __init__(self, env):
+        super().__init__(env)
+
+        # Assuming the output is a 2D class-labeled image (H, W)
+        h, w = self.observation_space["camera_seg"].shape[0], self.observation_space["camera_seg"] .shape[1]
+        self.observation_space["camera_seg"] = gym.spaces.Box(low=0, high=1,
+                                                shape=(1, h, w), dtype=np.float32)
+
+    def observation(self, observation):
+        return self.rgb_to_class_labels(observation)
+
+    def rgb_to_class_labels(self, obs):
+        rgb_image = obs["camera_seg"]
+        class_image = np.zeros((rgb_image.shape[0], rgb_image.shape[1]), dtype=np.uint8)
+        for color, class_id in self.color_map.items():
+            mask = np.all(rgb_image == color, axis=-1)
+            class_image[mask] = class_id
+        class_image = class_image / len(self.color_map)
+        class_image = np.expand_dims(class_image, axis=0)
+        obs["camera_seg"] = class_image
+        return obs
 
 class OneHotEncodeSegWrapper(gym.ObservationWrapper):
     color_map = {

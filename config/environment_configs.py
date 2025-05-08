@@ -4,7 +4,8 @@ from envs.duckietown.duckietown import DuckietownBaseDynamics
 from simulators.carla.carla_env import SelfCarlaEnv
 from util.general_wrappers import NormalizeWrapper, ChannelFirstWrapper, ResizeWrapper, CropWrapper, CannyWrapper, \
     SegmentationFilterWrapper, \
-    DuckieClipWrapper, OneHotEncodeSegWrapper, GrayscaleWrapper, EncoderWrapper, OneHotEncodeClassLabelWrapper
+    DuckieClipWrapper, OneHotEncodeSegWrapper, GrayscaleWrapper, EncoderWrapper, OneHotEncodeClassLabelWrapper, \
+    ClassEmbeddingWrapper
 
 environment_configs = {
     "carla": {
@@ -73,9 +74,21 @@ environment_configs = {
         ),
         "wrappers": [
             (CropWrapper, dict(keys=["camera_seg"])),
-            (SegmentationFilterWrapper, None),
+            (OneHotEncodeSegWrapper, None),
             (ChannelFirstWrapper, None),
-            (NormalizeWrapper, None),
+        ]
+    },
+
+    "carla_seg_encode": {
+        "base_env": SelfCarlaEnv,
+        "arguments": dict(
+            render=True,
+            rgb_camera=False,
+            seg_camera=True,
+        ),
+        "wrappers": [
+            (CropWrapper, dict(keys=["camera_seg"])),
+            (ClassEmbeddingWrapper, None),
         ]
     },
     "carla_encoder": {

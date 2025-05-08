@@ -293,10 +293,11 @@ class SelfCarlaEnv(gym.Env):
         print(f"Completed laps: {self.laps_completed}, Laps done: {self.laps_done}")
         #self.laps_done += 1
         #print(f"Vehicle before calling routeplanner: {self.vehicle.get_transform()}")
+        self.world.tick()
         self.route_planner = RoutePlanner(self.vehicle)
         #print(f"Vehicle after calling routeplanner: {self.vehicle.get_transform()}")
         #print(f"First waypoint: {self.route_planner.waypoints_queue[0]}")
-        distance = self.route_planner.waypoints_queue[0].transform.location.distance(self.vehicle.get_location())
+        distance = self.route_planner.locations[0].distance(self.vehicle.get_location())
         if distance > 5:
             return self.reset()
         #distance = self.route_planner.waypoints_queue[0].location.distance(self.vehicle.get_transform().get_location())
@@ -382,11 +383,11 @@ class SelfCarlaEnv(gym.Env):
 
 
         ego_loc = self.vehicle.get_transform().location
-        waypt =  self.route_planner.waypoints_queue[0]
+        waypt =  self.route_planner.waypoints[0]
         #print(f"First waypoint in step: {waypt}")
         if is_waypoint_behind_vehicle(self.vehicle.get_transform(), waypt.transform):
-            self.route_planner.waypoints_queue.popleft()
-            waypt = self.route_planner.waypoints_queue[0]
+            self.route_planner.waypoints.pop(0)
+            waypt = self.route_planner.waypoints[0]
         #waypt = waypt if waypt else get_closest_waypoint(self.waypoints, ego_loc.x, ego_loc.y, ego_loc.z)
 
 

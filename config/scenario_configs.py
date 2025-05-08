@@ -111,7 +111,7 @@ _CONFIG_CARLA_SEG = {
     "algorithm_policy_network": "MultiInputPolicy",
     "algorithm_hyperparams": algorithm_params["PPO"],
     "observation_space": gym.spaces.Dict({
-                "camera_seg": gym.spaces.Box(low=0, high=1, shape=(3, 80, 160), dtype=np.uint8),
+                "camera_seg": gym.spaces.Box(low=0, high=1, shape=(3, 180, 160), dtype=np.float32),
                 "vehicle_dynamics": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
             }),
     "action_space": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
@@ -119,7 +119,20 @@ _CONFIG_CARLA_SEG = {
         "carla": environment_configs["carla_seg"],
     }
 }
-
+_CONFIG_CARLA_SEG_ENCODE = {
+    "name": "carla_seg_encode",
+    "algorithm": "PPO",
+    "algorithm_policy_network": "MultiInputPolicy",
+    "algorithm_hyperparams": algorithm_params["PPO"],
+    "observation_space": gym.spaces.Dict({
+                "camera_seg": gym.spaces.Box(low=0, high=1, shape=(1, 80, 160), dtype=np.float32),
+                "vehicle_dynamics": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
+            }),
+    "action_space": gym.spaces.Box(np.float32(-1), high=np.float32(1)),
+    "environments": {
+        "carla": environment_configs["carla_seg_encode"],
+    }
+}
 
 _CONFIG_CARLA_RGB_SEG = {
     "name": "carla_rgb_seg",
@@ -198,7 +211,7 @@ _CONFIG_DUCKIE_RGB_SEG = {
 }
 
 
-configs = [_CONFIG_CARLA_RGB, _CONFIG_CARLA_RGB_SEG,_CONFIG_CARLA_GRAY,_CONFIG_CARLA_GRAY_NO_CROP, _CONFIG_CARLA_SEG, _CONFIG_CARLA_CANNY, _CONFIG_CARLA_RGB_FEATURE,_CONFIG_CARLA_RGB_NO_CROP,
+configs = [_CONFIG_CARLA_RGB, _CONFIG_CARLA_RGB_SEG,_CONFIG_CARLA_GRAY,_CONFIG_CARLA_GRAY_NO_CROP, _CONFIG_CARLA_SEG,_CONFIG_CARLA_SEG_ENCODE, _CONFIG_CARLA_CANNY, _CONFIG_CARLA_RGB_FEATURE,_CONFIG_CARLA_RGB_NO_CROP,
            _CONFIG_DUCKIE_RGB, _CONFIG_DUCKIE_GRAY, _CONFIG_DUCKIE_SEG, _CONFIG_DUCKIE_RGB_SEG,
            _CONFIG_CARLA_ENCODER]
 

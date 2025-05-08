@@ -14,26 +14,26 @@ class RoutePlanner:
         self._map = world.get_map()
 
 
-        self.waypoints_queue = deque(maxlen=1000)
+        self.waypoints = []
+        self.locations = []
 
-
-
-        for wpt in self.get_straight_waypoint_chain(vehicle.get_location()):
-            self.waypoints_queue.append(wpt)
+        self.waypoints , self.locations = self.get_straight_waypoint_chain(vehicle.get_location())
         #print(f"Vehicle in  routeplanner: {vehicle.get_transform()}")
 
     def get_straight_waypoint_chain(self,start_location, distance=1.0, max_length=1000):
 
 
-        current_wp = self._map.get_waypoint(start_location, project_to_road=True, lane_type=carla.LaneType.Driving)
+        current_wp = self._map.get_waypoint(start_location, project_to_road=True, lane_type=carla.LaneType.Driving).get_right_lane()
         start_location = current_wp.transform.location
         waypoints = [current_wp]
+        locations = [current_wp.transform.location]
         while len(waypoints) < max_length:
             try:
                 new_waypoints = current_wp.next_until_lane_end(distance)
                 if len(new_waypoints) <= 1:
                     raise
                 waypoints += new_waypoints
+                locations += [wp.transform.location for wp in new_waypoints]
             except:
                 next_wp = current_wp.next(distance + 3)
                 if len(next_wp) > 1:
@@ -44,9 +44,10 @@ class RoutePlanner:
                     )
                     next_wp = [best_wp]
                 waypoints += next_wp
+                locations += [wp.transform.location for wp in next_wp]
             current_wp = waypoints[-1]
         #print(f"First wpt in routeplanner: {waypoints[0]} for vehicle {start_location}")
-        return waypoints
+        return waypoints, locations
 
 
     def angle_between(self, v1, v2):
