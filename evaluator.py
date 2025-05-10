@@ -21,7 +21,7 @@ class Evaluator:
         self.algorithm = algorithm
 
         self.evaluation_timesteps = 100000
-        self.episode_length = 100000
+        self.episode_length = 1000
 
         self.apply_grad_cam = apply_grad_cam
 
@@ -44,7 +44,7 @@ class Evaluator:
 
                 if self.apply_grad_cam:
                     #self.grad_cam(state)
-                    hm = grad_cam(self.algorithm, state, key="camera_rgb")
+                    hm = grad_cam(self.algorithm, state, key="camera_gray")
                     cv2.imshow("gradients", hm)
                     cv2.waitKey(1)
                     #self.grad_cam(state, key="camera_seg")

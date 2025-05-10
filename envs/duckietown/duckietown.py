@@ -22,7 +22,7 @@ class DuckietownBaseDynamics(Simulator):
         self.laps_completed = 0
         self.laps_done = 0
 
-        self.distance_until_lap_complete = 0.3
+        self.distance_until_lap_complete = 0.25
         self.min_steps_for_lap = 300
         self.current_steps = 0
 
@@ -104,8 +104,6 @@ class DuckietownBaseDynamics(Simulator):
         self.previous_steer = steer_value  # Update previous steering value
         #reward += steer_change_penalty
 
-        if done:
-            self.laps_done += 1
 
         if self.camera_rgb_enabled and self.camera_seg_enabled:
             obs_seg = self.render_obs(True)
@@ -151,11 +149,13 @@ class DuckietownBaseDynamics(Simulator):
 
         distance_to_spawn = abs(np.linalg.norm(self.cur_pos - self.first_pos))
         if distance_to_spawn < self.distance_until_lap_complete and self.current_steps >= self.min_steps_for_lap:
-            #done = True
+            done = True
             self.laps_completed += 1
-            self.laps_done += 1
             # Add a small delay for frame rate control
         obs["vehicle_dynamics"] = [0.0]
+
+        if done:
+            self.laps_done += 1
         return obs, reward, done, False, info
 
     """
@@ -202,7 +202,6 @@ class DuckietownBaseDynamics(Simulator):
             dot_penalty = (1 - lp.dot_dir) / 2.0
             reward = 1.0 - 0.8 * lane_penalty - 0.2 * dot_penalty
 
-            print(reward)
             return reward
         except NotInLane:
             return -1

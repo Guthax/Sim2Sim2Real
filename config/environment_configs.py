@@ -163,8 +163,7 @@ environment_configs = {
         "wrappers": [
             (CropWrapper, dict(keys=["camera_seg"])),
             (DuckieClipWrapper, None),
-            (ChannelFirstWrapper, None),
-            (NormalizeWrapper, None),
+            (ClassEmbeddingWrapper, None),
         ]
     },
     "duckie_gray": {
@@ -180,7 +179,7 @@ environment_configs = {
             (GrayscaleWrapper, None),
             (ChannelFirstWrapper, None),
             (NormalizeWrapper, None),
-            (TimeLimit, dict(max_episode_steps=600))
+            #(TimeLimit, dict(max_episode_steps=600))
         ]
     },
     "duckie_rgb_seg": {

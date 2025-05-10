@@ -156,13 +156,15 @@ class ClassEmbeddingWrapper(gym.ObservationWrapper):
 
     def rgb_to_class_labels(self, obs):
         rgb_image = obs["camera_seg"]
-        class_image = np.zeros((rgb_image.shape[0], rgb_image.shape[1]), dtype=np.uint8)
+        class_image = np.zeros((rgb_image.shape[0], rgb_image.shape[1]), dtype=np.float32)
         for color, class_id in self.color_map.items():
             mask = np.all(rgb_image == color, axis=-1)
             class_image[mask] = class_id
         class_image = class_image / len(self.color_map)
         class_image = np.expand_dims(class_image, axis=0)
         obs["camera_seg"] = class_image
+
+
         return obs
 
 class OneHotEncodeSegWrapper(gym.ObservationWrapper):
@@ -514,17 +516,20 @@ class DuckieClipWrapper(gym.ObservationWrapper):
             image = observation["camera_seg"]
 
         #image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        target_rgb = (0, 0, 0)  # RGB value to find
+        new_rgb =(0, 0, 0),  # RGB value to replace with
+
+        modified_image = self.replace_nearby_colors(image, target_rgb, new_rgb, threshold=60)
 
         target_rgb = (128, 64, 128)  # RGB value to find
         new_rgb =(128, 64, 128),  # RGB value to replace with
 
-        modified_image = self.replace_nearby_colors(image, target_rgb, new_rgb, threshold=8)
+        modified_image = self.replace_nearby_colors(modified_image, target_rgb, new_rgb, threshold=60)
         target_rgb = (157,234, 50)# RGB value to find
         new_rgb =(157,234, 50)# RGB value to replace with
 
-        modified_image = self.replace_nearby_colors(modified_image, target_rgb, new_rgb, threshold=20)
-        if isinstance(self.env.observation_space, spaces.Dict):
-            observation["camera_seg"] = modified_image
-            return observation
-
-        return modified_image
+        modified_image = self.replace_nearby_colors(modified_image, target_rgb, new_rgb, threshold=60)
+        observation["camera_seg"] = modified_image
+        cv2.imshow("modified", observation["camera_seg"])
+        cv2.waitKey(1)
+        return observation
