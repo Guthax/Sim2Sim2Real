@@ -154,6 +154,39 @@ def extract_features(algorithm, obs, device=torch.device('cuda' if torch.cuda.is
     feat = algorithm.policy.features_extractor(tensor)
     return feat
 
+def extract_features_per_layer(algorithm, obs, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')):
+    tensor = obs_as_tensor(obs, device=device)
+    tensor = preprocess_obs(tensor, algorithm.observation_space)
+
+    # Get the features_extractor (assumed to be CNN-based)
+    model = algorithm.policy.features_extractor
+    model.eval()  # Important to avoid batchnorm/dropout randomness
+
+    # Container for intermediate outputs
+    features = {}
+
+    # Hook function to capture output
+    def get_hook(name):
+        def hook(module, input, output):
+            features[name] = output.detach().cpu().flatten()
+        return hook
+
+    # Register hooks on each Conv2d layer
+    hooks = []
+    for name, module in model.named_modules():
+        if isinstance(module, torch.nn.Conv2d):
+            hooks.append(module.register_forward_hook(get_hook(name)))
+
+    # Run forward pass
+    _ = model(tensor)
+
+    # Remove hooks
+    for hook in hooks:
+        hook.remove()
+
+    return features  # A dict {layer_name: output_tensor}
+
+
 def final_representation_actor(algorithm, obs,device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')):
     policy_net = algorithm.policy.to(device)
 

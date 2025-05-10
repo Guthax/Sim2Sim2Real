@@ -11,7 +11,8 @@ from stable_baselines3.common.utils import obs_as_tensor
 from torch import cosine_similarity
 from torch.backends.cudnn import deterministic
 
-from util.grad_cam import grad_cam, feature_map, final_representation, compare_histograms, compare_image_histograms
+from util.grad_cam import grad_cam, feature_map, final_representation, compare_histograms, compare_image_histograms, \
+    extract_features_per_layer
 from utils import lr_schedule
 from skimage.metrics import structural_similarity as ssim, mean_squared_error
 
@@ -83,6 +84,7 @@ class ModelComparator:
                 am_1 = fm1[attention_map_index].detach().cpu().numpy()
                 am_2 = fm2[attention_map_index].detach().cpu().numpy()
                 similarity = ssim(am_1, am_2)
+
                 total_attention_map_sim_for_frame += similarity
             avg_attention_map_for_frame = total_attention_map_sim_for_frame / fm1.shape[0]
             total_am_sim += avg_attention_map_for_frame
@@ -135,7 +137,7 @@ class ModelComparator:
 
 
 
-model_1 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/carla_rgb_domain_rand", device='cuda' if torch.cuda.is_available() else 'cpu')
+model_1 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/carla_rgb_256_dr_crop_600000_steps", device='cuda' if torch.cuda.is_available() else 'cpu')
 model_2 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/duckie_baseline", device='cuda' if torch.cuda.is_available() else 'cpu')
 
 params_1 = model_1.policy.parameters()
