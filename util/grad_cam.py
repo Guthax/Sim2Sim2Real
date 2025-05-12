@@ -168,13 +168,16 @@ def extract_features_per_layer(algorithm, obs, device=torch.device('cuda' if tor
     # Hook function to capture output
     def get_hook(name):
         def hook(module, input, output):
-            features[name] = output.detach().cpu().flatten()
+            if isinstance(module, torch.nn.Conv2d):
+                features[name] = output.detach().cpu().flatten()
+            else:
+                features[name] = output.detach().cpu().squeeze(0)
         return hook
 
     # Register hooks on each Conv2d layer
     hooks = []
     for name, module in model.named_modules():
-        if isinstance(module, torch.nn.Conv2d):
+        if isinstance(module, torch.nn.Conv2d) or isinstance(module, torch.nn.Linear):
             hooks.append(module.register_forward_hook(get_hook(name)))
 
     # Run forward pass

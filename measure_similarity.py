@@ -1,3 +1,4 @@
+import math
 from copy import deepcopy
 
 import numpy as np
@@ -22,6 +23,48 @@ from skimage.metrics import structural_similarity as ssim, mean_squared_error
 import torch.nn.functional as F
 
 
+class CKA:
+    def __init__(self):
+        pass
+
+    def centering(self, K):
+        n = K.shape[0]
+        unit = np.ones([n, n])
+        I = np.eye(n)
+        H = I - unit / n
+        return np.dot(np.dot(H, K), H)
+
+    def rbf(self, X, sigma=None):
+        GX = np.dot(X, X.T)
+        KX = np.diag(GX) - GX + (np.diag(GX) - GX).T
+        if sigma is None:
+            mdist = np.median(KX[KX != 0])
+            sigma = math.sqrt(mdist)
+        KX *= - 0.5 / (sigma * sigma)
+        KX = np.exp(KX)
+        return KX
+
+    def kernel_HSIC(self, X, Y, sigma):
+        return np.sum(self.centering(self.rbf(X, sigma)) * self.centering(self.rbf(Y, sigma)))
+
+    def linear_HSIC(self, X, Y):
+        L_X = X @ X.T
+        L_Y = Y @ Y.T
+        return np.sum(self.centering(L_X) * self.centering(L_Y))
+
+    def linear_CKA(self, X, Y):
+        hsic = self.linear_HSIC(X, Y)
+        var1 = np.sqrt(self.linear_HSIC(X, X))
+        var2 = np.sqrt(self.linear_HSIC(Y, Y))
+
+        return hsic / (var1 * var2)
+
+    def kernel_CKA(self, X, Y, sigma=None):
+        hsic = self.kernel_HSIC(X, Y, sigma)
+        var1 = np.sqrt(self.kernel_HSIC(X, X, sigma))
+        var2 = np.sqrt(self.kernel_HSIC(Y, Y, sigma))
+
+        return hsic / (var1 * var2)
 
 class SimilarityMeasurer:
     def __init__(self, models, video_path=None):
@@ -50,8 +93,13 @@ class SimilarityMeasurer:
 
             if key =="camera_rgb":
                 frame_processed = np.expand_dims(np.transpose(frame[:][40:], (2,0,1)) / 255.0, axis=0)
+                cv2.imshow("Test",frame[:][40:])
+                cv2.waitKey(1)
+            elif key =="camera_gray":
+                frame_processed = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)[:][40:]
+                frame_processed = np.expand_dims(np.expand_dims(frame_processed, axis=0), axis=0)
             else:
-                frame_processed = np.expand_dims(np.expand_dims(frame / 255.0, axis=0), axis=0)
+                frame_processed = np.expand_dims(np.expand_dims(frame[:][40:] / 255.0, axis=0), axis=0)
 
             obs = {
                 key: deepcopy(frame_processed),
@@ -120,15 +168,13 @@ class SimilarityMeasurer:
         samples_m2 = np.array(samples[1]).squeeze(1)
 
 
-        cca_score = cca(samples_m1, samples_m2)
-        cka_from_examples = cka(gram_linear(samples_m1), gram_linear(samples_m2))
-        cka_from_features = feature_space_linear_cka(samples_m1, samples_m2)
+        np_cka = CKA()
 
-        print('Linear CKA from Examples: {:.5f}'.format(cka_from_examples))
-        print('Linear CKA from Features: {:.5f}'.format(cka_from_features))
-        print(f'CCA: {cca_score}')
+        print('Linear CKA, between X and Y: {}'.format(np_cka.linear_CKA(samples_m1, samples_m2)))
+        print('Linear CKA, between Y and X: {}'.format(np_cka.linear_CKA(samples_m2, samples_m1)))
 
-        data = np.zeros((3,3))
+
+        data = np.zeros((len(features_per_layer_per_model[0].keys()),len(features_per_layer_per_model[1].keys())))
         x_labels = features_per_layer_per_model[0].keys()
         y_labels = features_per_layer_per_model[1].keys()
         for i, key in enumerate(features_per_layer_per_model[0].keys()):
@@ -137,14 +183,19 @@ class SimilarityMeasurer:
                 samples_m2 = features_per_layer_per_model[1][key2]
 
 
-                cca_metric = feature_space_linear_cka(samples_m1, samples_m2, debiased=True)
+                cca_metric = np_cka.linear_CKA(samples_m1, samples_m2)
 
                 data[i][i2] = cca_metric
         plt.imshow(data, cmap='viridis', interpolation='nearest')
         plt.colorbar()
-        plt.xticks(ticks=np.arange(3), labels=x_labels, rotation=45, ha='right', fontsize=10)
-        plt.yticks(ticks=np.arange(3), labels=y_labels, fontsize=10)
-        plt.title("Heatmap with Long Labels (Matplotlib)")
+        plt.xticks(ticks=np.arange(len(features_per_layer_per_model[0].keys())), labels=x_labels, rotation=45, ha='right', fontsize=10)
+        plt.yticks(ticks=np.arange(len(features_per_layer_per_model[1].keys())), labels=y_labels, fontsize=10)
+        for i in range(data.shape[0]):
+            for j in range(data.shape[1]):
+                plt.text(j, i, f"{data[i, j]:.2f}", ha='center', va='center',
+                         color='white' if data[i, j] < 0.5 else 'black')
+
+        plt.title("Heatmap of layer similarity between Gray+No  DR and Baseline")
         plt.tight_layout()
         plt.show()
 
@@ -152,9 +203,9 @@ class SimilarityMeasurer:
 
 
 
-model_1 = PPO.load("/home/jurriaan/Documents/Programming/Sim2Sim2Real/results/256/carla_rgb_256_dr_crop_600000_steps", device='cuda' if torch.cuda.is_available() else 'cpu')
-model_2 = PPO.load("/home/jurriaan/Documents/Programming/Sim2Sim2Real/results/256/carla_rgb_256_no_dr_crop_model_trained_800000_steps", device='cuda' if torch.cuda.is_available() else 'cpu')
+model_1 = PPO.load("/home/jurriaan/Documents/Programming/Sim2Sim2Real/results/256/carla_gray_256_no_dr_crop_model_trained_1000000_steps", device='cuda' if torch.cuda.is_available() else 'cpu')
+model_2 = PPO.load("/home/jurriaan/Documents/Programming/Sim2Sim2Real/results/256/duckie_gray_256_model_trained_400000_steps", device='cuda' if torch.cuda.is_available() else 'cpu')
 #model_3 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/carla_rgb_256_model_trained_400000_steps", device='cuda' if torch.cuda.is_available() else 'cpu')
-ge = SimilarityMeasurer(video_path='/home/jurriaan/Documents/Programming/Sim2Sim2Real/test/videos/duckie_video_right_lane.mp4',
+ge = SimilarityMeasurer(video_path='/home/jurriaan/Documents/Programming/Sim2Sim2Real/test/videos/duckiebot_real.mp4',
                       models = [model_1, model_2])
-ge.run()
+ge.run(key="camera_gray")
