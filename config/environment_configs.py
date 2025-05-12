@@ -73,9 +73,10 @@ environment_configs = {
             seg_camera=True,
         ),
         "wrappers": [
-            (CropWrapper, dict(keys=["camera_seg"])),
+            #(CropWrapper, dict(keys=["camera_seg"])),
             (OneHotEncodeSegWrapper, None),
             (ChannelFirstWrapper, None),
+            (TimeLimit, dict(max_episode_steps=300))
         ]
     },
 
@@ -89,6 +90,7 @@ environment_configs = {
         "wrappers": [
             (CropWrapper, dict(keys=["camera_seg"])),
             (ClassEmbeddingWrapper, None),
+            (TimeLimit, dict(max_episode_steps=300))
         ]
     },
     "carla_encoder": {
@@ -175,7 +177,7 @@ environment_configs = {
             randomize_maps_on_reset=False,
         ),
         "wrappers": [
-            (CropWrapper, dict(keys=["camera_rgb"])),
+            #(CropWrapper, dict(keys=["camera_rgb"])),
             (GrayscaleWrapper, None),
             (ChannelFirstWrapper, None),
             (NormalizeWrapper, None),

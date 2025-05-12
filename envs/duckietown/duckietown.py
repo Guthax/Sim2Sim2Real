@@ -28,7 +28,7 @@ class DuckietownBaseDynamics(Simulator):
 
         self.previous_steer = None
         # color_sky = [0,0,0], color_ground=[0,0,0], domain_rand=False,
-        Simulator.__init__(self,**kwargs)
+        Simulator.__init__(self,color_sky = [0,0,0], color_ground=[0,0,0], domain_rand=False,**kwargs)
 
         self.action_space = spaces.Box(low=np.float32(-1), high=np.float32(1))
 
