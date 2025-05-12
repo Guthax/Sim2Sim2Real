@@ -702,7 +702,7 @@ class Simulator(gym.Env):
 
         # If the map specifies a starting tile
 
-        start_pos = random.choice(DEFAULT_START_POSES) if not self.randomize_maps_on_reset else None
+        start_pos = None
         self.user_tile_start = start_pos[0] if start_pos else None
         self.start_pose = [start_pos[1], start_pos[2]] if start_pos else None
 
