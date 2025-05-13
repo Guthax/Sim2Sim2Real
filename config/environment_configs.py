@@ -20,7 +20,7 @@ environment_configs = {
             (CropWrapper, dict(keys=["camera_rgb"])),
             (ChannelFirstWrapper, None),
             (NormalizeWrapper, None),
-            (TimeLimit, dict(max_episode_steps=300))
+            (TimeLimit, dict(max_episode_steps=500))
         ]
     },
     "carla_rgb_no_crop": {
@@ -144,13 +144,13 @@ environment_configs = {
         "base_env": DuckietownBaseDynamics,
         "arguments": dict(
             render_img=True,
-            randomize_maps_on_reset=False,
+            randomize_maps_on_reset=True,
         ),
         "wrappers": [
             (CropWrapper, dict(keys=["camera_rgb"])),
             (ChannelFirstWrapper, None),
             (NormalizeWrapper, None),
-            (TimeLimit, dict(max_episode_steps=500)),
+            (TimeLimit, dict(max_episode_steps=300)),
         ]
     },
 

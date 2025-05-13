@@ -410,7 +410,7 @@ class Simulator(gym.Env):
         self.randomize_maps_on_reset = randomize_maps_on_reset
 
         if self.randomize_maps_on_reset:
-            self.map_names_poses = {
+            self.map_names_poses = dict({
                 "Caltech_loop01": None,
                 "ETHZ_autolab_fast_track": None,
                 #"ETHZ_autolab_technical_track",
@@ -421,7 +421,7 @@ class Simulator(gym.Env):
                 "ETH_small_loop_3": None,
                 "TTIC_large_loop": None,
                 #"TTIC_ripltown"
-            }
+            })
         # Initialize the state
         self.reset()
 
@@ -584,7 +584,7 @@ class Simulator(gym.Env):
         self.speed = 0.0
 
         if self.randomize_maps_on_reset:
-            map_name = random.choice(self.map_names_poses.keys())
+            map_name = random.choice(list(self.map_names_poses.keys()))
             logger.info(f"Random map chosen: {map_name}")
             self._load_map(map_name)
 

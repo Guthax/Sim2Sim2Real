@@ -127,8 +127,16 @@ class SelfCarlaEnv(gym.Env):
 
         #valid_spawn_point_indexes = [10, 15, 97, 95, 33, 41, 1, 86, 87, 89]
 
-        valid_spawn_point_indexes = [15,95]
-        #valid_spawn_point_indexes = [10,15, 28,89, 35,43,97, 20, 23, 95,33, 39]
+        #valid_spawn_point_indexes = [15,95]
+        valid_spawn_point_indexes = [   28, 87,
+                                        89, 4,
+                                        19, 96,
+                                        15, 17,
+                                        6, 10,
+                                        0, 14, 11, 45, 34,
+                                        95,
+                                        33,
+                                        41, 1]
         for _ in range(10):  # Try up to 10 times to find a valid spawn point
             spawn_point_index = random.choice(valid_spawn_point_indexes)
             spawn_point = spawn_points[spawn_point_index]

@@ -55,7 +55,7 @@ class ModelComparator:
                 break
 
 
-            frame_processed = np.expand_dims(np.transpose(frame, (2,0,1)) / 255.0, axis=0)
+            frame_processed = np.expand_dims(np.transpose(frame[40:][:], (2,0,1)) / 255.0, axis=0)
             obs = {
                 "camera_rgb": deepcopy(frame_processed),
                 "vehicle_dynamics": [[0]],
@@ -137,8 +137,8 @@ class ModelComparator:
 
 
 
-model_1 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/carla_rgb_256_dr_crop_600000_steps", device='cuda' if torch.cuda.is_available() else 'cpu')
-model_2 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/duckie_baseline", device='cuda' if torch.cuda.is_available() else 'cpu')
+model_1 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/carla_rgb_256_no_dr_crop_model_trained_800000_steps", device='cuda' if torch.cuda.is_available() else 'cpu')
+model_2 = PPO.load("/home/jurriaan/workplace/programming/Sim2Sim2Real/results/duckie_rgb_256_model_trained_600000_steps", device='cuda' if torch.cuda.is_available() else 'cpu')
 
 params_1 = model_1.policy.parameters()
 params_2 = model_2.policy.parameters()
@@ -155,4 +155,4 @@ ge = ModelComparator(video_path='/home/jurriaan/workplace/programming/Sim2Sim2Re
                       model_1=model_1,
                       model_2=model_2)
 #ge.run()
-ge.run_on_random()
+ge.run()
