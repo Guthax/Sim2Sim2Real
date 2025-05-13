@@ -14,7 +14,6 @@ environment_configs = {
             render=True,
             rgb_camera=True,
             seg_camera=False,
-            layered_mapping=False,
         ),
         "wrappers": [
             (CropWrapper, dict(keys=["camera_rgb"])),
@@ -99,7 +98,6 @@ environment_configs = {
             render=True,
             rgb_camera=False,
             seg_camera=True,
-            layered_mapping=False,
             convert_segmentation=False
         ),
         "wrappers": [

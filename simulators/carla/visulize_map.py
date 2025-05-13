@@ -14,7 +14,7 @@ class MapVisualization:
     def __init__(self, args):
         self.carla_client = carla.Client(args.host, args.port, worker_threads=1)
         self.carla_client.set_timeout(10)
-        self.world = self.carla_client.load_world("Town02")
+        self.world = self.carla_client.load_world("Town01")
         self.map = self.world.get_map()
         self.fig, self.ax = plt.subplots()
         self.line_list = []

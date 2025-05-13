@@ -23,11 +23,12 @@ CAMERA_HEIGHT = 120
 def slight_variation(base, delta):
     return base + random.uniform(-delta, delta)
 class SelfCarlaEnv(gym.Env):
-    def __init__(self, host='localhost', port=2000, rgb_camera=True, seg_camera=False, render=False, domain_rand= True, layered_mapping=False, convert_segmentation=True):
+    def __init__(self, host='localhost', port=2000, rgb_camera=True, seg_camera=False, render=False, domain_rand= True, map_change=False, convert_segmentation=True):
         super(SelfCarlaEnv, self).__init__()
         self.client = carla.Client(host, port)
         self.client.set_timeout(20.0)
         self.world = self.client.load_world("Town02_opt")
+        self.current_map_name = "Town02_opt"
 
         fps = 20
         settings = self.world.get_settings()
@@ -43,9 +44,9 @@ class SelfCarlaEnv(gym.Env):
         self.world.tick()
 
 
-        self.layered_mapping = layered_mapping
-        self.layered_mapping_counter = 200000
-        self.current_mapping_counter = 0
+        self.map_change = map_change
+        self.map_change_counter = 1000
+        self.current_map_change_counter = 0
         self.map_layers = [carla.MapLayer.Buildings, carla.MapLayer.Decals,
                   carla.MapLayer.Foliage, carla.MapLayer.ParkedVehicles,
                   carla.MapLayer.Particles, carla.MapLayer.Props, carla.MapLayer.StreetLights,
@@ -128,20 +129,22 @@ class SelfCarlaEnv(gym.Env):
         #valid_spawn_point_indexes = [10, 15, 97, 95, 33, 41, 1, 86, 87, 89]
 
         #valid_spawn_point_indexes = [15,95]
-        valid_spawn_point_indexes = [   28, 87,
-                                        89, 4,
-                                        19, 96,
-                                        15, 17,
-                                        6, 10,
-                                        0, 14, 11, 45, 34,
-                                        95,
-                                        33,
-                                        41, 1]
+        valid_spawn_point_indexes = {
+            "Town01_opt": [207, 202,197, 184, 118,174,47, 54, 108],
+            "Town02_opt": [28, 87,89, 4,19, 96,15, 17,6, 10,0, 14, 11, 45, 34,95,33,41, 1],
+        }
+
         for _ in range(10):  # Try up to 10 times to find a valid spawn point
-            spawn_point_index = random.choice(valid_spawn_point_indexes)
+            spawn_point_index = random.choice(valid_spawn_point_indexes[self.current_map_name])
             spawn_point = spawn_points[spawn_point_index]
             print(f"Spawn point: {spawn_point_index}")
+
             self.vehicle = self.world.try_spawn_actor(self.vehicle_bp, spawn_point)
+
+            angle_deviance_radians = random.uniform(-math.pi / 8, math.pi / 8)
+
+            angle_deviance_degrees = math.degrees(angle_deviance_radians)
+            self.vehicle.get_transform().rotation.yaw = angle_deviance_degrees
             self.spawn_position = spawn_point
             if self.vehicle is not None:
                 break
@@ -249,11 +252,18 @@ class SelfCarlaEnv(gym.Env):
             self.world.set_weather(weather)
             self.count_until_randomization = 0
 
-        if self.current_mapping_counter > self.layered_mapping_counter and len(self.map_layers) > 0 and self.layered_mapping:
-            layer_to_load = self.map_layers.pop(random.randrange(len(self.map_layers)))
-            self.world.load_map_layer(layer_to_load)
-            print("Loading: ", layer_to_load)
-            self.current_mapping_counter = 0
+        if self.current_map_change_counter > self.map_change_counter and self.map_change:
+            self.current_map_name = "Town02_opt" if self.current_map_name == "Town01_opt" else "Town01_opt"
+            self.world = self.client.load_world(self.current_map_name)
+
+            self.map_layers = [carla.MapLayer.Buildings, carla.MapLayer.Decals,
+                               carla.MapLayer.Foliage, carla.MapLayer.ParkedVehicles,
+                               carla.MapLayer.Particles, carla.MapLayer.Props, carla.MapLayer.StreetLights,
+                               carla.MapLayer.Walls]
+            [self.world.unload_map_layer(layer) for layer in self.map_layers]
+            self.world.tick()
+            self.current_map_change_counter = 0
+
         self.actor_list = []
 
         self.collision_occurred = False
@@ -379,7 +389,7 @@ class SelfCarlaEnv(gym.Env):
         if done:
             self.laps_done += 1
         self.current_steps += 1
-        self.current_mapping_counter += 1
+        self.current_map_change_counter += 1
         self.total_amount_steps += 1
         return observation, reward, done, False, info
 
