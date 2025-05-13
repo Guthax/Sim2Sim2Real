@@ -45,7 +45,7 @@ class SelfCarlaEnv(gym.Env):
 
 
         self.map_change = map_change
-        self.map_change_counter = 10000
+        self.map_change_counter = 1000
         self.current_map_change_counter = 0
         self.map_layers = [carla.MapLayer.Buildings, carla.MapLayer.Decals,
                   carla.MapLayer.Foliage, carla.MapLayer.ParkedVehicles,
@@ -138,13 +138,12 @@ class SelfCarlaEnv(gym.Env):
             spawn_point_index = random.choice(valid_spawn_point_indexes[self.current_map_name])
             spawn_point = spawn_points[spawn_point_index]
             print(f"Spawn point: {spawn_point_index}")
+            angle_deviance_radians = random.uniform(-math.pi /8, math.pi / 8)
+            angle_deviance_degrees = math.degrees(angle_deviance_radians)
+            spawn_point.rotation.yaw += angle_deviance_degrees
 
             self.vehicle = self.world.try_spawn_actor(self.vehicle_bp, spawn_point)
 
-            #angle_deviance_radians = random.uniform(-math.pi / 8, math.pi / 8)
-
-            #angle_deviance_degrees = math.degrees(angle_deviance_radians)
-            #self.vehicle.get_transform().rotation.yaw = angle_deviance_degrees
             self.spawn_position = spawn_point
             if self.vehicle is not None:
                 break
