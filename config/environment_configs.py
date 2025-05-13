@@ -148,7 +148,7 @@ environment_configs = {
             (CropWrapper, dict(keys=["camera_rgb"])),
             (ChannelFirstWrapper, None),
             (NormalizeWrapper, None),
-            (TimeLimit, dict(max_episode_steps=300)),
+            #(TimeLimit, dict(max_episode_steps=300)),
         ]
     },
 
