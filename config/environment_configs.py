@@ -47,7 +47,7 @@ environment_configs = {
             (GrayscaleWrapper, None),
             (ChannelFirstWrapper, None),
             (NormalizeWrapper, None),
-            (TimeLimit, dict(max_episode_steps=300))
+            (TimeLimit, dict(max_episode_steps=500))
         ]
     },
     "carla_gray_no_crop": {
