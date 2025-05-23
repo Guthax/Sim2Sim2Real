@@ -22,13 +22,13 @@ class DuckietownBaseDynamics(Simulator):
         self.laps_completed = 0
         self.laps_done = 0
 
-        self.distance_until_lap_complete = 0.25
+        self.distance_until_lap_complete = 0.35
         self.min_steps_for_lap = 300
         self.current_steps = 0
 
         self.previous_steer = None
         # color_sky = [0,0,0], color_ground=[0,0,0], domain_rand=False,
-        Simulator.__init__(self,**kwargs)
+        Simulator.__init__(self,color_sky = [0,0,0], color_ground=[0,0,0], domain_rand=False,**kwargs)
 
         self.action_space = spaces.Box(low=np.float32(-1), high=np.float32(1))
 

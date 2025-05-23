@@ -21,7 +21,7 @@ class Evaluator:
         self.algorithm = algorithm
 
         self.evaluation_timesteps = 100000
-        self.episode_length = 1000
+        self.episode_length = 10000
 
         self.apply_grad_cam = apply_grad_cam
 

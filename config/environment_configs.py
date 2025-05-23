@@ -19,7 +19,7 @@ environment_configs = {
             (CropWrapper, dict(keys=["camera_rgb"])),
             (ChannelFirstWrapper, None),
             (NormalizeWrapper, None),
-            (TimeLimit, dict(max_episode_steps=500))
+            (TimeLimit, dict(max_episode_steps=300))
         ]
     },
     "carla_rgb_no_crop": {
@@ -47,7 +47,7 @@ environment_configs = {
             (GrayscaleWrapper, None),
             (ChannelFirstWrapper, None),
             (NormalizeWrapper, None),
-            (TimeLimit, dict(max_episode_steps=500))
+            (TimeLimit, dict(max_episode_steps=300))
         ]
     },
     "carla_gray_no_crop": {
@@ -61,7 +61,7 @@ environment_configs = {
             (GrayscaleWrapper, None),
             (ChannelFirstWrapper, None),
             (NormalizeWrapper, None),
-            (TimeLimit, dict(max_episode_steps=500))
+            (TimeLimit, dict(max_episode_steps=300))
         ]
     },
     "carla_seg": {
@@ -142,13 +142,25 @@ environment_configs = {
         "base_env": DuckietownBaseDynamics,
         "arguments": dict(
             render_img=True,
-            randomize_maps_on_reset=True,
+            randomize_maps_on_reset=False,
         ),
         "wrappers": [
             (CropWrapper, dict(keys=["camera_rgb"])),
             (ChannelFirstWrapper, None),
             (NormalizeWrapper, None),
             #(TimeLimit, dict(max_episode_steps=300)),
+        ]
+    },
+    "duckie_rgb_no_crop": {
+        "base_env": DuckietownBaseDynamics,
+        "arguments": dict(
+            render_img=True,
+            randomize_maps_on_reset=False,
+        ),
+        "wrappers": [
+            (ChannelFirstWrapper, None),
+            (NormalizeWrapper, None),
+            #(TimeLimit, dict(max_episode_steps=1000)),
         ]
     },
 
