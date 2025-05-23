@@ -131,7 +131,7 @@ class SelfCarlaEnv(gym.Env):
         #valid_spawn_point_indexes = [15,95]
         valid_spawn_point_indexes = {
             "Town01_opt": [207, 202,197, 184, 118,174,47, 54, 108],
-            "Town02_opt": [28, 87,89, 4,19, 96,15, 17,6, 10,0, 14, 11, 45, 34,95,33,41, 1],
+            "Town02_opt": [28,89,4,45,78,41,43,35,1,33,95,36,9,10,14,15,97],
         }
 
         for _ in range(10):  # Try up to 10 times to find a valid spawn point
