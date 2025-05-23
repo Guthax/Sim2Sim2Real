@@ -119,7 +119,7 @@ class SelfCarlaEnv(gym.Env):
         self.convert_segmentation = convert_segmentation
 
         if not self.domain_rand:
-            self.world.set_weather(carla.WeatherParameters.Default)
+            self.world.set_weather(carla.WeatherParameters.CloudySunset)
 
 
 
@@ -132,7 +132,8 @@ class SelfCarlaEnv(gym.Env):
         valid_spawn_point_indexes = {
             "Town01_opt": [207, 202,197, 184, 118,174,47, 54, 108],
             #"Town02_opt": [28,89,4,45,78,41,43,35,1,33,95,36,9,10,14,15,97],
-            "Town02_opt": [4,22, 9,41, 1, 15],
+            "Town02_opt": [89,4,87,28, 97, 22, 15, 17, 14, 10,36,95,9,39,41,43,1, 78]
+            #"Town02_opt": [4,22, 9,41, 1, 15],
         }
 
         for _ in range(10):  # Try up to 10 times to find a valid spawn point
