@@ -143,7 +143,7 @@ class SelfCarlaEnv(gym.Env):
             angle_deviance_radians = random.uniform(-math.pi /12, math.pi / 12)
             angle_deviance_degrees = math.degrees(angle_deviance_radians)
             print("Deviance: ", angle_deviance_degrees)
-            spawn_point.rotation.yaw += angle_deviance_degrees
+            #spawn_point.rotation.yaw += angle_deviance_degrees
 
             self.vehicle = self.world.try_spawn_actor(self.vehicle_bp, spawn_point)
 
